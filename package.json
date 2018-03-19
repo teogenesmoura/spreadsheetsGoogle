@@ -1,0 +1,21 @@
+{
+  "name": "spreadsheets",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "chart.js": "^2.7.2",
+    "chartjs-node": "^1.6.1",
+    "express": "^4.16.3",
+    "fs": "0.0.1-security",
+    "googleapis": "^27.0.0",
+    "nodemon": "^1.17.2",
+    "opn": "^5.3.0",
+    "path": "^0.12.7"
+  }
+}

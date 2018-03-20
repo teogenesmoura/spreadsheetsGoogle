@@ -1,3 +1,4 @@
+"use strict";
 /* Reference code for OAuth and Spreadsheets:
 	https://github.com/google/google-api-nodejs-client/blob/master/samples/sheets/quickstart.js
 */

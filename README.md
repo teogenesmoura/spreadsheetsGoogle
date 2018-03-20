@@ -157,6 +157,7 @@ Este é apenas um esqueleto de projeto para que o grupo comece a trabalhar. Rest
 * Persistir dados coletados em base estruturada
 * Disponibilizar uma API publica para que leigos possam gerar visualizações interessantes
 * Adicionar mais regras ao Linter para aumentar a qualidade da padronização de código
+* Google Spreadsheets vs MongoDB?
 
 ## Licença
 

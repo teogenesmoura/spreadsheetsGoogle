@@ -43,9 +43,13 @@ http://localhost:3000
 Este projeto usa principalmente, mas não exclusivamente:
 
 Javascript ES6
+
 Node JS
+
 Express js
+
 googleapis
+
 Chart JS
 
 ### Prerequisitos

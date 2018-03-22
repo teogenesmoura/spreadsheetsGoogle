@@ -19,6 +19,7 @@ const client = new google.auth.OAuth2(
 // Generate the url that will be used for authorization
 this.authorizeUrl = client.generateAuthUrl({
 	access_type: "offline",
+  prompt: "consent",
 	scope: scopes
 });
 // Open an http server to accept the oauth callback. In this

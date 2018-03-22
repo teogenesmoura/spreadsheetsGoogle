@@ -44,7 +44,7 @@ let listCollectives = (auth) => {
 		const sheets = google.sheets("v4");
 		sheets.spreadsheets.values.get({
 			auth: auth,
-			spreadsheetId: "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
+			spreadsheetId: "1NkTrhXFGQ68VIF9PVxunXaEU_PVFJhgDx-qCsf1iH5o",
 			range: "A:S"
 		}, (err, res) => {
 			if (err) {

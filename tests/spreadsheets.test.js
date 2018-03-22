@@ -1,5 +1,5 @@
 "use strict";
-const spreadsheets = require("./controllers/spreadsheets");
+const spreadsheets = require("../controllers/spreadsheets");
 const fs = require("fs");
 /**
  * Test case for the 'generateCharts' method. It loads a mock collectives.json file (In the time of writing the file reflects

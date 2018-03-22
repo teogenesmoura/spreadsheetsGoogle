@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "esw *.js controllers --color",
+    "start": "nodemon index.js",
+    "precommit": "npm run lint && npm run test"
   },
   "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
   "license": "ISC",
@@ -19,6 +22,9 @@
     "path": "^0.12.7"
   },
   "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-watch": "^3.1.3",
+    "husky": "^0.14.3",
     "jest": "^22.4.2"
   }
 }

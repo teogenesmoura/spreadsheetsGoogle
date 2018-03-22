@@ -12,6 +12,8 @@ As instruções a seguir trazem orientações para aqueles que quiserem contribu
 
 ## Instalação
 
+Veja os [pré-requisitos](#prerequisitos) antes de instalar qualquer coisa.
+
 O primeiro passo para executar o código deste repositório consiste em clona-lo localmente.
 
 ```shell
@@ -54,7 +56,7 @@ Chart JS
 
 ### Prerequisitos
 
-Note que este projeto utiliza a biblioteca [chartjs-node](https://github.com/vmpowerio/chartjs-node), que requer a instalação da biblioteca Cairo previamente no seu sistema. Mais informações podem ser encontradas no link anterior.
+Note que este projeto utiliza a biblioteca [chartjs-node](https://github.com/vmpowerio/chartjs-node), que requer a instalação da biblioteca Cairo previamente no seu sistema. Para instalá-lo execute `sudo apt-get install libcairo2-dev libjpeg-dev libgif-dev`, os avisos podem ser ignorados.
 
 Para que o programa execute, é necessária a obtenção da chave de autenticação da API do Google. Deverá, então, ser criado um arquivo chamado "credentials.json" na pasta raíz do projeto, cujo conteúdo se assemelha ao seguinte:
 
@@ -74,7 +76,8 @@ Para que o programa execute, é necessária a obtenção da chave de autenticaç
 }
 ```
 
-Para conseguir as credenciais *client_id* e *client_secret*, acesse o [Console de Desenvolvedores](https://console.developer.google.com/). Selecione o seu projeto, clique em *APIs & auth* e em seguida em *credentials*. 
+Para conseguir as credenciais *client_id* e *client_secret*, acesse o [Console de Desenvolvedores](https://console.developer.google.com/). Selecione o projeto do grupo `resocie-data-viz`, clique em *APIs & auth* e em seguida em *credentials*, faça o download do arquivo e salve-o na raiz deste diretório como `credentials.json`.
+
 Mais informações de como funciona a autenticação em Oauth2 das APIs do Google podem ser encontradas no seguinte link:
 
 [Google API Node JS Client](https://github.com/google/google-api-nodejs-client#authorizing-and-authenticating)

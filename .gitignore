@@ -3,3 +3,4 @@
 credentials.json
 controllers/*.png
 yarn-error.log
+logs/

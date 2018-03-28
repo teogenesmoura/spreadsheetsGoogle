@@ -1,13 +1,14 @@
-/* Reference code for OAuth and Spreadsheets:
-	https://github.com/google/google-api-nodejs-client/blob/master/samples/sheets/quickstart.js
-*/
 const { google } = require("googleapis");
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const opn = require("opn");
 const sheets = require("./controllers/spreadsheets");
+const logger = require("./config/logger");
 
+/* Reference code for OAuth and Spreadsheets:
+	https://github.com/google/google-api-nodejs-client/blob/master/samples/sheets/quickstart.js
+*/
 const keyfile = path.join(__dirname, "credentials.json");
 const keys = JSON.parse(fs.readFileSync(keyfile));
 const scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
 	sheets.authenticate(client, req, res);
 });
 app.listen(3000, () => {
+	logger.info(`[SERVER] Listening on port ${3000}`);
 	// open the browser to the authorize url to start the workflow
 	opn(this.authorizeUrl, { wait: false });
 });

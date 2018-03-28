@@ -1,5 +1,6 @@
 const { google } = require("googleapis");
 const ChartjsNode = require("chartjs-node");
+const logger = require("../config/logger");
 
 const fileName = "frentePopularInstagram.png";
 const pathOfFile = `${__dirname}/${fileName}`;
@@ -18,7 +19,7 @@ const authenticate = (client, req, res) => {
 	const code = req.query.code;
 	client.getToken(code, (err, tokens) => {
 		if (err) {
-			console.error("Error getting oAuth tokens:");
+			logger.error("Error getting oAuth tokens:");
 			throw err;
 		}
 		client.credentials = tokens;
@@ -48,12 +49,13 @@ const listCollectives = (auth) => {
 			range: "A:S",
 		}, (err, res) => {
 			if (err) {
-				console.error("The API returned an error.");
+				logger.error("The API returned an error.");
 				reject(err);
 			}
 			const rows = res.data.values;
 			if (rows.length === 0) {
-				console.warn("No data found.");
+				logger.error("No data found.");
+				reject(rows);
 			} else {
 				resolve(rows);
 			}
@@ -73,7 +75,7 @@ const listCollectives = (auth) => {
  * chartJSNode fails to do so.
  */
 const generateCharts = (collectives) => {
-	console.log(JSON.stringify(collectives));
+	logger.trace("Generating graph from collectives");
 	const chartNode = new ChartjsNode(600, 600);
 	/* In sequence: Tweets, Seguindo, Seguidores, Curtidas */
 	const data = [collectives[2][8], collectives[2][9], collectives[2][10], collectives[2][11]];
@@ -115,6 +117,7 @@ const generateCharts = (collectives) => {
 			// directly upload the image to s3 by using the
 			// stream and length properties
 			if (streamResult.stream === undefined || streamResult.length === undefined) {
+				logger.error("Missing properties on streamResult");
 				throw String("Missing properties on streamResult");
 			}
 			// write to a file

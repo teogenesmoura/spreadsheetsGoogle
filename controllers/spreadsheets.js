@@ -16,21 +16,28 @@ const pathOfFile = `${__dirname}/${fileName}`;
 * @returns {File} outputFile - Promise containing resized image or error
 */
 const authenticate = (client, req, res) => {
+	if (req.query.code === undefined) {
+		logger.error("Undefined auth code");
+		return res.status(500).send("No code query parameter");
+	}
 	const code = req.query.code;
-	client.getToken(code, (err, tokens) => {
+
+	return client.getToken(code, async (err, tokens) => {
 		if (err) {
-			logger.error("Error getting oAuth tokens:");
-			throw err;
+			logger.error(`Error getting oAuth tokens: ${err}`);
+			return res.status(500).send("Error");
 		}
 		client.credentials = tokens;
-		listCollectives(client)
-			.then((collectives) => {
-				return generateCharts(collectives);
-			})
-			.then(() => {
-				res.sendFile(pathOfFile);
-				return pathOfFile;
-			});
+
+		try {
+			const collectives = await listCollectives(client)
+			await generateCharts(collectives);
+			res.sendFile(pathOfFile);
+			return pathOfFile;
+		} catch (e) {
+			logger.error(e);
+			return res.status(500).send("Error");
+		}
 	});
 };
 
@@ -74,7 +81,7 @@ const listCollectives = (auth) => {
  * the chart's image file is written to disk data are collected and fails when
  * chartJSNode fails to do so.
  */
-const generateCharts = (collectives) => {
+const generateCharts = async (collectives) => {
 	logger.trace("Generating graph from collectives");
 	const chartNode = new ChartjsNode(600, 600);
 	/* In sequence: Tweets, Seguindo, Seguidores, Curtidas */
@@ -101,28 +108,8 @@ const generateCharts = (collectives) => {
 			responsive: true,
 		},
 	};
-	return chartNode.drawChart(config)
-		.then(() => {
-			// chart is created
-			// get image as png buffer
-			return chartNode.getImageBuffer("image/png");
-		})
-		.then((buffer) => {
-			Array.isArray(buffer); // => true
-			// as a stream
-			return chartNode.getImageStream("image/png");
-		})
-		.then((streamResult) => {
-			// using the length property you can do things like
-			// directly upload the image to s3 by using the
-			// stream and length properties
-			if (streamResult.stream === undefined || streamResult.length === undefined) {
-				logger.error("Missing properties on streamResult");
-				throw String("Missing properties on streamResult");
-			}
-			// write to a file
-			return chartNode.writeImageToFile("image/png", pathOfFile);
-		});
+	await chartNode.drawChart(config);
+	return chartNode.writeImageToFile("image/png", pathOfFile);
 };
 
 module.exports = { generateCharts, authenticate };

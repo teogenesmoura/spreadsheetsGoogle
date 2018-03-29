@@ -105,7 +105,7 @@ O código conta com duas camadas de estilo: A provida pelo comando
 Para executar o eslint, instale globalmente a biblioteca com:
 
 ```shell
-npm install eslint --save-dev
+npm install -g eslint --save-dev
 ```
 
 Então, execute o linter com o seguinte comando:

@@ -1,7 +1,14 @@
 const winston = require("winston");
+const fs = require("fs");
 
 const format = winston.format;
 const { combine, printf } = format;
+
+// Create the logs directory if it does not exist
+const logDir = "logs";
+if (!fs.existsSync(logDir)) {
+	fs.mkdirSync(logDir);
+}
 
 const customLevels = {
 	levels: {

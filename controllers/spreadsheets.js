@@ -30,7 +30,7 @@ const authenticate = (client, req, res) => {
 		client.credentials = tokens;
 
 		try {
-			const collectives = await listCollectives(client)
+			const collectives = await listCollectives(client);
 			await generateCharts(collectives);
 			res.sendFile(pathOfFile);
 			return pathOfFile;

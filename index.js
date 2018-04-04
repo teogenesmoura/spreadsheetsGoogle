@@ -15,8 +15,8 @@ mongoose.connection.on("error", () => {
 	throw new Error(`unable to connect to database: ${mongoUri}`);
 });
 
-app.listen(3000, () => {
-	logger.info(`[SERVER] Listening on port ${3000}`);
+app.listen(config.port, () => {
+	logger.info(`[SERVER] Listening on port ${config.port}`);
 });
 
 module.exports = app;

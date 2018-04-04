@@ -3,27 +3,42 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "lint": "esw *.js config controllers tests --color",
+    "test": "jest 'server/tests' --forceExit",
+    "lint": "esw *.js config server --color",
     "start": "nodemon index.js",
     "precommit": "npm run lint && npm run test"
   },
+  "jest": {
+      "setupFiles": ["<rootDir>/config/jest-setup.js"]
+  },
   "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
+  "contributors": [
+    "Mikael Mello <mikaelmmello@gmail.com>"
+  ],
   "repository": {
     "type": "git",
-    "url": "git@github.com:teogenesmoura/spreadsheetsGoogle.git"
+    "url": "git@github.com:unb-cic-esw/data-viz.git"
   },
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "body-parser": "^1.18.2",
     "chart.js": "^2.7.2",
     "chartjs-node": "^1.6.1",
+    "compression": "^1.7.2",
+    "cookie-parser": "^1.4.3",
+    "cors": "^2.8.4",
     "express": "^4.16.3",
     "fs": "0.0.1-security",
     "googleapis": "^27.0.0",
+    "helmet": "^3.12.0",
+    "http-status": "^1.0.1",
+    "method-override": "^2.3.10",
     "nodemon": "^1.17.2",
     "opn": "^5.3.0",
     "path": "^0.12.7",
+    "supertest": "^3.0.0",
+    "supertest-as-promised": "^4.0.2",
     "winston": "^3.0.0-rc3"
   },
   "devDependencies": {

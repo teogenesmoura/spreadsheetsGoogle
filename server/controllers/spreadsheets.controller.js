@@ -1,6 +1,7 @@
 const { google } = require("googleapis");
 const ChartjsNode = require("chartjs-node");
-const logger = require("../config/logger");
+const logger = require("../../config/logger");
+const { client, authorizeUrl } = require("../../config/google-auth");
 
 const fileName = "frentePopularInstagram.png";
 const pathOfFile = `${__dirname}/${fileName}`;
@@ -9,16 +10,14 @@ const pathOfFile = `${__dirname}/${fileName}`;
 * Contacts the Google API and generates a token. Returns the path of the
 * chart generated on disk and calls the res object to send the image
 * to the browser.
-* @param {object} client - client object for authentication with Google
 * @param {object} req - standard req object from the Express library
 * @param {object} res - standard res object from the Express library
 * @returns {String} pathOfFile - path of the chart generated on disk
 * @returns {File} outputFile - Promise containing resized image or error
 */
-const authenticate = (client, req, res) => {
+const authenticate = (req, res) => {
 	if (req.query.code === undefined) {
-		logger.error("Undefined auth code");
-		return res.status(500).send("No code query parameter");
+		return res.redirect(authorizeUrl);
 	}
 	const code = req.query.code;
 

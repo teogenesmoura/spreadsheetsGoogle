@@ -1,5 +1,5 @@
 const fs = require("fs");
-const request = require("supertest-as-promised");
+const request = require("supertest");
 const httpStatus = require("http-status");
 const spreadsheets = require("../controllers/spreadsheets.controller");
 const app = require("../../index");

@@ -1,8 +1,15 @@
 "use strict";
 const {google} = require("googleapis");
 const ChartjsNode = require("chartjs-node");
-const fileName = "frentePopularInstagram.png";
+const instagram = require("../templates/instagram");
+const fileName = "frentePopularInstagram_Rod.png";
 const pathOfFile = __dirname + "/" + fileName;
+const chartSize = 600;
+const tweetsRow = 8,
+	seguindoRow = 9,
+	seguidoresRow = 10,
+	curtidasRow = 11;
+
 
 /**
 * Contacts the Google API and generates a token. Returns the path of the 
@@ -40,7 +47,7 @@ let authenticate = (client,req,res) => {
  * Spreadsheet's data are collected and fails when the API returns an error 
  */
 let listCollectives = (auth) => {
-	const collectivesPromise = new Promise(function(resolve, reject) {
+	const collectivesPromise = new Promise(function(resolve, reject){
 		const sheets = google.sheets("v4");
 		sheets.spreadsheets.values.get({
 			auth: auth,
@@ -74,29 +81,44 @@ let listCollectives = (auth) => {
  */
 let generateCharts = (collectives) => {
 	console.log(JSON.stringify(collectives));
-	const chartNode = new ChartjsNode(600, 600);
+	const chartNode = new ChartjsNode(chartSize, chartSize);
 	/* In sequence: Tweets, Seguindo, Seguidores, Curtidas */
-	const data = [collectives[2][8], collectives[2][9], collectives[2][10], collectives[2][11]];
+	const data = [
+		collectives[2][tweetsRow],
+		collectives[2][seguidoresRow],
+		collectives[2][seguidoresRow],
+		collectives[2][curtidasRow]
+	];
 	/* INSTAGRAM */
-	const label = collectives[0][16];
+	const label = collectives[0][instagram.label];
 	const labels = [
-		collectives[1][8], // Tweets
-		collectives[1][9], // Seguindo
-		collectives[1][10], // Seguidores
-		collectives[1][11], // Curtidas
+		collectives[1][tweetsRow], // Tweets
+		collectives[1][seguindoRow], // Seguindo
+		collectives[1][seguidoresRow], // Seguidores
+		collectives[1][curtidasRow], // Curtidas
 	];
 	const config = {
-		type: "pie",
+		type: "pie", //"doughnut", //"pie",
 		data: {
 			datasets: [{
 				data: data,
-				backgroundColor: ["#3e95cd", "#8e5ea2","#3cba9f","#e8c3b9"],
+				backgroundColor: [
+					instagram.blue,
+					instagram.purpleViolet,
+					instagram.orange,
+					instagram.redOrange],
 				label: label 
 			}],
 			labels: labels
 		},
 		options: {
-			responsive: true
+			responsive: true,
+			legend: {position: "bottom"},
+			cutoutPercentage: 25,
+			title: {
+				display: true,
+				text: instagram.label
+			}
 		}
 	};
 	return chartNode.drawChart(config)
@@ -121,4 +143,4 @@ let generateCharts = (collectives) => {
 		});
 };
 
-module.exports = {generateCharts, authenticate};
+module.exports = {generateCharts, authenticate, fileName};

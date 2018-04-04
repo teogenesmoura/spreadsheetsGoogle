@@ -9,5 +9,5 @@ it("frentePopularInstagram chart should exist on disk", () => {
 	expect.assertions(1);
 	var collectives = JSON.parse(fs.readFileSync("./collectives.json"));
 	return spreadsheets.generateCharts(collectives)
-		.then(expect(fs.readFileSync("./controllers/frentePopularInstagram.png")).toBeInstanceOf(Buffer));
+		.then(expect(fs.readFileSync(spreadsheets.fileName)).toBeInstanceOf(Buffer));
 });

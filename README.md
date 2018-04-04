@@ -99,26 +99,18 @@ npm test
 
 ## Guia de estilo
 
-O código conta com duas camadas de estilo: A provida pelo comando
-*"use strict"* do próprio Javascript e a biblioteca [Eslint](https://eslint.org/), com as configurações presentes no arquivo *".eslintrc.js"* para manter boas práticas de programação. 
+O código conta com a biblioteca [Eslint](https://eslint.org/), com as configurações presentes no arquivo *".eslintrc.js"* para manter boas práticas de programação, extendidas do [Guia de Estilo para Javascript da Airbnb](https://github.com/airbnb/javascript) com algumas mudanças de acordo com as necessidades do nosso projeto. 
 
-Para executar o eslint, instale globalmente a biblioteca com:
-
-```shell
-npm install eslint --save-dev
-```
-
-Então, execute o linter com o seguinte comando:
+Para executar o linter:
 
 ```shell
-eslint controllers/spreadsheets.js
+npm run lint
 ```
+É sempre bom usar um plugin no seu editor de texto para ter um feedback em tempo real do código que você escreve, evitando perder tempo reescrevendo muitos trechos de código. No caso do Visual Studio Code, o próprio ESLint oferece um plugin.
 
-Este comando analisará somente o arquivo *"controllers/spreadsheet.js"*. Para analisar toda a pasta, use o seguinte comando:
+## Hooks
 
-```shell
-eslint ./
-```
+Este projeto conta com apenas um hook de pré-commit, isso significa o comando `npm run lint && npm run test` é executado antes de todo commit feito, garantindo que nenhum commit seja realizado com código mal-estilizado ou com testes falhando.
 
 ## Documentação
 
@@ -153,14 +145,13 @@ Este é apenas um esqueleto de projeto para que o grupo comece a trabalhar. Rest
 * Implementar mais casos de teste unitário
 * Implementar testes de comportamento (BDD)
 * Gerar mais de um gráfico
-* Incluir mecanismo de logging
 * Expandir quantidade dos dados utilizados
 * Pesar o custo de gerar gráficos server-side e verificar se vale a pena fazê-lo no cliente
 * Implementar mecanismo para automatização da coleta recorrente dos dados
 * Persistir dados coletados em base estruturada
 * Disponibilizar uma API publica para que leigos possam gerar visualizações interessantes
-* Adicionar mais regras ao Linter para aumentar a qualidade da padronização de código
 * Google Spreadsheets vs MongoDB?
+* Ignorar os docs no repositório já que eles são gerados automaticamente? Discutir
 
 ## Licença
 

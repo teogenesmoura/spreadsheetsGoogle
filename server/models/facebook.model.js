@@ -22,27 +22,31 @@ const nomeModelo = "facebookConta";
  * Como testar as interfaces com o MongoDB?
 */
 
-const facebookContaEsquema = new mongoose.Schema({
-	nome: {	// name
-		type: String,
-	},
-	classe: { // class, cluster
-		type: String,
-	},
-	link: { // acccount, fanPage, profile
-		type: String,
-		trim: true,
-	},
-	curtidas: { // likes
+const facebookHistory = {
+	likes: {
 		type: Number,
 	},
-	seguidores: { // followers
+	followers: {
 		type: Number,
 	},
-	mesConsulta: { // consultation, query
+	date: {
 		type: Date,
 		Default: Date.now,
 	},
+};
+
+const facebookContaEsquema = new mongoose.Schema({
+	name: {
+		type: String,
+	},
+	class: {
+		type: String,
+	},
+	link: {
+		type: String,
+		trim: true,
+	},
+	history: [facebookHistory],
 });
 
 module.exports = mongoose.model(nomeModelo, facebookContaEsquema);

@@ -1,6 +1,6 @@
 .DS_Store
 /node_modules
-credentials.json
+config/credentials.json
 server/controllers/*.png
 yarn-error.log
 logs/

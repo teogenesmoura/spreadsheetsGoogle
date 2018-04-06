@@ -1,7 +1,8 @@
 // Módulo do MongoDB, banco de dados NoSQL
 const mongoose = require("mongoose");
 
-const nameModel = "facebookConta";
+const nameModel = "facebookAccounts";
+const collectionName = "accounts";
 /**
  * Planilha que irá povoar o BD:
  * https://docs.google.com/spreadsheets/d/1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q/edit#gid=0
@@ -49,4 +50,4 @@ const facebookAccountSchema = new mongoose.Schema({
 	history: [facebookHistory],
 });
 
-module.exports = mongoose.model(nameModel, facebookAccountSchema);
+module.exports = mongoose.model(nameModel, facebookAccountSchema, collectionName);

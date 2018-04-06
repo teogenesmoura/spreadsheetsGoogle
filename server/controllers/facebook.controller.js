@@ -19,27 +19,30 @@
 // const mongoose = require("mongoose");
 const Facebook = require("../models/facebook.model");
 
-// const teste = new Facebook({ name: "Pedro" });
-
-// mongoose.connect("mongodb://localhost/facebook", { keepAlive: 1 });
-
 const test = (req, res) => {
 	console.log("oi");
-	/*
-	teste.save((err) => {
-		if (err) console.log("error");
-		console.log("success");
-	});
-	// */
 
-	Facebook.find({}, {}, (error, data) => {
-		// return res.render("facebook/index", { list: data });
-		console.log("busca");
-		return console.log(data);
+	Facebook.find((error, data) => {
+		return console.log(`${data}`);
 	});
-	// console.log(facebook.find());
-	// */
+
 	res.redirect("/");
 };
 
-module.exports = { test };
+const signUpInit = (req, res) => {
+	const teste = new Facebook({
+		name: "Maria José",
+		class: "tstClass",
+		link: "www.maria.jose.com",
+		history: [{ likes: 42, followers: 4200, date: new Date(94, 2, 21) }],
+	});
+
+	teste.save((err) => {
+		if (err) console.log(`error ${err}`);
+		console.log("success");
+	});
+
+	res.redirect("/");
+};
+
+module.exports = { test, signUpInit };

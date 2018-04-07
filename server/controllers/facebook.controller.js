@@ -19,22 +19,26 @@
 // const mongoose = require("mongoose");
 const Facebook = require("../models/facebook.model");
 
-const test = (req, res) => {
-	console.log("oi");
-
-	Facebook.find((error, data) => {
-		return console.log(`${data}`);
+const find = (req, res) => {
+	console.log("Busca no banco");
+	Facebook.find((error, datas) => {
+		return console.log(`${datas}`);
 	});
 
 	res.redirect("/");
 };
 
-const signUpInit = (req, res) => {
+const tstInsertion = (req, res) => {
+	console.log("Inserção de Teste no banco");
 	const teste = new Facebook({
 		name: "Maria José",
 		class: "tstClass",
 		link: "www.maria.jose.com",
-		history: [{ likes: 42, followers: 4200, date: new Date(94, 2, 21) }],
+		history: [{
+			likes: 42,
+			followers: 4200,
+			date: new Date(94, 2, 21),
+		}],
 	});
 
 	teste.save((err) => {
@@ -42,7 +46,13 @@ const signUpInit = (req, res) => {
 		console.log("success");
 	});
 
-	res.redirect("/");
+	res.redirect("/facebook");
 };
 
-module.exports = { test, signUpInit };
+const signUpInit = (req, res) => {
+	console.log("Inserção de dados no banco");
+
+	res.redirect("/facebook");
+};
+
+module.exports = { find, tstInsertion, signUpInit };

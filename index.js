@@ -19,8 +19,9 @@ mongoose.connection.once("open", () => {
 });
 
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
 	logger.info(`[SERVER] Listening on port ${config.port}`);
 });
 
 module.exports = app;
+module.exports.server = server;

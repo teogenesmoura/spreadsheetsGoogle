@@ -15,6 +15,7 @@ const collectionName = "accounts";
  *		Nome das Planilhas: "Grupos/<mes> <ano>",
  *			<mes> => nome em 3 letras,
  *			<ano> => 4 digitos
+ *		Data nas Planilhas: dd/mm/aaaa
  *		Classe: 03-13 => Frente/Coletivos,
  *				16-53 => Organizações da Sociedade Civil,
  *				56-77 => Pré-Candidatura à Presidência

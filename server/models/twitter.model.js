@@ -29,13 +29,19 @@ const twitterAccountSchema = new mongoose.Schema({
 	},
 	username: {
 		type: String,
+		default: null,
 	},
 	type: {
 		type: String,
+		default: null,
 	},
-	sample: [sampleSchema],
+	sample: {
+		type: [sampleSchema],
+		default: null,
+	},
 	campaigns: {
 		type: [String],
+		default: null,
 	},
 });
 

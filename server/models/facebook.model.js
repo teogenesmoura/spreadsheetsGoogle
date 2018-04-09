@@ -22,8 +22,12 @@ const collectionName = "accounts";
  * Verificar o significado dos "Não usar --";
  * Vale a pena já desenvolver os métodos de pesquisa básicos?
  * Como testar as interfaces com o MongoDB?
-*/
+ */
 
+/**
+ * Temporary samples of Facebook accounts, containing:
+ * likes, followers and query date.
+ */
 const facebookHistory = {
 	likes: {
 		type: Number,
@@ -37,6 +41,10 @@ const facebookHistory = {
 	},
 };
 
+/**
+ * Required data from Facebook accounts, containing:
+ * name, class of account, link and temporal history.
+ */
 const facebookAccountSchema = new mongoose.Schema({
 	name: {
 		type: String,

@@ -6,9 +6,7 @@ const router = express.Router(); // eslint-disable-line new-cap
 
 router.get("/", (req, res) => {
 	res.write("Welcome to Facebook Main Page");
-	res.write("\n");
-	res.write("Continuando");
-	res.redirect("/");
+	res.end();
 });
 
 router.route("/find")
@@ -17,4 +15,6 @@ router.route("/find")
 router.route("/tstInsertion")
 	.get(facebookCtrl.tstInsertion);
 
+router.route("/init")
+	.get(facebookCtrl.signUpInit);
 module.exports = router;

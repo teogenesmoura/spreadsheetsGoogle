@@ -18,6 +18,7 @@
 
 // const mongoose = require("mongoose");
 const Facebook = require("../models/facebook.model");
+const collectives = require("../tests/spreadsheets-collectives.json");
 
 const find = (req, res) => {
 	console.log("Busca no banco");
@@ -51,6 +52,8 @@ const tstInsertion = (req, res) => {
 
 const signUpInit = (req, res) => {
 	console.log("Inserção de dados no banco");
+
+	console.log(`Collectives[2][0]: ${collectives[2][0]}`);
 
 	res.redirect("/facebook");
 };

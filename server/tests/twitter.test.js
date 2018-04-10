@@ -15,7 +15,6 @@ describe("Twitter endpoint", () => {
 				expect(res.body.error).toBe(false);
 				expect(res.body).toHaveProperty("usernames");
 				expect(res.body.usernames).toBeInstanceOf(Array);
-				expect(res.body.usernames.length).toBeGreaterThan(0);
 				done();
 			})
 			.catch(done);

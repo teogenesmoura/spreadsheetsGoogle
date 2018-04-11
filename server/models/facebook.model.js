@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 
 const nameModel = "facebookAccounts";
-const collectionName = "accounts";
+const collectionName = "facebook";
 /**
  * Planilha que irá povoar o BD:
  * https://docs.google.com/spreadsheets/d/1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q/edit#gid=0
@@ -37,7 +37,8 @@ const facebookHistory = {
 	},
 	date: {
 		type: Date,
-		Default: Date.now,
+		required: true,
+		default: Date.now,
 	},
 };
 
@@ -48,15 +49,21 @@ const facebookHistory = {
 const facebookAccountSchema = new mongoose.Schema({
 	name: {
 		type: String,
+		required: true,
 	},
 	class: {
 		type: String,
+		default: null,
 	},
 	link: {
 		type: String,
 		trim: true,
+		default: null,
 	},
-	history: [facebookHistory],
+	history: {
+		type: [facebookHistory],
+		default: null,
+	},
 });
 
 module.exports = mongoose.model(nameModel, facebookAccountSchema, collectionName);

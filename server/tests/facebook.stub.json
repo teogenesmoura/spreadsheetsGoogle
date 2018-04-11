@@ -1,0 +1,38 @@
+{
+	"facebook": [
+		{
+			"name": "José Maria",
+			"class": "joseClass",
+			"link": "joseLink",
+			"history": [
+				{
+					"likes": 42,
+					"followers": 420,
+					"date": "1994-12-24T02:00:00Z"
+				},
+				{
+					"likes": 42,
+					"followers": 840,
+					"date": "1995-01-24T02:00:00Z"
+				}
+			]
+		},
+		{
+			"name": "Ana Francisca",
+			"class": "anaClass",
+			"link": "anaLink",
+			"history": [
+				{
+					"likes": 24,
+					"followers": 240,
+					"date": "1994-12-24T02:00:00Z"
+				},
+				{
+					"likes": 42,
+					"followers": 240,
+					"date": "1995-01-24T02:00:00Z"
+				}
+			]
+		}
+	]
+}

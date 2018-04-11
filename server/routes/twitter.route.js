@@ -13,4 +13,9 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(twitterCtrl.listAccounts);
 
+router.route("/:username/likes")
+	.get(twitterCtrl.likeProgress);
+
+router.param("username", twitterCtrl.loadAccount);
+
 module.exports = router;

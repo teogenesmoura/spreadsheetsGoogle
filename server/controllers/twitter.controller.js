@@ -60,12 +60,12 @@ const userLastSample = async (req, res) => {
 
 		account.lastSample = lastSample;
 
-		res.status(200).json({
+		res.status(httpStatus.OK).json({
 			error: false,
 			account: account,
 		});
 	} catch (e) {
-		res.status(500).json({
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
 			description: "Erro ao carregar amostras",
 		});

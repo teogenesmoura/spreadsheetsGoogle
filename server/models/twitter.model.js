@@ -45,4 +45,4 @@ const twitterAccountSchema = new mongoose.Schema({
 	},
 });
 
-module.exports = mongoose.model("twitterAccount", twitterAccountSchema);
+module.exports = mongoose.model("twitterAccount", twitterAccountSchema, "twitterAccount");

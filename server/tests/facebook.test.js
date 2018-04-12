@@ -1,7 +1,6 @@
 const request = require("supertest");
 const httpStatus = require("http-status");
 const app = require("../../index");
-const server = require("../../index").server;
 const facebookAccount = require("../models/facebook.model");
 const facebookStub = require("./facebook.stub.json").facebook;
 
@@ -12,10 +11,8 @@ beforeAll(async () => {
 /**
  * Possibility of all tests accessing the same server
  */
-afterAll(async (done) => {
+afterAll(async () => {
 	await facebookAccount.collection.drop();
-	server.close();
-	done();
 });
 
 /**

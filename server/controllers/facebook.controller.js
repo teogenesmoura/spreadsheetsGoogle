@@ -1,29 +1,6 @@
-// const logger = require("../../config/logger");
-
-/* module.exports = (app) => {
-	const facebook = app.server.models.facebook.model;
-
-	const facebookController = {
-		index: (req, res) => {
-			facebook.find((error, data) => {
-				/* if(error){}
-				else
-				//
-				return res.render("facebook/index", { list: data });
-			});
-		},
-	};
-	return facebookController;
-}; */
-
-// const mongoose = require("mongoose");
 const Facebook = require("../models/facebook.model");
 const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
-
-if (global.CanvasGradient === undefined) {
-	global.CanvasGradient = () => {};
-}
 
 const likesType = "Likes";
 const blueDark = "#3b5998";

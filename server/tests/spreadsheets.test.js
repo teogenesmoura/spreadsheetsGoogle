@@ -3,15 +3,6 @@ const request = require("supertest");
 const httpStatus = require("http-status");
 const spreadsheets = require("../controllers/spreadsheets.controller");
 const app = require("../../index");
-const server = require("../../index").server;
-
-/**
- * Possibility of all tests accessing the same server
- */
-afterAll(async (done) => {
-	server.close();
-	done();
-});
 
 /**
  * Test case for the /spreadsheets endpoint. Tests behavior of sad path for now

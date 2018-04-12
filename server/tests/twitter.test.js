@@ -31,6 +31,24 @@ describe("Twitter endpoint", () => {
 		done();
 	});
 
+	it("GET /twitter/:username should return a json with user information", async (done) => {
+		const res = await request(app).get("/twitter/john").expect(httpStatus.OK);
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+		expect(res.body).toHaveProperty("account");
+		expect(res.body.account.username).toEqual("john");
+		expect(res.body.account.name).toEqual("Joao");
+		expect(res.body.account.type).toEqual("Presidente");
+		expect(res.body.account.lastSample).toEqual({
+			tweets: 323,
+			likes: 621,
+			followers: 855,
+			following: 30,
+			moments: 11,
+		});
+		done();
+	});
+
 	it("GET /twitter/:username/likes should return an image (the graph)", async (done) => {
 		expect(usernameTest).toBeDefined();
 		const res = await request(app).get(`/twitter/${usernameTest}/likes`).expect(httpStatus.OK);

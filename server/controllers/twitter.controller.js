@@ -32,6 +32,46 @@ const loadAccount = async (req, res, next, username) => {
 	}
 };
 
+// Mostra a última amostra de dados do usuário
+const userLastSample = async (req, res) => {
+	try {
+		const account = req.account.toObject();
+		const samples = req.account.samples;
+		const length = samples.length - 1;
+		const lastSample = {};
+
+		for (let i = length; i >= 0; i -= 1) {
+			if (lastSample.likes === undefined && samples[i].likes !== undefined) {
+				lastSample.likes = samples[i].likes;
+			}
+			if (lastSample.tweets === undefined && samples[i].tweets !== undefined) {
+				lastSample.tweets = samples[i].tweets;
+			}
+			if (lastSample.followers === undefined && samples[i].followers !== undefined) {
+				lastSample.followers = samples[i].followers;
+			}
+			if (lastSample.following === undefined && samples[i].following !== undefined) {
+				lastSample.following = samples[i].following;
+			}
+			if (lastSample.moments === undefined && samples[i].moments !== undefined) {
+				lastSample.moments = samples[i].moments;
+			}
+		}
+
+		account.lastSample = lastSample;
+
+		res.status(200).json({
+			error: false,
+			account: account,
+		});
+	} catch (e) {
+		res.status(500).json({
+			error: true,
+			description: "Erro ao carregar amostras",
+		});
+	}
+};
+
 const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
@@ -109,7 +149,6 @@ const createDataset = async (req, res, next) => {
 	next();
 };
 
-
 // Desenha um gráfico de linha que usa o tempo como eixo X
 const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
@@ -164,4 +203,5 @@ module.exports = {
 	setSampleKey,
 	createDataset,
 	drawLineChart,
+	userLastSample,
 };

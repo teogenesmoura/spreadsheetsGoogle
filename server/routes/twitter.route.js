@@ -13,6 +13,9 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(twitterCtrl.listAccounts);
 
+router.route("/:username")
+	.get(twitterCtrl.userLastSample);
+
 router.route("/:username/:query")
 	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
 

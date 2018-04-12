@@ -1,3 +1,4 @@
+const httpStatus = require("http-status");
 const twitterAccount = require("../models/twitter.model");
 const Chart = require("chartjs-node");
 
@@ -5,12 +6,12 @@ const Chart = require("chartjs-node");
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await twitterAccount.find({}, "username -_id");
-		res.status(200).json({
+		res.status(httpStatus.OK).json({
 			error: false,
 			usernames: accounts,
 		});
 	} catch (e) {
-		res.status(500).json({
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
 			description: "Erro ao carregar os usuários do Twitter do banco de dados",
 		});
@@ -24,7 +25,7 @@ const loadAccount = async (req, res, next, username) => {
 		req.account = account;
 		return next();
 	} catch (e) {
-		return res.status(500).json({
+		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
 			description: `Erro ao carregar o usuário ${username} no banco de dados`,
 		});
@@ -34,7 +35,7 @@ const loadAccount = async (req, res, next, username) => {
 const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
-	const sampleKey = req.path.split("/").pop();
+	const sampleKey = req.params.query;
 
 	// Título do gráfico gerado
 	let mainLabel;
@@ -60,10 +61,9 @@ const setSampleKey = async (req, res, next) => {
 	default:
 		// Se chegou até aqui, a função está sendo chamada por uma rota
 		// com um parâmetro diferente dos aceitáveis.
-		// Isso só pode acontecer se o programador programar errado!
-		return res.status(403).json({
+		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
-			description: "Esta função não deveria ser chamada nesta rota",
+			description: `Query invalida para usuário ${req.account.username}`,
 		});
 	}
 
@@ -153,7 +153,7 @@ const drawLineChart = async (req, res) => {
 
 	await chartNode.drawChart(config);
 	const buffer = await chartNode.getImageBuffer("image/png");
-	res.writeHead(200, { "Content-Type": "image/png" });
+	res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
 	res.write(buffer);
 	res.end();
 };

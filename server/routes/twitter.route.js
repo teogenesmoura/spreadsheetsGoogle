@@ -13,19 +13,7 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(twitterCtrl.listAccounts);
 
-router.route("/:username/likes")
-	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
-
-router.route("/:username/followers")
-	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
-
-router.route("/:username/following")
-	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
-
-router.route("/:username/tweets")
-	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
-
-router.route("/:username/moments")
+router.route("/:username/:query")
 	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
 
 router.param("username", twitterCtrl.loadAccount);

@@ -14,17 +14,30 @@ const instagramHistory = {
 		required: true,
 		default: Date.now,
 	},
-	followers: Number,
-	following: Number,
-	num_of_posts: Number,
+	followers: {
+		type: Number,
+	},
+	following: {
+		type: Number,
+	},
+	num_of_posts: {
+		type: Number,
+	},
 };
 
 const instagramAccountSchema = new mongoose.Schema({
-	profile: {
-		name: String,
-		link: String,
+	name: {
+		type: String,
+		required: true,
 	},
-	history: [instagramHistory],
+	link: {
+		type: String,
+		default: null,
+	},
+	history: {
+		type: [instagramHistory],
+		default: null,
+	},
 });
 
 module.exports = mongoose.model(nameModel, instagramAccountSchema, collectionName);

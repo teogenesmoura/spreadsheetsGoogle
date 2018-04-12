@@ -31,7 +31,7 @@ describe("# GET /facebook", () => {
 
 		expect(res.body).toHaveProperty("results");
 		expect(res.body.results).toBeInstanceOf(Array);
-		expect(res.body.results.lenght).toEqual(facebookStub.length);
+		expect(res.body.results.length).toEqual(facebookStub.length);
 
 		nameTest = res.body.results[0].name;
 

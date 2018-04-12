@@ -22,17 +22,12 @@ router.route("/")
 router.route("/:name/likes")
 	.get(facebookCtrl.likeProgress);
 
-// Graphically evaluate the evolution of the followers of a given account
-router.route("/:name/followers")
-	.get(facebookCtrl.likeProgress);
+router.route("/:name/:query")
+	.get(facebookCtrl.setHistoryKey, facebookCtrl.getDataset, facebookCtrl.getChartLimits);
 
 router.param("name", facebookCtrl.loadAccount);
 
 /*
-// Log insertion test, redirect to the Facebook front page.
-router.route("/tstInsertion")
-	.get(facebookCtrl.tstInsertion);
-
 // Inserting all records, redirecting to Facebook main page
 router.route("/init")
 	.get(facebookCtrl.signUpInit);

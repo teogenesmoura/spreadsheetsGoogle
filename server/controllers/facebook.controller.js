@@ -1,18 +1,20 @@
-const Facebook = require("../models/facebook.model");
 const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
+const Facebook = require("../models/facebook.model");
+const logger = require("../../config/logger");
 
-const likesType = "Likes";
-const blueDark = "#3b5998";
-// const blue = "#8b9dc3";
-// const blueSoft = "#dfe3ee";
-const blueLight = "#f7f7f7";
+const likesType = "likes";
+const followersType = "followers";
+
+const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec", "#dfe3ee", "#f7f7f7"];
+const colorCtrl = 0;
+const white = "#ffffff";
 
 /**
  * Search for all registered Facebook accounts.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
- * @return {object} result - list with all registered accounts
+ * @return {object} result - list with all registered accounts, displaying the link and the name
  * @return {String} description - error warning
  */
 const listAccounts = async (req, res) => {
@@ -26,6 +28,8 @@ const listAccounts = async (req, res) => {
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
 
+		logger.error(errorMsg);
+
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
 			description: errorMsg,
@@ -34,12 +38,12 @@ const listAccounts = async (req, res) => {
 };
 
 /**
- * Look for a specific registered Facebook account.
+ * Look for a specific registered Facebook account, by name.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
  * @param {object} name - standard identifier of a Facebook account
- * @returns Execution of the next feature
+ * @returns Execution of the next feature, over the data found
  */
 const loadAccount = async (req, res, next, name) => {
 	try {
@@ -50,11 +54,139 @@ const loadAccount = async (req, res, next, name) => {
 	} catch (error) {
 		const errorMsg = `Error loading user: ${name} into database`;
 
+		logger.error(errorMsg);
+
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
 			description: errorMsg,
 		});
 	}
+};
+
+/**
+ * Layer to query requested identification
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the history key generated
+ */
+const setHistoryKey = async (req, res, next) => {
+	const historyKey = req.params.query;
+	const errorMsg = `Requisição inválida para o usuário ${req.account.name}`;
+
+	let chartTitle;
+
+	switch (historyKey) {
+	case likesType:
+		chartTitle = evolutionMsg("curtidas");
+		break;
+	case followersType:
+		chartTitle = evolutionMsg("seguidores");
+		break;
+	default:
+		logger.error(errorMsg);
+
+		return res.status(httpStatus.NOT_FOUND).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
+
+	req.chart = {
+		historyKey: historyKey,
+		chartTitle: chartTitle,
+	};
+
+	return next();
+};
+
+/**
+ * Recovery of the requested historical data set
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data set generated
+ */
+const getDataset = async (req, res, next) => {
+	const history = req.account.history;
+	const historyKey = req.chart.historyKey;
+
+	const data = [];
+	const labels = [];
+
+	const length = history.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		if (history[ind][historyKey] !== undefined
+			&& history[ind][historyKey] !== null) {
+			const date = new Date(history[ind].date);
+
+			data.push({
+				x: date,
+				y: history[ind][historyKey],
+			});
+			labels.push(date);
+		}
+	}
+
+	const dataSet = [{
+		data: data,
+		backgroundColor: blueTones[colorCtrl],
+		borderColor: white,
+		fill: false,
+		label: `${req.account.name} (${req.account.link})`,
+	}];
+
+	req.chart.dataSets = dataSet;
+	next();
+};
+
+/**
+ * Definition of the mathematical configurations for the Y-axis of the chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the Y-axis limits of the chart
+ */
+const getChartLimits = async (req, res, next) => {
+	const historyValid = req.chart.datasets.data;
+	const length = historyValid.length;
+
+	let minValue = Infinity;
+	let maxValue = -Infinity;
+	let averageValue = 0;
+	let desvPadValue = 0;
+	let value = 0;
+
+	for (let ind = 0; ind < length; ind += 1) {
+		value = historyValid[ind].y;
+
+		if (value < minValue) {
+			minValue = value;
+		} else if (value > maxValue) {
+			maxValue = value;
+		}
+
+		averageValue += value;
+	}
+
+	averageValue /= length;
+
+	for (let ind = 0; ind < length; ind += 1) {
+		value = historyValid[ind].y;
+
+		desvPadValue += (value - averageValue) ** 2;
+	}
+
+	desvPadValue /= length;
+	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
+	minValue = Math.floor(minValue) - desvPadValue;
+	maxValue = Math.ceil(maxValue) + desvPadValue;
+
+	req.chart.yMin = minValue;
+	req.chart.yMax = maxValue;
+	req.chart.yStep = (maxValue - minValue) / (2 * length);
+
+	next();
 };
 
 /**
@@ -138,8 +270,8 @@ const getProgress = async (req, history, type) => {
 
 	const dataSet = [{
 		data: data,
-		backgroundColor: blueDark,
-		borderColor: blueLight,
+		backgroundColor: blueTones[0],
+		borderColor: blueTones[blueTones.length - 1],
 		fill: false,
 		label: `${req.account.name} (${req.account.link})`,
 	}];
@@ -257,5 +389,5 @@ const evolutionMsg = (param) => {
 };
 
 module.exports = {
-	listAccounts, loadAccount, likeProgress, signUpInit,
+	listAccounts, loadAccount, setHistoryKey, getDataset, getChartLimits, likeProgress, signUpInit,
 };

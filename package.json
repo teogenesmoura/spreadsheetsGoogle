@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest 'server/tests' --forceExit",
+    "test": "jest 'server/tests'",
     "lint": "esw *.js config server --color",
     "start": "nodemon index.js",
     "precommit": "npm run lint && npm run test"
@@ -15,7 +15,8 @@
   },
   "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
   "contributors": [
-    "Mikael Mello <mikaelmmello@gmail.com>"
+    "Mikael Mello <mikaelmmello@gmail.com>",
+    "Rodrigo Guimarães <rodrigofegui@gmail.com>"
   ],
   "repository": {
     "type": "git",

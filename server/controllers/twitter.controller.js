@@ -31,21 +31,67 @@ const loadAccount = async (req, res, next, username) => {
 	}
 };
 
-// Responde com uma imagem (gráfico)
-const likeProgress = async (req, res) => {
-	const samples = req.account.samples;
+const setSampleKey = async (req, res, next) => {
+	// Pega o último elemento da URL para ver qual o parâmetro
+	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
+	const sampleKey = req.path.split("/").pop();
 
-	const mainLabel = "Evolução de curtidas";
+	// Título do gráfico gerado
+	let mainLabel;
+
+	// Analisa o caminho da rota que chegou nesta função para
+	// ter um título com o parâmetro correto.
+	switch (sampleKey) {
+	case "likes":
+		mainLabel = "Evolução do número de curtidas";
+		break;
+	case "followers":
+		mainLabel = "Evolução do número de seguidores";
+		break;
+	case "following":
+		mainLabel = "Evolução do número de usuários que segue";
+		break;
+	case "tweets":
+		mainLabel = "Evolução do número de tweets";
+		break;
+	case "moments":
+		mainLabel = "Evolução do número de momentos";
+		break;
+	default:
+		// Se chegou até aqui, a função está sendo chamada por uma rota
+		// com um parâmetro diferente dos aceitáveis.
+		// Isso só pode acontecer se o programador programar errado!
+		return res.status(403).json({
+			error: true,
+			description: "Esta função não deveria ser chamada nesta rota",
+		});
+	}
+
+	req.chart = {
+		sampleKey: sampleKey,
+		mainLabel: mainLabel,
+	};
+	return next();
+};
+
+// Responde com uma imagem (gráfico)
+const createDataset = async (req, res, next) => {
+	// Carrega as samples da conta do usuário
+	const samples = req.account.samples;
+	const sampleKey = req.chart.sampleKey;
+
 	const data = [];
 	const labels = [];
 
+	// Itera sobre todas as samples e adiciona aquelas que tem o dado procurado
+	// na array de dados `data`
 	const length = samples.length;
 	for (let i = 0; i < length; i += 1) {
-		if (samples[i].likes !== undefined && samples[i].likes !== null) {
+		if (samples[i][sampleKey] !== undefined && samples[i][sampleKey] !== null) {
 			const date = new Date(samples[i].date);
 			data.push({
 				x: date,
-				y: samples[i].likes,
+				y: samples[i][sampleKey],
 			});
 			labels.push(date);
 		}
@@ -59,16 +105,15 @@ const likeProgress = async (req, res) => {
 		label: `${req.account.name} (${req.account.username})`,
 	}];
 
-	const chart = await drawLineChart(mainLabel, dataset);
-	const buffer = await chart.getImageBuffer("image/png");
-	res.writeHead(200, { "Content-Type": "image/png" });
-	res.write(buffer);
-	res.end();
+	req.chart.datasets = dataset;
+	next();
 };
 
 
 // Desenha um gráfico de linha que usa o tempo como eixo X
-const drawLineChart = async (mainLabel, datasets) => {
+const drawLineChart = async (req, res) => {
+	const mainLabel = req.chart.mainLabel;
+	const datasets = req.chart.datasets;
 	const chartNode = new Chart(600, 600);
 	const config = {
 		type: "line",
@@ -107,7 +152,16 @@ const drawLineChart = async (mainLabel, datasets) => {
 	};
 
 	await chartNode.drawChart(config);
-	return chartNode;
+	const buffer = await chartNode.getImageBuffer("image/png");
+	res.writeHead(200, { "Content-Type": "image/png" });
+	res.write(buffer);
+	res.end();
 };
 
-module.exports = { listAccounts, loadAccount, likeProgress };
+module.exports = {
+	listAccounts,
+	loadAccount,
+	setSampleKey,
+	createDataset,
+	drawLineChart,
+};

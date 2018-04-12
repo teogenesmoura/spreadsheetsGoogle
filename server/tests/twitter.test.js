@@ -37,4 +37,32 @@ describe("Twitter endpoint", () => {
 		expect(res.header["content-type"]).toEqual("image/png");
 		done();
 	});
+
+	it("GET /twitter/:username/tweets should return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
+		const res = await request(app).get(`/twitter/${usernameTest}/tweets`).expect(httpStatus.OK);
+		expect(res.header["content-type"]).toEqual("image/png");
+		done();
+	});
+
+	it("GET /twitter/:username/followers should return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
+		const res = await request(app).get(`/twitter/${usernameTest}/followers`).expect(httpStatus.OK);
+		expect(res.header["content-type"]).toEqual("image/png");
+		done();
+	});
+
+	it("GET /twitter/:username/following should return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
+		const res = await request(app).get(`/twitter/${usernameTest}/following`).expect(httpStatus.OK);
+		expect(res.header["content-type"]).toEqual("image/png");
+		done();
+	});
+
+	it("GET /twitter/:username/moments should return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
+		const res = await request(app).get(`/twitter/${usernameTest}/moments`).expect(httpStatus.OK);
+		expect(res.header["content-type"]).toEqual("image/png");
+		done();
+	});
 });

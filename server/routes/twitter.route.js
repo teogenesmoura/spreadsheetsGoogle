@@ -14,7 +14,19 @@ router.route("/")
 	.get(twitterCtrl.listAccounts);
 
 router.route("/:username/likes")
-	.get(twitterCtrl.likeProgress);
+	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
+
+router.route("/:username/followers")
+	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
+
+router.route("/:username/following")
+	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
+
+router.route("/:username/tweets")
+	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
+
+router.route("/:username/moments")
+	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
 
 router.param("username", twitterCtrl.loadAccount);
 

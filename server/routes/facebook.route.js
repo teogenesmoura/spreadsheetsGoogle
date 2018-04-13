@@ -20,10 +20,8 @@ router.route("/")
 
 router.param("name", facebookCtrl.loadAccount);
 
-/* Graphically evaluate the evolution of the likes of a given account
-router.route("/:name/likes")
-	.get(facebookCtrl.likeProgress);
-*/
+router.route("/:name")
+	.get(facebookCtrl.getUser);
 
 router.route("/:name/:query")
 	.get(

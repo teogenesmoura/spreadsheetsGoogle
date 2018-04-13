@@ -30,7 +30,7 @@ const listAccounts = async (req, res) => {
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
 
-		logger.error(errorMsg);
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -55,9 +55,9 @@ const loadAccount = async (req, res, next, name) => {
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error loading user: ${name} into database`;
+		const errorMsg = `Error loading user: ${name} from database`;
 
-		logger.error(errorMsg);
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -79,8 +79,10 @@ const getUser = async (req, res) => {
 			error: false,
 			results: account,
 		});
-	} catch (e) {
-		const errorMsg = "";
+	} catch (error) {
+		const errorMsg = "Internal server error while respondign with account";
+
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -120,10 +122,10 @@ const getLatest = async (req, res) => {
 			error: false,
 			results: latest,
 		});
-	} catch (e) {
-		const errorMsg = "Erro ao carregar amostras";
+	} catch (error) {
+		const errorMsg = `Error while getting samples of Facebook user ${req.account.name}`;
 
-		logger.error(errorMsg);
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -153,8 +155,7 @@ const setHistoryKey = async (req, res, next) => {
 		chartTitle = evolutionMsg("seguidores");
 		break;
 	default:
-		logger.error(errorMsg);
-
+		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
 			description: errorMsg,

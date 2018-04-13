@@ -19,11 +19,11 @@ afterAll(async () => {
  * Test case for the /facebook, and derived pages, endpoint.
  * Tests behavior of sad path for now.
 */
-describe("# GET /facebook", () => {
+describe("Facebook endpoint", () => {
 	let nameTest;
 
 	// When required, access should be granted
-	it("should to have access: index; and return a JSON with all the users in the db", async (done) => {
+	it("GET /facebook should return a JSON with all the users in the db", async (done) => {
 		const res = await request(app).get("/facebook").expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -39,7 +39,7 @@ describe("# GET /facebook", () => {
 	});
 
 	// When requires, access should be granted
-	it("should to have access: userpage; and return all data", async (done) => {
+	it("GET /facebook/:name should return all data from a certain user", async (done) => {
 		const res = await request(app).get(`/facebook/${nameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -68,7 +68,7 @@ describe("# GET /facebook", () => {
 	});
 
 	// When requires, access should be granted
-	it("should to have access: latest; and return latest data", async (done) => {
+	it("GET /facebook/latest/:name should return the latest data from a user", async (done) => {
 		const res = await request(app).get(`/facebook/latest/${nameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -84,7 +84,7 @@ describe("# GET /facebook", () => {
 	});
 
 	// When required, access should be granted
-	it("should to have access: likes; and return a image", async (done) => {
+	it("GET /facebook/:name/likes should return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${nameTest}/likes`).expect(httpStatus.OK);
@@ -95,7 +95,7 @@ describe("# GET /facebook", () => {
 	});
 
 	// When required, access should be granted
-	it("should to have access: followers; and return a image", async (done) => {
+	it("GET /facebook/:name/followers should return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);

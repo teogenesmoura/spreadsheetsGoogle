@@ -49,7 +49,7 @@ const listAccounts = async (req, res) => {
  */
 const loadAccount = async (req, res, next, name) => {
 	try {
-		const account = await Facebook.findOne({ name });
+		const account = await Facebook.findOne({ name }, "-_id");
 
 		req.account = account;
 
@@ -72,39 +72,35 @@ const loadAccount = async (req, res, next, name) => {
  * @param {object} res - standard response object from the Express library
  */
 const getUser = async (req, res) => {
-	const account = req.account;
+	try {
+		const account = req.account;
 
-	res.status(httpStatus.OK);
-	res.write("{\n");
-	res.write(`  Name: ${account.name},\n`);
-	res.write(`  Class: ${account.class},\n`);
-	res.write(`  Link: ${account.link},\n`);
-	res.write("  History: [\n");
-	account.history.forEach((time) => {
-		res.write("\t{\n");
-		res.write(`\t  Likes: ${time.likes},\n`);
-		res.write(`\t  Followers: ${time.followers},\n`);
-		res.write(`\t  Date: ${time.date}\n`);
-		res.write("\t}\n");
-	});
-	res.write("  ]\n");
-	res.write("}\n");
-	res.end();
+		res.status(httpStatus.OK).json({
+			error: false,
+			results: account,
+		});
+	} catch (e) {
+		const errorMsg = "";
+
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
 };
 
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
 const getLatest = async (req, res) => {
-	console.log("veio Latest");
-
 	try {
 		const history = req.account.toObject().history;
 		const length = history.length - 1;
 		const latest = {};
 		let count = 0;
 
-		console.log("History:");
-		console.log(history);
-		console.log("Length:");
-		console.log(length);
 		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
 			if (latest.likes === undefined
 				&& history[ind].likes !== undefined) {

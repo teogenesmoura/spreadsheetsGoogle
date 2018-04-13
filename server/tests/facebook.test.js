@@ -38,11 +38,29 @@ describe("# GET /facebook", () => {
 		done();
 	});
 
+	// When requires, access should be granted
+	it("should to have access: userpage; and return all data", async (done) => {
+		await request(app).get(`/facebook/${nameTest}`).expect(httpStatus.OK);
+
+		done();
+	});
+
 	// When required, access should be granted
-	it("should to have access: likesProgress; and return a image", async (done) => {
+	it("should to have access: likes; and return a image", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${nameTest}/likes`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	// When required, access should be granted
+	it("should to have access: followers; and return a image", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
 

@@ -21,7 +21,7 @@ const white = "#ffffff";
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "link name -_id");
+		const accounts = await Facebook.find({}, "name -_id");
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -74,7 +74,7 @@ const loadAccount = async (req, res, next, name) => {
 const getUser = async (req, res) => {
 	const account = req.account;
 
-	res.writeHeader(httpStatus.OK);
+	res.status(httpStatus.OK);
 	res.write("{\n");
 	res.write(`  Name: ${account.name},\n`);
 	res.write(`  Class: ${account.class},\n`);
@@ -90,6 +90,50 @@ const getUser = async (req, res) => {
 	res.write("  ]\n");
 	res.write("}\n");
 	res.end();
+};
+
+const getLatest = async (req, res) => {
+	console.log("veio Latest");
+
+	try {
+		const history = req.account.toObject().history;
+		const length = history.length - 1;
+		const latest = {};
+		let count = 0;
+
+		console.log("History:");
+		console.log(history);
+		console.log("Length:");
+		console.log(length);
+		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
+			if (latest.likes === undefined
+				&& history[ind].likes !== undefined) {
+				latest.likes = history[ind].likes;
+				count += 1;
+			}
+			if (latest.followers === undefined
+				&& history[ind].followers !== undefined) {
+				latest.followers = history[ind].followers;
+				count += 1;
+			}
+		}
+
+		req.account.history.latest = latest;
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			results: latest,
+		});
+	} catch (e) {
+		const errorMsg = "Erro ao carregar amostras";
+
+		logger.error(errorMsg);
+
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
 };
 
 /**
@@ -342,6 +386,7 @@ module.exports = {
 	listAccounts,
 	loadAccount,
 	getUser,
+	getLatest,
 	setHistoryKey,
 	getDataset,
 	getChartLimits,

@@ -144,13 +144,9 @@ Este comando gerará a documentação para o arquivo index.js na pasta */docs*.
 
 ## To-do
 
-* Implementar mais casos de teste unitário
-* Implementar testes de comportamento (BDD)
-* Gerar mais de um gráfico
 * Expandir quantidade dos dados utilizados
 * Pesar o custo de gerar gráficos server-side e verificar se vale a pena fazê-lo no cliente
 * Implementar mecanismo para automatização da coleta recorrente dos dados
-* Persistir dados coletados em base estruturada
 * Disponibilizar uma API publica para que leigos possam gerar visualizações interessantes
 * Google Spreadsheets vs MongoDB?
 * Ignorar os docs no repositório já que eles são gerados automaticamente? Discutir

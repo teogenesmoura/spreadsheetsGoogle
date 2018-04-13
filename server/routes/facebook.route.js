@@ -5,34 +5,44 @@ const facebookCtrl = require("../controllers/facebook.controller");
 const router = express.Router(); // eslint-disable-line new-cap
 
 /**
- * Access to the Facebook data home page. Presentation of a welcome message.
- * @param {object} req - standard request object from the Express library
- * @param {object} res - standard response object from the Express library
- *
-router.get("/", (req, res) => {
-	res.write("Welcome to Facebook Main Page");
-	res.end();
-});
+ * Access to the Facebook data home page.
+ * Presentation of all user registered, identified by name.
 */
-// Search for all records on Facebook.
 router.route("/")
 	.get(facebookCtrl.listAccounts);
 
-// Graphically evaluate the evolution of the likes of a given account
-router.route("/:name/likes")
-	.get(facebookCtrl.likeProgress);
+/**
+ * Access to the data home page of a given user.
+ * Presentation of all the data registered.
+ */
+router.route("/:name")
+	.get(facebookCtrl.getUser);
 
-// Graphically evaluate the evolution of the followers of a given account
-router.route("/:name/followers")
-	.get(facebookCtrl.likeProgress);
+/**
+ * Access to the latest valid data of a given user.
+ */
+router.route("/latest/:name")
+	.get(facebookCtrl.getLatest);
 
+
+/**
+ * Presentation of the temporal evolution of a given query for a given user.
+ */
+router.route("/:name/:query")
+	.get(
+		facebookCtrl.setHistoryKey,
+		facebookCtrl.getDataset,
+		facebookCtrl.getChartLimits,
+		facebookCtrl.getConfigLineChart,
+		facebookCtrl.plotLineChart,
+	);
+
+/**
+ * Search for a user in the database
+ */
 router.param("name", facebookCtrl.loadAccount);
 
 /*
-// Log insertion test, redirect to the Facebook front page.
-router.route("/tstInsertion")
-	.get(facebookCtrl.tstInsertion);
-
 // Inserting all records, redirecting to Facebook main page
 router.route("/init")
 	.get(facebookCtrl.signUpInit);

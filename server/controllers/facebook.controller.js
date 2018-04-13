@@ -1,23 +1,27 @@
-const Facebook = require("../models/facebook.model");
 const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
+const Facebook = require("../models/facebook.model");
+const logger = require("../../config/logger");
 
-const likesType = "Likes";
-const blueDark = "#3b5998";
-// const blue = "#8b9dc3";
-// const blueSoft = "#dfe3ee";
-const blueLight = "#f7f7f7";
+const likesType = "likes";
+const followersType = "followers";
+
+const chartSize = 600;
+
+const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec"]; // , "#dfe3ee", "#f7f7f7"
+let colorCtrl = 0;
+const white = "#ffffff";
 
 /**
  * Search for all registered Facebook accounts.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
- * @return {object} result - list with all registered accounts
+ * @return {object} result - list with all registered accounts, displaying the link and the name
  * @return {String} description - error warning
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "link name -_id");
+		const accounts = await Facebook.find({}, "name -_id");
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -25,6 +29,8 @@ const listAccounts = async (req, res) => {
 		});
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
+
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -34,21 +40,24 @@ const listAccounts = async (req, res) => {
 };
 
 /**
- * Look for a specific registered Facebook account.
+ * Look for a specific registered Facebook account, by name.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
  * @param {object} name - standard identifier of a Facebook account
- * @returns Execution of the next feature
+ * @returns Execution of the next feature, over the data found
  */
 const loadAccount = async (req, res, next, name) => {
 	try {
-		const account = await Facebook.findOne({ name });
+		const account = await Facebook.findOne({ name }, "-_id");
+
 		req.account = account;
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error loading user: ${name} into database`;
+		const errorMsg = `Error loading user: ${name} from database`;
+
+		logger.error(`${errorMsg} - Details: ${error}`);
 
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -58,120 +67,222 @@ const loadAccount = async (req, res, next, name) => {
 };
 
 /**
- * Graphic response to the likes evolution of a given account
+ * Data recovery about a given user
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const likeProgress = async (req, res) => {
-	const history = req.account.history;
+const getUser = async (req, res) => {
+	try {
+		const account = req.account;
 
-	const mainLabel = evolutionMsg("curtidas");
-
-	getProgress(req, history, likesType)
-		.then(async (progress) => {
-			const chart = await drawLineChart(mainLabel, progress[0], progress[1], progress[2]);
-			const buffer = await chart.getImageBuffer("image/png");
-			res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
-			res.write(buffer);
-			res.end();
+		res.status(httpStatus.OK).json({
+			error: false,
+			results: account,
 		});
+	} catch (error) {
+		const errorMsg = "Internal server error while respondign with account";
+
+		logger.error(`${errorMsg} - Details: ${error}`);
+
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
 };
 
-const getProgress = async (req, history, type) => {
-	const length = history.length;
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getLatest = async (req, res) => {
+	try {
+		const history = req.account.toObject().history;
+		const length = history.length - 1;
+		const latest = {};
+		let count = 0;
 
-	const data = [];
-	const labels = [];
-	let minValue = Infinity;
-	let maxValue = -Infinity;
-	let minTime = Infinity;
-	let maxTime = -Infinity;
-	let value;
-	let date;
-	let averageValue = 0;
-	let desvPadValue = 0;
-
-	for (let ind = 0; ind < length; ind += 1) {
-		date = 0;
-		switch (type) {
-		case likesType:
-			if (history[ind].likes !== undefined
-				&& history[ind].likes !== null) {
-				date = new Date(history[ind].date);
-				value = history[ind].likes;
+		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
+			if (latest.likes === undefined
+				&& history[ind].likes !== undefined) {
+				latest.likes = history[ind].likes;
+				count += 1;
 			}
-			break;
-		default:
-			if (history[ind].followers !== undefined
-				&& history[ind].followers !== null) {
-				date = new Date(history[ind].date);
-				value = history[ind].followers;
+			if (latest.followers === undefined
+				&& history[ind].followers !== undefined) {
+				latest.followers = history[ind].followers;
+				count += 1;
 			}
 		}
 
-		data.push({
-			x: date,
-			y: value,
+		req.account.history.latest = latest;
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			results: latest,
 		});
-		labels.push(date);
+	} catch (error) {
+		const errorMsg = `Error while getting samples of Facebook user ${req.account.name}`;
 
-		if (value < minValue) minValue = value;
-		else if (value > maxValue) maxValue = value;
+		logger.error(`${errorMsg} - Details: ${error}`);
 
-		if (date.getTime() < minTime) minTime = date.getTime();
-		else if (date.getTime() > maxTime) maxTime = date.getTime();
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
+};
+
+/**
+ * Layer to query requested identification
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the history key generated
+ */
+const setHistoryKey = async (req, res, next) => {
+	const historyKey = req.params.query;
+	const errorMsg = `Requisição inválida para o usuário ${req.account.name}`;
+
+	let chartTitle;
+
+	switch (historyKey) {
+	case likesType:
+		chartTitle = evolutionMsg("curtidas");
+		break;
+	case followersType:
+		chartTitle = evolutionMsg("seguidores");
+		break;
+	default:
+		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
+		return res.status(httpStatus.NOT_FOUND).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
+
+	req.chart = {
+		historyKey: historyKey,
+		chartTitle: chartTitle,
+	};
+
+	return next();
+};
+
+/**
+ * Recovery of the requested historical data set
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data set generated
+ */
+const getDataset = async (req, res, next) => {
+	const history = req.account.history;
+	const historyKey = req.chart.historyKey;
+
+	const dataUser = [];
+	// const labels = [];
+
+	const length = history.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		if (history[ind][historyKey] !== undefined
+			&& history[ind][historyKey] !== null) {
+			const date = new Date(history[ind].date);
+
+			dataUser.push({
+				x: date,
+				y: history[ind][historyKey],
+			});
+			// labels.push(date);
+		}
+	}
+
+	const dataSet = [{
+		data: dataUser,
+		backgroundColor: blueTones[colorCtrl += 1],
+		borderColor: white,
+		fill: true,
+		label: `${req.account.name} (${req.account.link})`,
+	}];
+
+	colorCtrl %= (blueTones.length - 1);
+
+	req.chart.dataSets = dataSet;
+	req.chart.data = dataUser;
+
+	next();
+};
+
+/**
+ * Definition of the mathematical configurations for the Y-axis of the chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the Y-axis limits of the chart
+ */
+const getChartLimits = async (req, res, next) => {
+	const historyValid = req.chart.data;
+	const length = historyValid.length;
+
+	let minValue = Infinity;
+	let maxValue = -Infinity;
+	let averageValue = 0;
+	let desvPadValue = 0;
+	let value = 0;
+
+	for (let ind = 0; ind < length; ind += 1) {
+		value = historyValid[ind].y;
+
+		if (value < minValue) {
+			minValue = value;
+		} else if (value > maxValue) {
+			maxValue = value;
+		}
 
 		averageValue += value;
 	}
 
 	averageValue /= length;
+
 	for (let ind = 0; ind < length; ind += 1) {
-		if (history[ind].likes !== undefined
-			&& history[ind].likes !== null) {
-			desvPadValue += (history[ind].likes - averageValue) ** 2;
-		}
+		value = historyValid[ind].y;
+
+		desvPadValue += (value - averageValue) ** 2;
 	}
+
 	desvPadValue /= length;
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
-	minValue = Math.floor(minValue) - desvPadValue;
 	maxValue = Math.ceil(maxValue) + desvPadValue;
 
-	const dataSet = [{
-		data: data,
-		backgroundColor: blueDark,
-		borderColor: blueLight,
-		fill: false,
-		label: `${req.account.name} (${req.account.link})`,
-	}];
+	minValue = Math.floor(minValue) - desvPadValue;
+	if (minValue <= 0) minValue = 0;
 
-	const mathCtrl = [minValue, maxValue, data.length];
-	const timeCtrl = [minTime, maxTime];
+	req.chart.yMin = minValue;
+	req.chart.yMax = maxValue;
+	req.chart.yStep = (maxValue - minValue) / (2 * length);
 
-	const returnArray = [];
-	returnArray.push(dataSet);
-	returnArray.push(mathCtrl);
-	returnArray.push(timeCtrl);
-
-	return returnArray;
+	next();
 };
 
 /**
- * Generating a line-type chart
- * @param {String} mainLabel - charRodrigot primary identifier generated
- * @param {object} dataSets - set of chart settings
- * @returns chart generated
+ * Standard setting for generating a line chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
  */
-const drawLineChart = async (mainLabel, dataSets, mathCtrl, timeCtrl) => {
-	const chart = new ChartNode(600, 600);
+const getConfigLineChart = async (req, res, next) => {
+	const labelXAxes = "Data";
+	const labelYAxes = "Valor";
+
 	const config = {
 		type: "line",
-		data: {
-			datasets: dataSets,
-		},
+		data: { datasets: req.chart.dataSets },
 		options: {
 			title: {
 				display: true,
-				text: mainLabel,
+				text: req.chart.chartTitle,
 			},
 			scales: {
 				xAxes: [{
@@ -180,37 +291,49 @@ const drawLineChart = async (mainLabel, dataSets, mathCtrl, timeCtrl) => {
 					time: {
 						tooltipFormat: "ll HH:mm",
 						unit: "week",
-						min: timeCtrl[0],
-						max: timeCtrl[1],
 						displayFormats: { month: "MMM YYYY" },
 					},
 					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
+						major: { fontStyle: "bold" },
 					},
 					scaleLabel: {
 						display: true,
-						labelString: "Date",
+						labelString: labelXAxes,
 					},
 				}],
 				yAxes: [{
 					scaleLabel: {
 						display: true,
-						labelString: "value",
+						labelString: labelYAxes,
 					},
 					ticks: {
-						min: mathCtrl[0],
-						max: mathCtrl[1],
-						stepSize: (mathCtrl[1] - mathCtrl[0]) / (2 * mathCtrl[2]),
+						min: req.chart.yMin,
+						max: req.chart.yMax,
+						stepSize: req.chart.yStep,
 					},
 				}],
 			},
 		},
 	};
 
-	await chart.drawChart(config);
-	return chart;
+	req.chart.config = config;
+
+	next();
+};
+
+/**
+ * Generating and plotting the generated chart on the page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const plotLineChart = async (req, res) => {
+	const chart = new ChartNode(chartSize, chartSize);
+
+	await chart.drawChart(req.chart.config);
+	const buffer = await chart.getImageBuffer("image/png");
+	res.writeHeader(httpStatus.OK, { "Content-type": "image/png" });
+	res.write(buffer);
+	res.end();
 };
 
 /**
@@ -257,5 +380,14 @@ const evolutionMsg = (param) => {
 };
 
 module.exports = {
-	listAccounts, loadAccount, likeProgress, signUpInit,
+	listAccounts,
+	loadAccount,
+	getUser,
+	getLatest,
+	setHistoryKey,
+	getDataset,
+	getChartLimits,
+	getConfigLineChart,
+	plotLineChart,
+	signUpInit,
 };

@@ -6,8 +6,10 @@ const logger = require("../../config/logger");
 const likesType = "likes";
 const followersType = "followers";
 
-const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec", "#dfe3ee", "#f7f7f7"];
-const colorCtrl = 0;
+const chartSize = 600;
+
+const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec"]; // , "#dfe3ee", "#f7f7f7"
+let colorCtrl = 0;
 const white = "#ffffff";
 
 /**
@@ -48,6 +50,7 @@ const listAccounts = async (req, res) => {
 const loadAccount = async (req, res, next, name) => {
 	try {
 		const account = await Facebook.findOne({ name });
+
 		req.account = account;
 
 		return next();
@@ -111,8 +114,8 @@ const getDataset = async (req, res, next) => {
 	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
 
-	const data = [];
-	const labels = [];
+	const dataUser = [];
+	// const labels = [];
 
 	const length = history.length;
 	for (let ind = 0; ind < length; ind += 1) {
@@ -120,23 +123,27 @@ const getDataset = async (req, res, next) => {
 			&& history[ind][historyKey] !== null) {
 			const date = new Date(history[ind].date);
 
-			data.push({
+			dataUser.push({
 				x: date,
 				y: history[ind][historyKey],
 			});
-			labels.push(date);
+			// labels.push(date);
 		}
 	}
 
 	const dataSet = [{
-		data: data,
-		backgroundColor: blueTones[colorCtrl],
+		data: dataUser,
+		backgroundColor: blueTones[colorCtrl += 1],
 		borderColor: white,
-		fill: false,
+		fill: true,
 		label: `${req.account.name} (${req.account.link})`,
 	}];
 
+	colorCtrl %= (blueTones.length - 1);
+
 	req.chart.dataSets = dataSet;
+	req.chart.data = dataUser;
+
 	next();
 };
 
@@ -148,7 +155,7 @@ const getDataset = async (req, res, next) => {
  * @returns Execution of the next feature, over the Y-axis limits of the chart
  */
 const getChartLimits = async (req, res, next) => {
-	const historyValid = req.chart.datasets.data;
+	const historyValid = req.chart.data;
 	const length = historyValid.length;
 
 	let minValue = Infinity;
@@ -179,8 +186,10 @@ const getChartLimits = async (req, res, next) => {
 
 	desvPadValue /= length;
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
-	minValue = Math.floor(minValue) - desvPadValue;
 	maxValue = Math.ceil(maxValue) + desvPadValue;
+
+	minValue = Math.floor(minValue) - desvPadValue;
+	if (minValue <= 0) minValue = 0;
 
 	req.chart.yMin = minValue;
 	req.chart.yMax = maxValue;
@@ -190,120 +199,23 @@ const getChartLimits = async (req, res, next) => {
 };
 
 /**
- * Graphic response to the likes evolution of a given account
+ * Standard setting for generating a line chart
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
  */
-const likeProgress = async (req, res) => {
-	const history = req.account.history;
+const getConfigLineChart = async (req, res, next) => {
+	const labelXAxes = "Data";
+	const labelYAxes = "Valor";
 
-	const mainLabel = evolutionMsg("curtidas");
-
-	getProgress(req, history, likesType)
-		.then(async (progress) => {
-			const chart = await drawLineChart(mainLabel, progress[0], progress[1], progress[2]);
-			const buffer = await chart.getImageBuffer("image/png");
-			res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
-			res.write(buffer);
-			res.end();
-		});
-};
-
-const getProgress = async (req, history, type) => {
-	const length = history.length;
-
-	const data = [];
-	const labels = [];
-	let minValue = Infinity;
-	let maxValue = -Infinity;
-	let minTime = Infinity;
-	let maxTime = -Infinity;
-	let value;
-	let date;
-	let averageValue = 0;
-	let desvPadValue = 0;
-
-	for (let ind = 0; ind < length; ind += 1) {
-		date = 0;
-		switch (type) {
-		case likesType:
-			if (history[ind].likes !== undefined
-				&& history[ind].likes !== null) {
-				date = new Date(history[ind].date);
-				value = history[ind].likes;
-			}
-			break;
-		default:
-			if (history[ind].followers !== undefined
-				&& history[ind].followers !== null) {
-				date = new Date(history[ind].date);
-				value = history[ind].followers;
-			}
-		}
-
-		data.push({
-			x: date,
-			y: value,
-		});
-		labels.push(date);
-
-		if (value < minValue) minValue = value;
-		else if (value > maxValue) maxValue = value;
-
-		if (date.getTime() < minTime) minTime = date.getTime();
-		else if (date.getTime() > maxTime) maxTime = date.getTime();
-
-		averageValue += value;
-	}
-
-	averageValue /= length;
-	for (let ind = 0; ind < length; ind += 1) {
-		if (history[ind].likes !== undefined
-			&& history[ind].likes !== null) {
-			desvPadValue += (history[ind].likes - averageValue) ** 2;
-		}
-	}
-	desvPadValue /= length;
-	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
-	minValue = Math.floor(minValue) - desvPadValue;
-	maxValue = Math.ceil(maxValue) + desvPadValue;
-
-	const dataSet = [{
-		data: data,
-		backgroundColor: blueTones[0],
-		borderColor: blueTones[blueTones.length - 1],
-		fill: false,
-		label: `${req.account.name} (${req.account.link})`,
-	}];
-
-	const mathCtrl = [minValue, maxValue, data.length];
-	const timeCtrl = [minTime, maxTime];
-
-	const returnArray = [];
-	returnArray.push(dataSet);
-	returnArray.push(mathCtrl);
-	returnArray.push(timeCtrl);
-
-	return returnArray;
-};
-
-/**
- * Generating a line-type chart
- * @param {String} mainLabel - charRodrigot primary identifier generated
- * @param {object} dataSets - set of chart settings
- * @returns chart generated
- */
-const drawLineChart = async (mainLabel, dataSets, mathCtrl, timeCtrl) => {
-	const chart = new ChartNode(600, 600);
 	const config = {
 		type: "line",
-		data: {
-			datasets: dataSets,
-		},
+		data: { datasets: req.chart.dataSets },
 		options: {
 			title: {
 				display: true,
-				text: mainLabel,
+				text: req.chart.chartTitle,
 			},
 			scales: {
 				xAxes: [{
@@ -312,37 +224,49 @@ const drawLineChart = async (mainLabel, dataSets, mathCtrl, timeCtrl) => {
 					time: {
 						tooltipFormat: "ll HH:mm",
 						unit: "week",
-						min: timeCtrl[0],
-						max: timeCtrl[1],
 						displayFormats: { month: "MMM YYYY" },
 					},
 					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
+						major: { fontStyle: "bold" },
 					},
 					scaleLabel: {
 						display: true,
-						labelString: "Date",
+						labelString: labelXAxes,
 					},
 				}],
 				yAxes: [{
 					scaleLabel: {
 						display: true,
-						labelString: "value",
+						labelString: labelYAxes,
 					},
 					ticks: {
-						min: mathCtrl[0],
-						max: mathCtrl[1],
-						stepSize: (mathCtrl[1] - mathCtrl[0]) / (2 * mathCtrl[2]),
+						min: req.chart.yMin,
+						max: req.chart.yMax,
+						stepSize: req.chart.yStep,
 					},
 				}],
 			},
 		},
 	};
 
-	await chart.drawChart(config);
-	return chart;
+	req.chart.config = config;
+
+	next();
+};
+
+/**
+ * Generating and plotting the generated chart on the page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const plotLineChart = async (req, res) => {
+	const chart = new ChartNode(chartSize, chartSize);
+
+	await chart.drawChart(req.chart.config);
+	const buffer = await chart.getImageBuffer("image/png");
+	res.writeHeader(httpStatus.OK, { "Content-type": "image/png" });
+	res.write(buffer);
+	res.end();
 };
 
 /**
@@ -389,5 +313,12 @@ const evolutionMsg = (param) => {
 };
 
 module.exports = {
-	listAccounts, loadAccount, setHistoryKey, getDataset, getChartLimits, likeProgress, signUpInit,
+	listAccounts,
+	loadAccount,
+	setHistoryKey,
+	getDataset,
+	getChartLimits,
+	getConfigLineChart,
+	plotLineChart,
+	signUpInit,
 };

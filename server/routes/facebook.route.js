@@ -18,14 +18,21 @@ router.get("/", (req, res) => {
 router.route("/")
 	.get(facebookCtrl.listAccounts);
 
-// Graphically evaluate the evolution of the likes of a given account
+router.param("name", facebookCtrl.loadAccount);
+
+/* Graphically evaluate the evolution of the likes of a given account
 router.route("/:name/likes")
 	.get(facebookCtrl.likeProgress);
+*/
 
 router.route("/:name/:query")
-	.get(facebookCtrl.setHistoryKey, facebookCtrl.getDataset, facebookCtrl.getChartLimits);
-
-router.param("name", facebookCtrl.loadAccount);
+	.get(
+		facebookCtrl.setHistoryKey,
+		facebookCtrl.getDataset,
+		facebookCtrl.getChartLimits,
+		facebookCtrl.getConfigLineChart,
+		facebookCtrl.plotLineChart,
+	);
 
 /*
 // Inserting all records, redirecting to Facebook main page

@@ -24,6 +24,7 @@ const importData = async (req, res) => {
 	const types = [
 		"FRENTES / COLETIVOS",
 		"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
+		"PRÉ-CANDIDATURAS À PRESIDÊNCIA",
 	];
 	let cType = 0;
 	let lastDate;
@@ -38,7 +39,10 @@ const importData = async (req, res) => {
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
 			if (row[0] === "ORGANIZAÇÕES DA SOCIEDADE CIVIL") {
-				cType += 1;
+				cType = 1;
+				continue; // eslint-disable-line no-continue
+			} else if (row[0] === "PRÉ-CANDIDATURAS À PRESIDÊNCIA") {
+				cType = 2;
 				continue; // eslint-disable-line no-continue
 			}
 
@@ -66,9 +70,10 @@ const importData = async (req, res) => {
 			if (username) {
 				console.log(row);
 				for (let k = 8; k <= 14; k += 1) {
-					if (!(row[k]) || row[k] === "-" || row[k] === "s" || row[k] === "s/") row[k] = null;
-					else if (k <= 11) {
-						if (k == 10) console.log(k);
+					if (!(row[k]) || row[k] === "-" || row[k] === "s" || row[k] === "s/") {
+						row[k] = null;
+					} else if (k <= 11) {
+						if (k === 10) console.log(k);
 						row[k] = row[k].replace(/\.|,/g, "");
 					}
 				}
@@ -221,8 +226,8 @@ const createDataset = async (req, res, next) => {
 
 	const dataset = [{
 		data: data,
-		backgroundColor: "#ffffff",
-		borderColor: "#ffffff",
+		backgroundColor: "#ff0000",
+		borderColor: "#ff0000",
 		fill: false,
 		label: `${req.account.name} (${req.account.username})`,
 	}];

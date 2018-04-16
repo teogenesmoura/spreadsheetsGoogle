@@ -80,7 +80,7 @@ const promisifiedListCollectives = (auth, range) => {
 		});
 	});
 	return collectivesPromise;
-}
+};
 
 /**
  * Generates a Pie chart from data collected from the Spreadsheets API.

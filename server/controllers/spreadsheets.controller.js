@@ -15,7 +15,7 @@ const pathOfFile = `${__dirname}/${fileName}`;
 * @returns {String} pathOfFile - path of the chart generated on disk
 * @returns {File} outputFile - Promise containing resized image or error
 */
-const authenticate = (req, res) => {
+const authenticate = (req, res, next) => {
 	if (req.query.code === undefined) {
 		return res.redirect(authorizeUrl);
 	}
@@ -27,16 +27,8 @@ const authenticate = (req, res) => {
 			return res.status(500).send("Error");
 		}
 		client.credentials = tokens;
-
-		try {
-			const collectives = await listCollectives(client);
-			await generateCharts(collectives);
-			res.sendFile(pathOfFile);
-			return pathOfFile;
-		} catch (e) {
-			logger.error(e);
-			return res.status(500).send("Error");
-		}
+		req.client = client;
+		return next();
 	});
 };
 
@@ -46,28 +38,27 @@ const authenticate = (req, res) => {
  * @returns {Promise} collectivesPromise - Promise object that resolves when rows of Google
  * Spreadsheet's data are collected and fails when the API returns an error
  */
-const listCollectives = (auth) => {
-	const collectivesPromise = new Promise((resolve, reject) => {
-		const sheets = google.sheets("v4");
-		sheets.spreadsheets.values.get({
-			auth: auth,
-			spreadsheetId: "1W4kmkNTZrDUHyZx_siToEr9EDZvTGEwDTp05I18Ach4",
-			range: "A:S",
-		}, (err, res) => {
-			if (err) {
-				logger.error("The API returned an error.");
-				reject(err);
-			}
-			const rows = res.data.values;
-			if (rows.length === 0) {
-				logger.error("No data found.");
-				reject(rows);
-			} else {
-				resolve(rows);
-			}
-		});
+const listCollectives = (req, res, next) => {
+	const auth = req.client;
+	const sheets = google.sheets("v4");
+	sheets.spreadsheets.values.get({
+		auth: auth,
+		spreadsheetId: "1W4kmkNTZrDUHyZx_siToEr9EDZvTGEwDTp05I18Ach4",
+		range: "A:S",
+	}, (err, res2) => {
+		if (err) {
+			logger.error("The API returned an error.");
+			return res.status(500).send("The API returned an error.");
+		}
+		const rows = res2.data.values;
+		if (rows.length === 0) {
+			logger.error("No data found.");
+			return res.status(500).send("No data found");
+		} else {
+			req.collectives = rows;
+			return next();
+		}
 	});
-	return collectivesPromise;
 };
 
 /**
@@ -80,7 +71,8 @@ const listCollectives = (auth) => {
  * the chart's image file is written to disk data are collected and fails when
  * chartJSNode fails to do so.
  */
-const generateCharts = async (collectives) => {
+const generateCharts = async (req, res, next) => {
+	const collectives = req.collectives;
 	logger.trace("Generating graph from collectives");
 	const chartNode = new ChartjsNode(600, 600);
 	/* In sequence: Tweets, Seguindo, Seguidores, Curtidas */
@@ -108,7 +100,8 @@ const generateCharts = async (collectives) => {
 		},
 	};
 	await chartNode.drawChart(config);
-	return chartNode.writeImageToFile("image/png", pathOfFile);
+	await chartNode.writeImageToFile("image/png", pathOfFile);
+	return res.sendFile(pathOfFile);
 };
 
-module.exports = { generateCharts, authenticate };
+module.exports = { listCollectives, generateCharts, authenticate };

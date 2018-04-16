@@ -5,7 +5,7 @@ const Chart = require("chartjs-node");
 // Procura todas as contas no banco de dados e retorna todos os usuários
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await twitterAccount.find({}, "username -_id");
+		const accounts = await twitterAccount.find({}, "name username -_id");
 		res.status(httpStatus.OK).json({
 			error: false,
 			usernames: accounts,
@@ -16,6 +16,88 @@ const listAccounts = async (req, res) => {
 			description: "Erro ao carregar os usuários do Twitter do banco de dados",
 		});
 	}
+};
+
+const importData = async (req, res) => {
+	const tabs = req.collectives;
+	const length = tabs.length;
+	const types = [
+		"FRENTES / COLETIVOS",
+		"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
+	];
+	let cType = 0;
+	let lastDate;
+
+	const actors = {};
+	for (let i = 0; i < length; i += 1) {
+		const cTab = tabs[i];
+
+		const rowsCount = cTab.length;
+		for (let j = 0; j < rowsCount; j += 1) {
+			const row = cTab[j];
+			// Se estivermos na row que indicao o novo tipo, atualiza
+			// a string do tipo atual e continua para a próxima row
+			if (row[0] === "ORGANIZAÇÕES DA SOCIEDADE CIVIL") {
+				cType += 1;
+				continue; // eslint-disable-line no-continue
+			}
+
+			// Se estiver em uma row com nome vazio ou a primeira
+			// continue
+			if (j <= 1 || !(row[0])) {
+				continue; // eslint-disable-line no-continue
+			}
+			let username;
+			if (!(row[7]) || !(row[7].includes("twitter.com"))) username = null;
+			else {
+				username = row[7].match(/((https?:\/\/)?(www\.)?twitter\.com\/)?(@|#!\/)?([A-Za-z0-9_]{1,15})(\/([-a-z]{1,20}))?/);
+				username = username[5];
+			}
+
+			if (actors[row[0]] === undefined) {
+				const newAccount = twitterAccount({
+					name: row[0],
+					username: username,
+					type: types[cType],
+				});
+				actors[row[0]] = newAccount;
+			}
+
+			if (username) {
+				console.log(row);
+				for (let k = 8; k <= 14; k += 1) {
+					if (!(row[k]) || row[k] === "-" || row[k] === "s" || row[k] === "s/") row[k] = null;
+					else if (k <= 11) {
+						if (k == 10) console.log(k);
+						row[k] = row[k].replace(/\.|,/g, "");
+					}
+				}
+				// <TODO>: Fix nasty ifs when the tabs are corrected to be equal
+				let newDate = row[(i > 1 ? 13 : 14)];
+				if (newDate) newDate = newDate.split("/");
+				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				lastDate = newDate;
+				const sample = {
+					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
+					likes: row[11],
+					followers: row[10],
+					following: row[9],
+					moments: (i > 1 ? null : row[12]),
+					tweets: row[8],
+					campaigns: (row[(i > 1 ? 12 : 13)] ? row[(i > 1 ? 12 : 13)].split("#") : []),
+				};
+				actors[row[0]].samples.push(sample);
+			}
+		}
+	}
+	const savePromises = [];
+	Object.entries(actors).forEach(([key]) => {
+		savePromises.push(actors[key].save());
+	});
+	await Promise.all(savePromises);
+	return res.status(httpStatus.OK).json({
+		error: false,
+	});
 };
 
 // Carrega uma conta com username específico
@@ -202,6 +284,7 @@ module.exports = {
 	loadAccount,
 	setSampleKey,
 	createDataset,
+	importData,
 	drawLineChart,
 	userLastSample,
 };

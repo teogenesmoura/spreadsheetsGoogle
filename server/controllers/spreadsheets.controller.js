@@ -38,28 +38,49 @@ const authenticate = (req, res, next) => {
  * @returns {Promise} collectivesPromise - Promise object that resolves when rows of Google
  * Spreadsheet's data are collected and fails when the API returns an error
  */
-const listCollectives = (req, res, next) => {
+const listCollectives = async (req, res, next) => {
 	const auth = req.client;
-	const sheets = google.sheets("v4");
-	sheets.spreadsheets.values.get({
-		auth: auth,
-		spreadsheetId: "1W4kmkNTZrDUHyZx_siToEr9EDZvTGEwDTp05I18Ach4",
-		range: "A:S",
-	}, (err, res2) => {
-		if (err) {
-			logger.error("The API returned an error.");
-			return res.status(500).send("The API returned an error.");
-		}
-		const rows = res2.data.values;
-		if (rows.length === 0) {
-			logger.error("No data found.");
-			return res.status(500).send("No data found");
-		} else {
-			req.collectives = rows;
-			return next();
-		}
-	});
+	const tabs = [
+		"'Grupos dez-2017'",
+		"'Grupos jan-2018'",
+		"'Grupos fev-2018'",
+		"'Grupos mar-2018'",
+		"'Grupos abril-2018'",
+	];
+
+	const length = tabs.length;
+	req.collectives = [];
+	const allTabs = [];
+	for (let i = 0; i < length; i += 1) {
+		allTabs.push(promisifiedListCollectives(auth, tabs[i]));
+	}
+	req.collectives = await Promise.all(allTabs);
+	return next();
 };
+
+const promisifiedListCollectives = (auth, range) => {
+	const collectivesPromise = new Promise((resolve, reject) => {
+		const sheets = google.sheets("v4");
+		sheets.spreadsheets.values.get({
+			auth: auth,
+			spreadsheetId: "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
+			range: range,
+		}, (err, res) => {
+			if (err) {
+				logger.error("The API returned an error.");
+				reject(err);
+			}
+			const rows = res.data.values;
+			if (rows.length === 0) {
+				logger.error("No data found.");
+				reject(rows);
+			} else {
+				resolve(rows);
+			}
+		});
+	});
+	return collectivesPromise;
+}
 
 /**
  * Generates a Pie chart from data collected from the Spreadsheets API.
@@ -71,19 +92,22 @@ const listCollectives = (req, res, next) => {
  * the chart's image file is written to disk data are collected and fails when
  * chartJSNode fails to do so.
  */
-const generateCharts = async (req, res, next) => {
+const generateCharts = async (req, res) => {
 	const collectives = req.collectives;
 	logger.trace("Generating graph from collectives");
 	const chartNode = new ChartjsNode(600, 600);
 	/* In sequence: Tweets, Seguindo, Seguidores, Curtidas */
-	const data = [collectives[2][8], collectives[2][9], collectives[2][10], collectives[2][11]];
+	const data = [collectives[0][2][8],
+		collectives[0][2][9],
+		collectives[0][2][10],
+		collectives[0][2][11]];
 	/* INSTAGRAM */
-	const label = collectives[0][16];
+	const label = collectives[0][0][16];
 	const labels = [
-		collectives[1][8], // Tweets
-		collectives[1][9], // Seguindo
-		collectives[1][10], // Seguidores
-		collectives[1][11], // Curtidas
+		collectives[0][1][8], // Tweets
+		collectives[0][1][9], // Seguindo
+		collectives[0][1][10], // Seguidores
+		collectives[0][1][11], // Curtidas
 	];
 	const config = {
 		type: "pie",

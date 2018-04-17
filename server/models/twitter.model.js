@@ -20,6 +20,10 @@ const sampleSchema = {
 	moments: {
 		type: Number,
 	},
+	campaigns: {
+		type: [String],
+		default: [],
+	},
 };
 
 const twitterAccountSchema = new mongoose.Schema({
@@ -37,11 +41,7 @@ const twitterAccountSchema = new mongoose.Schema({
 	},
 	samples: {
 		type: [sampleSchema],
-		default: null,
-	},
-	campaigns: {
-		type: [String],
-		default: null,
+		default: [],
 	},
 });
 

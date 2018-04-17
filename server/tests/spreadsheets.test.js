@@ -39,8 +39,13 @@ describe("# generateCharts method", () => {
 			fs.unlinkSync("./server/controllers/frentePopularInstagram.png");
 		}
 
+		const req = { collectives: collectives };
+		const res = {
+			sendFile: () => {},
+		};
+
 		// creates chart and writes it to a png file
-		await spreadsheets.generateCharts(collectives);
+		await spreadsheets.generateCharts(req, res);
 
 		// loads the created image
 		const newImage = fs.readFileSync("./server/controllers/frentePopularInstagram.png");

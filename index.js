@@ -15,6 +15,11 @@ mongoose.connection.on("error", () => {
 	throw new Error(`unable to connect to database: ${mongoUri}`);
 });
 
+mongoose.connection.once("open", () => {
+	logger.info(`Connected to database on host ${mongoUri}`);
+	console.log(`Connected to database on host ${mongoUri}`);
+});
+
 if (config.env !== "test") {
 	app.listen(config.port, () => {
 		logger.info(`[SERVER] Listening on port ${config.port}`);

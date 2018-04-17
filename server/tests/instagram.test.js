@@ -3,6 +3,7 @@ const httpStatus = require("http-status");
 const app = require("../../index");
 const instagramAccountModel = require("../models/instagram.model");
 const instagramStub = require("./instagram-stub.json").instagram;
+const mongoose = require("mongoose");
 
 /**
  * Tests if instagram endpoint can be reached
@@ -14,6 +15,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await instagramAccountModel.collection.drop();
+	await mongoose.disconnect();
+	await app.close();
 });
 
 describe("GET /instagram", () => {
@@ -28,7 +31,7 @@ describe("GET /instagram", () => {
 			})
 			.catch(done);
 	});
-/*	it("should access /instagram/all", async (done) => {
+	/* it("should access /instagram/all", async (done) => {
 		const res = await request(app).get("/instagram/all").expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -36,7 +39,7 @@ describe("GET /instagram", () => {
 
 		expect(res.body).toHaveProperty("usernames");
 		expect(res.body.usernames).toBeInstanceOf(Array);
-//		expect(res.body.username.length).toEqual(instagramStub.length);
+		expect(res.body.usernames.length).toEqual(instagramStub.length);
 		nameTest = res.body.usernames[0];
 
 		done();
@@ -44,9 +47,8 @@ describe("GET /instagram", () => {
 	it("should return data from /instagram/all", async (done) => {
 		expect(nameTest).toBeDefined();
 
-		const res = await request(app).get("/instagram/all").expect(httpStatus.OK);
+		//		const res = await request(app).get("/instagram/all").expect(httpStatus.OK);
 
 		done();
-	});
-*/
+	}); */
 });

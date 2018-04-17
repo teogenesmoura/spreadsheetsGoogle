@@ -2,7 +2,13 @@ const httpStatus = require("http-status");
 const twitterAccount = require("../models/twitter.model");
 const Chart = require("chartjs-node");
 
-// Procura todas as contas no banco de dados e retorna todos os usuários
+/**
+ * Retrieves all twitterAccount documents on the db and lists its name and username properties
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @returns {json} - with the properties error (false if no error occurred) and usernames (an
+ * array with multiple objects containing `name` and `username` properties
+ */
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await twitterAccount.find({}, "name username -_id");
@@ -18,30 +24,49 @@ const listAccounts = async (req, res) => {
 	}
 };
 
+/**
+ * Parses the data of a spreadsheet to retrieve twitter accounts and add them into the database
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @returns {json} - { error: false } if successful
+ */
 const importData = async (req, res) => {
-	const tabs = req.collectives;
-	const length = tabs.length;
+	// <TODO>: Add error handling to avoid crashes and return 500 instead
+
+	// Different types of actors indicated in the spreadsheet
 	const types = [
 		"FRENTES / COLETIVOS",
 		"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
 		"PRÉ-CANDIDATURAS À PRESIDÊNCIA",
 	];
-	let cType = 0;
-	let lastDate;
+	let cType = 0; // current type index
+	let lastDate; // date of last inserted sample
+	const actors = {}; // map of actor objects to avoid creating duplicates
 
-	const actors = {};
+	const tabs = req.collectives;
+	const length = tabs.length;
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {
 			const row = cTab[j];
+			// row[0] = Actor name
+			// row[7] = Twitter username (profile url)
+			// row[8] = Number of tweets in that date
+			// row[9] = Number of people that account is following in that date
+			// row[10] = Number of followers in that date
+			// row[11] = Number of likes in that date
+			// row[12] = Number of moments in that date
+			// row[13] = List of campaigns in that date
+			// row[14] = Date of the sample
+
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (row[0] === "ORGANIZAÇÕES DA SOCIEDADE CIVIL") {
+			if (row[0] === types[1]) {
 				cType = 1;
 				continue; // eslint-disable-line no-continue
-			} else if (row[0] === "PRÉ-CANDIDATURAS À PRESIDÊNCIA") {
+			} else if (row[0] === types[2]) {
 				cType = 2;
 				continue; // eslint-disable-line no-continue
 			}
@@ -51,6 +76,9 @@ const importData = async (req, res) => {
 			if (j <= 1 || !(row[0])) {
 				continue; // eslint-disable-line no-continue
 			}
+
+			// validation of username field with regex to capture only the username
+			// and not the whole profile url
 			let username;
 			if (!(row[7]) || !(row[7].includes("twitter.com"))) username = null;
 			else {
@@ -58,6 +86,7 @@ const importData = async (req, res) => {
 				username = username[5];
 			}
 
+			// if current actors hasnt been defined yet, create a new schema
 			if (actors[row[0]] === undefined) {
 				const newAccount = twitterAccount({
 					name: row[0],
@@ -67,18 +96,27 @@ const importData = async (req, res) => {
 				actors[row[0]] = newAccount;
 			}
 
+			// if current actor has a twitter username, add a sample
 			if (username) {
+				// Checks all rows for "empty" fields, magic strings that are used
+				// to represent no data
 				for (let k = 8; k <= 14; k += 1) {
 					if (!(row[k]) || row[k] === "s/" || row[k] === "s") {
 						row[k] = null;
 					} else if (k <= 11) {
+						// if string is not empty, remove all dots and commas to avoid
+						// real numbers
 						row[k] = row[k].replace(/\.|,/g, "");
 					}
 				}
+
+				// Parses the date of the sample and use the last one if something wrong happens
 				let newDate = row[14];
 				if (newDate) newDate = newDate.split("/");
 				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
 				lastDate = newDate;
+
+				// Defines sample and adds it to the actor document
 				const sample = {
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
 					likes: row[11],
@@ -92,6 +130,8 @@ const importData = async (req, res) => {
 			}
 		}
 	}
+
+	// Executes save() for all actors and finishes when all of them finish
 	const savePromises = [];
 	Object.entries(actors).forEach(([key]) => {
 		savePromises.push(actors[key].save());
@@ -102,7 +142,13 @@ const importData = async (req, res) => {
 	});
 };
 
-// Carrega uma conta com username específico
+/**
+ * Loads a twitter Account and pass it into the req.account object
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @param {object} next - standard next object from the Express libary
+ * @param {string} username - username of the account to be loaded
+ */
 const loadAccount = async (req, res, next, username) => {
 	try {
 		const account = await twitterAccount.findOne({ username });
@@ -116,7 +162,15 @@ const loadAccount = async (req, res, next, username) => {
 	}
 };
 
-// Mostra a última amostra de dados do usuário
+/**
+ * Creates a sample from the last defined samples for each property
+ * since samples are only required to have a date filled
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @returns {json} - with the properties error (false if no error occurred) and account with the
+ * following properties: _id, name, username, lastSample (likes, tweets, followers, following,
+ * moments).
+ */
 const userLastSample = async (req, res) => {
 	try {
 		const account = req.account.toObject();
@@ -156,6 +210,13 @@ const userLastSample = async (req, res) => {
 	}
 };
 
+/**
+ * Middleware function that selects the correct property to retrieve data of the account
+ *  based on the path of the url
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @param {object} next - standard next object from the Express libary
+ */
 const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
@@ -198,7 +259,13 @@ const setSampleKey = async (req, res, next) => {
 	return next();
 };
 
-// Responde com uma imagem (gráfico)
+/**
+ * Creates a dataset to be used on the creation of a Chart object later on, this
+ * dataset is based in the req.chart.sampleKey string
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @param {object} next - standard next object from the Express libary
+ */
 const createDataset = async (req, res, next) => {
 	// Carrega as samples da conta do usuário
 	const samples = req.account.samples;
@@ -233,7 +300,12 @@ const createDataset = async (req, res, next) => {
 	next();
 };
 
-// Desenha um gráfico de linha que usa o tempo como eixo X
+/**
+ * Draws the chart into a buffer and send it as a response to the request.
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @param {object} next - standard next object from the Express libary
+ */
 const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
 	const datasets = req.chart.datasets;

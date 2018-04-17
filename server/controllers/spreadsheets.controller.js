@@ -16,18 +16,20 @@ const pathOfFile = `${__dirname}/${fileName}`;
 * @returns {File} outputFile - Promise containing resized image or error
 */
 const authenticate = (req, res, next) => {
+	const fullUrl = `${req.protocol}://${req.get('host')}${(req.baseUrl + req.path).replace(/\/$/, "")}`;
+	const cClient = client(fullUrl);
 	if (req.query.code === undefined) {
-		return res.redirect(authorizeUrl);
+		return res.redirect(authorizeUrl(cClient));
 	}
 	const code = req.query.code;
 
-	return client.getToken(code, async (err, tokens) => {
+	return cClient.getToken(code, async (err, tokens) => {
 		if (err) {
 			logger.error(`Error getting oAuth tokens: ${err}`);
 			return res.status(500).send("Error");
 		}
-		client.credentials = tokens;
-		req.client = client;
+		cClient.credentials = tokens;
+		req.client = cClient;
 		return next();
 	});
 };

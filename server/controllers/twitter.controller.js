@@ -68,17 +68,14 @@ const importData = async (req, res) => {
 			}
 
 			if (username) {
-				console.log(row);
 				for (let k = 8; k <= 14; k += 1) {
-					if (!(row[k]) || row[k] === "-" || row[k] === "s" || row[k] === "s/") {
+					if (!(row[k]) || row[k] === "s/" || row[k] === "s") {
 						row[k] = null;
 					} else if (k <= 11) {
-						if (k === 10) console.log(k);
 						row[k] = row[k].replace(/\.|,/g, "");
 					}
 				}
-				// <TODO>: Fix nasty ifs when the tabs are corrected to be equal
-				let newDate = row[(i > 1 ? 13 : 14)];
+				let newDate = row[14];
 				if (newDate) newDate = newDate.split("/");
 				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
 				lastDate = newDate;
@@ -87,9 +84,9 @@ const importData = async (req, res) => {
 					likes: row[11],
 					followers: row[10],
 					following: row[9],
-					moments: (i > 1 ? null : row[12]),
+					moments: row[12],
 					tweets: row[8],
-					campaigns: (row[(i > 1 ? 12 : 13)] ? row[(i > 1 ? 12 : 13)].split("#") : []),
+					campaigns: (row[13] ? row[13].split("#") : []),
 				};
 				actors[row[0]].samples.push(sample);
 			}

@@ -1,5 +1,6 @@
 const express = require("express");
 const twitterCtrl = require("../controllers/twitter.controller");
+const spreadsheetsCtrl = require("../controllers/spreadsheets.controller");
 
 const router = express.Router(); // eslint-disable-line new-cap
 
@@ -12,6 +13,13 @@ const router = express.Router(); // eslint-disable-line new-cap
 
 router.route("/")
 	.get(twitterCtrl.listAccounts);
+
+router.route("/import")
+	.get(
+		spreadsheetsCtrl.authenticate,
+		spreadsheetsCtrl.listCollectives,
+		twitterCtrl.importData,
+	);
 
 router.route("/:username")
 	.get(twitterCtrl.userLastSample);

@@ -12,6 +12,9 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(facebookCtrl.listAccounts);
 
+router.route("/help")
+	.get(facebookCtrl.help);
+
 /**
  *  Inserting all records, redirecting to Facebook main page
  */

@@ -37,6 +37,23 @@ const listAccounts = async (req, res) => {
 	}
 };
 
+const help = async (req, res) => {
+	const routes = [{
+		root: "/ - Lista com todos os usuários registrados no banco de dados;",
+		help: "/help - Exibição desta lista guia das rotas;",
+		import: "/import - Aquisição dos dados, referente ao Facebook, armazenados nas planilhas do Google;",
+		user: "/:name - Exibição de todos os dados registrados sobre um dado usuário;",
+		latest: "/latest/:name - Exibição do último histórico válido para um dado usuário;",
+		likes: "/:name/likes - Exibição da evolução de curtidas para um dado usuário;",
+		followers: "/:name/followers - Exibição da evolução de seguidores para um dado usuários.",
+	}];
+
+	res.status(httpStatus.OK).json({
+		error: false,
+		results: routes,
+	});
+};
+
 /**
  * Look for a specific registered Facebook account, by name.
  * @param {object} req - standard request object from the Express library
@@ -461,6 +478,7 @@ const evolutionMsg = (param) => {
 
 module.exports = {
 	listAccounts,
+	help,
 	loadAccount,
 	getUser,
 	getLatest,

@@ -39,6 +39,19 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When requires, access should be granted
+	it("GET /facebook/help should return the routes' guide", async (done) => {
+		const res = await request(app).get("/facebook/help").expect(httpStatus.OK);
+
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toBeInstanceOf(Array);
+
+		done();
+	});
+
+	// When requires, access should be granted
 	it("GET /facebook/:name should return all data from a certain user", async (done) => {
 		const res = await request(app).get(`/facebook/${nameTest}`).expect(httpStatus.OK);
 

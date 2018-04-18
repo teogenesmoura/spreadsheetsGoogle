@@ -25,6 +25,7 @@
 			"dateCol": 6
 		}],
 		"range": [{
+			"nameCol": 0,
 			"twitterMin": 7,
 			"twitterMax": 14,
 			"instagramMin": 15,

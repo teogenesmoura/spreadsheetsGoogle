@@ -20,7 +20,7 @@ router.route("/import")
 		spreadsheetsCtrl.authenticate,
 		facebookCtrl.setCollectivesParams,
 		spreadsheetsCtrl.listCollectives,
-		facebookCtrl.signUpInit,
+		facebookCtrl.importAccounts,
 	);
 /**
  * Access to the data home page of a given user.

@@ -198,9 +198,9 @@ const getDataset = async (req, res, next) => {
 
 	const dataSet = [{
 		data: dataUser,
-		backgroundColor: blueTones[colorCtrl += 1],
-		borderColor: white,
-		fill: true,
+		backgroundColor: white,
+		borderColor: blueTones[colorCtrl += 1],
+		fill: false,
 		label: `${req.account.name} (${req.account.link})`,
 	}];
 
@@ -365,10 +365,82 @@ const setCollectivesParams = async (req, res, next) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const signUpInit = async (req, res) => {
-	console.log("Inserção de dados no banco");
+const importAccounts = async (req, res) => {
+	const tabs = req.collectives;
+	const length = tabs.length;
+	const actors = {};
+	const categories = ResocieSheets.categories;
+	const nameCol = ResocieSheets.range[0].nameCol;
+	const linkCol = ResocieSheets.facebookRange[0].linkCol;
+	const likesCol = ResocieSheets.facebookRange[0].likesCol;
+	const followersCol = ResocieSheets.facebookRange[0].followersCol;
+	const dateCol = ResocieSheets.facebookRange[0].dateCol;
+	let cCategory = 0;
+	let lastDate;
 
-	res.end();
+	for (let posSheet = 0; posSheet < length; posSheet += 1) {
+		const cSheet = tabs[posSheet];
+		const rowsCount = cSheet.length;
+
+		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
+			const cRow = cSheet[posRow];
+			// Se estivermos na row que indicao o novo tipo, atualiza
+			// a string do tipo atual e continua para a próxima row
+			if (cRow[nameCol] === ResocieSheets.categories[cCategory + 1]) {
+				cCategory += 1;
+				continue; // eslint-disable-line no-continue
+			}
+
+			// se o nome for vazio ou o primeiro, pular
+			if (!cRow[nameCol] || posRow < 1) {
+				continue; // eslint-disable-line no-continue
+			}
+
+			// se não existe link para conta do facebook
+			let accountLink;
+			if (!(cRow[linkCol]) || cRow[linkCol] === "-" || cRow[linkCol] === "s" || cRow[linkCol] === "s/") {
+				accountLink = null;
+			} else {
+				accountLink = cRow[linkCol];
+			}
+
+			if (actors[cRow[nameCol]] === undefined) {
+				const newAccount = Facebook({
+					name: cRow[nameCol],
+					class: categories[cCategory],
+					link: accountLink,
+				});
+				actors[cRow[nameCol]] = newAccount;
+			}
+
+			if (accountLink) {
+				for (let posRow2 = linkCol; posRow2 <= dateCol; posRow2 += 1) {
+					if (!(cRow[posRow2]) || cRow[posRow2] === "-" || cRow[posRow2] === "s" || cRow[posRow2] === "s/") {
+						cRow[posRow2] = null;
+					} else if (posRow2 === likesCol || posRow2 === followersCol) {
+						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
+						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
+					}
+				}
+				let newDate = cRow[dateCol];
+				if (newDate) newDate = newDate.split("/");
+				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				lastDate = newDate;
+				const newHistory = {
+					likes: cRow[likesCol],
+					followers: cRow[followersCol],
+					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
+				};
+				actors[cRow[nameCol]].history.push(newHistory);
+			}
+		}
+	}
+	const savePromises = [];
+	Object.entries(actors).forEach((cActor) => {
+		savePromises.push(cActor[1].save());
+	});
+	await Promise.all(savePromises);
+	return listAccounts(req, res);
 };
 
 /**
@@ -392,5 +464,5 @@ module.exports = {
 	getConfigLineChart,
 	plotLineChart,
 	setCollectivesParams,
-	signUpInit,
+	importAccounts,
 };

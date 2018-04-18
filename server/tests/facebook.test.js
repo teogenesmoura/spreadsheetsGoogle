@@ -68,6 +68,19 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When requires, access should be granted
+	it("GET /facebook/error should return message error", async (done) => {
+		const res = await request(app).get("/facebook/error").expect(httpStatus.OK);
+
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toEqual(null);
+
+		done();
+	});
+
+	// When requires, access should be granted
 	it("GET /facebook/latest/:name should return the latest data from a user", async (done) => {
 		const res = await request(app).get(`/facebook/latest/${nameTest}`).expect(httpStatus.OK);
 

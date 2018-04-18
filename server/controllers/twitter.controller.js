@@ -1,6 +1,7 @@
 const httpStatus = require("http-status");
 const twitterAccount = require("../models/twitter.model");
 const Chart = require("chartjs-node");
+const Resocie = require("../../config/resocie.json").spreadsheets[0];
 
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
@@ -353,6 +354,26 @@ const drawLineChart = async (req, res) => {
 	res.end();
 };
 
+/**
+ * Assignment of the control variables of the acquisition of the desired spreadsheets
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const setCollectivesParams = async (req, res, next) => {
+	const pagesName = [];
+
+	const length = Resocie.periodos.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		pagesName.push(`'${Resocie.nome} ${Resocie.periodos[ind]}'`);
+	}
+
+	req.sheets.ID = Resocie.ID;
+	req.sheets.pages = pagesName;
+
+	next();
+};
+
 module.exports = {
 	listAccounts,
 	loadAccount,
@@ -361,4 +382,5 @@ module.exports = {
 	importData,
 	drawLineChart,
 	userLastSample,
+	setCollectivesParams,
 };

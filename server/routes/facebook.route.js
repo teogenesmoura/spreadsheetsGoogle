@@ -1,6 +1,7 @@
 
 const express = require("express");
 const facebookCtrl = require("../controllers/facebook.controller");
+const spreadsheetsCtrl = require("../controllers/spreadsheets.controller");
 
 const router = express.Router(); // eslint-disable-line new-cap
 
@@ -11,6 +12,16 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(facebookCtrl.listAccounts);
 
+/**
+ *  Inserting all records, redirecting to Facebook main page
+ */
+router.route("/import")
+	.get(
+		spreadsheetsCtrl.authenticate,
+		facebookCtrl.setCollectivesParams,
+		spreadsheetsCtrl.listCollectives,
+		facebookCtrl.signUpInit,
+	);
 /**
  * Access to the data home page of a given user.
  * Presentation of all the data registered.
@@ -41,11 +52,5 @@ router.route("/:name/:query")
  * Search for a user in the database
  */
 router.param("name", facebookCtrl.loadAccount);
-
-/*
-// Inserting all records, redirecting to Facebook main page
-router.route("/init")
-	.get(facebookCtrl.signUpInit);
-*/
 
 module.exports = router;

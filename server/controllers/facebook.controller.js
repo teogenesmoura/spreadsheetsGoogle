@@ -2,9 +2,7 @@ const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
-
-const likesType = "likes";
-const followersType = "followers";
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
 const chartSize = 600;
 
@@ -148,10 +146,10 @@ const setHistoryKey = async (req, res, next) => {
 	let chartTitle;
 
 	switch (historyKey) {
-	case likesType:
+	case ResocieSheets.types[0].likesType:
 		chartTitle = evolutionMsg("curtidas");
 		break;
-	case followersType:
+	case ResocieSheets.types[0].followersType:
 		chartTitle = evolutionMsg("seguidores");
 		break;
 	default:
@@ -337,6 +335,32 @@ const plotLineChart = async (req, res) => {
 };
 
 /**
+ * Assignment of the control variables of the acquisition of the desired spreadsheets
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const setCollectivesParams = async (req, res, next) => {
+	// *
+	const pagesName = [];
+
+	const length = ResocieSheets.periods.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		pagesName.push(`${ResocieSheets.name} ${ResocieSheets.periods[ind]}`);
+	}
+
+	const sheets = [{
+		ID: ResocieSheets.ID,
+		pages: pagesName,
+	}];
+
+	req.sheets = sheets;
+
+	next();
+	// */
+};
+
+/**
  * Insert all Facebook accounts available.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -344,29 +368,7 @@ const plotLineChart = async (req, res) => {
 const signUpInit = async (req, res) => {
 	console.log("Inserção de dados no banco");
 
-	//	Atualização de dados
-	Facebook.findOne({ name: "Rodrigo" }, (err, account) => {
-		if (err) console.log(`error ${err}`);
-
-		account.name = "Rodrigo F.G.";
-		account.save((error) => {
-			if (error) console.log(`error ${error}`);
-			console.log("success update");
-		});
-	});
-
-	//	Incremento no histórico temporal
-	Facebook.findOne({ name: "Rodrigo F.G." }, (err, account) => {
-		if (err) console.log(`error ${err}`);
-		const history = { likes: 24, followers: 240, date: Date.now() };
-		account.history.push(history);
-		account.save((error) => {
-			if (error) console.log(`error ${error}`);
-			console.log("success update");
-		});
-	});
-
-	res.redirect("/facebook");
+	res.end();
 };
 
 /**
@@ -389,5 +391,6 @@ module.exports = {
 	getChartLimits,
 	getConfigLineChart,
 	plotLineChart,
+	setCollectivesParams,
 	signUpInit,
 };

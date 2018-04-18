@@ -1,0 +1,36 @@
+{
+	"spreadsheets": [{
+		"ID": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
+		"name": "Grupos",
+		"periods": [
+			"dez-2017",
+			"jan-2018",
+			"fev-2018",
+			"mar-2018",
+			"abril-2018"
+		],
+		"categories": [
+			"FRENTES / COLETIVOS",
+			"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
+			"PRÉ-CANDIDATURAS À PRESIDÊNCIA"
+		],
+		"types": [{
+			"likesType": "likes",
+			"followersType": "followers"
+		}],
+		"facebookRange": [{
+			"linkCol": 3,
+			"likesCol": 4,
+			"followersCol": 5,
+			"dateCol": 6
+		}],
+		"range": [{
+			"twitterMin": 7,
+			"twitterMax": 14,
+			"instagramMin": 15,
+			"instagramMax": 18,
+			"youtubeMin": 19,
+			"youtubeMax": 22
+		}]
+	}]
+}

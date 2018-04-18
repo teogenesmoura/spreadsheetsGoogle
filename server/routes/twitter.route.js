@@ -16,6 +16,7 @@ router.route("/")
 
 router.route("/import")
 	.get(
+		twitterCtrl.setCollectivesParams,
 		spreadsheetsCtrl.authenticate,
 		spreadsheetsCtrl.listCollectives,
 		twitterCtrl.importData,

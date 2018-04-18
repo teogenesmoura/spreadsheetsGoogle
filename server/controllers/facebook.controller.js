@@ -381,12 +381,18 @@ const importAccounts = async (req, res) => {
 	for (let posSheet = 0; posSheet < length; posSheet += 1) {
 		const cSheet = tabs[posSheet];
 		const rowsCount = cSheet.length;
+		cCategory = 0;
 
 		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
 			const cRow = cSheet[posRow];
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (cRow[nameCol] === ResocieSheets.categories[cCategory + 1]) {
+			if (cRow[nameCol] === "ORGANIZAÇÕES DA SOCIEDADE CIVIL") {
+				console.log("Categoria Prox.");
+				console.log(categories[cCategory + 1]);
+			}
+
+			if (cRow[nameCol] === categories[cCategory + 1]) {
 				cCategory += 1;
 				continue; // eslint-disable-line no-continue
 			}

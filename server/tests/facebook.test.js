@@ -80,6 +80,12 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
+	it("GET /facebook/import shoul import all data from the spreadsheets to localBD", async (done) => {
+		await request(app).get("/facebook/import").expect(httpStatus.FOUND);
+
+		done();
+	});
+
 	// When requires, access should be granted
 	it("GET /facebook/latest/:name should return the latest data from a user", async (done) => {
 		const res = await request(app).get(`/facebook/latest/${nameTest}`).expect(httpStatus.OK);
@@ -114,6 +120,15 @@ describe("Facebook endpoint", () => {
 		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	// When required, access should be granted
+	it("GET /facebook/:name/qualquer should return an image (the graph)", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		await request(app).get(`/facebook/${nameTest}/qualquer`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

@@ -1,10 +1,13 @@
 const instagramAccount = require("../models/instagram.model");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
+const ChartNode = require("chartjs-node");
 
 const followingType = "following";
 const followersType = "followers";
-const postType = "num_of_posts";
+const postType = "posts";
+const chartSize = 600;
+
 /**
  * Procura os nomes no banco de dados e retorna os usuários do instagram
  */
@@ -45,7 +48,7 @@ const getUser = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: account,
+			usernames: account,
 		});
 	} catch (error) {
 		const errorMsg = "Internal server error while responding with account";
@@ -134,6 +137,95 @@ const setHistoryKey = async (req, res, next) => {
 	return next();
 };
 
+const getDataset = async (req, res, next) => {
+	const history = req.account.history;
+	const historyKey = req.chart.historyKey;
+
+	const dataUser = [];
+	// const labels = [];
+
+	const length = history.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		if (history[ind][historyKey] !== undefined
+			&& history[ind][historyKey] !== null) {
+			const date = new Date(history[ind].date);
+
+			dataUser.push({
+				x: date,
+				y: history[ind][historyKey],
+			});
+			// labels.push(date);
+		}
+	}
+
+	const dataSet = [{
+		data: dataUser,
+		backgroundColor: "#ffffff",
+		borderColor: "#4286f4",
+		fill: false,
+		label: `${req.account.name} (${req.account.link})`,
+	}];
+
+	req.chart.dataSets = dataSet;
+	req.chart.data = dataUser;
+
+	next();
+};
+
+const getConfigLineChart = async (req, res, next) => {
+	const labelXAxes = "Data";
+	const labelYAxes = "Valor";
+
+	const config = {
+		type: "line",
+		data: { datasets: req.chart.dataSets },
+		options: {
+			title: {
+				display: true,
+				text: req.chart.chartTitle,
+			},
+			scales: {
+				xAxes: [{
+					type: "time",
+					autoSkip: false,
+					time: {
+						tooltipFormat: "ll HH:mm",
+						unit: "week",
+						displayFormats: { month: "MMM YYYY" },
+					},
+					ticks: {
+						major: { fontStyle: "bold" },
+					},
+					scaleLabel: {
+						display: true,
+						labelString: labelXAxes,
+					},
+				}],
+				yAxes: [{
+					scaleLabel: {
+						display: true,
+						labelString: labelYAxes,
+					},
+				}],
+			},
+		},
+	};
+
+	req.chart.config = config;
+
+	next();
+};
+
+const plotLineChart = async (req, res) => {
+	const chart = new ChartNode(chartSize, chartSize);
+
+	await chart.drawChart(req.chart.config);
+	const buffer = await chart.getImageBuffer("image/png");
+	res.writeHeader(httpStatus.OK, { "Content-type": "image/png" });
+	res.write(buffer);
+	res.end();
+};
+
 const evolutionMsg = (param) => {
 	return `Evolução de ${param}`;
 };
@@ -144,4 +236,7 @@ module.exports = {
 	getUser,
 	getLatest,
 	setHistoryKey,
+	getDataset,
+	getConfigLineChart,
+	plotLineChart,
 };

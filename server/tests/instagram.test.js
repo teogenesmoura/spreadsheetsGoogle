@@ -31,11 +31,13 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("usernames");
 		expect(res.body.usernames).toBeInstanceOf(Array);
 		expect(res.body.usernames.length).toEqual(instagramStub.length);
+
 		nameTest = res.body.usernames[0].name;
 
 		done();
 	});
-	it("should access /instagram/:name", async (done) => {
+
+	it("should access /instagram/:name and return a JSON with all data", async (done) => {
 		const res = await request(app).get(`/instagram/${nameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -48,26 +50,72 @@ describe("GET /instagram", () => {
 		expect(res.body.usernames.history.length).toEqual(3);
 
 		expect(res.body.usernames.history[0].date).toEqual("2018-04-01T12:30:00.500Z");
-		expect(res.body.usernames.history[0].followers).toEqual("10");
-		expect(res.body.usernames.history[0].following).toEqual("1");
-		expect(res.body.usernames.history[0].num_of_posts).toEqual("10");
+		expect(res.body.usernames.history[0].followers).toEqual(10);
+		expect(res.body.usernames.history[0].following).toEqual(1);
+		expect(res.body.usernames.history[0].num_of_posts).toEqual(10);
 
 		expect(res.body.usernames.history[1].date).toEqual("2018-04-05T12:30:00.505Z");
-		expect(res.body.usernames.history[1].followers).toEqual("15");
-		expect(res.body.usernames.history[1].following).toEqual("6");
-		expect(res.body.usernames.history[1].num_of_posts).toEqual("15");
+		expect(res.body.usernames.history[1].followers).toEqual(15);
+		expect(res.body.usernames.history[1].following).toEqual(6);
+		expect(res.body.usernames.history[1].num_of_posts).toEqual(15);
 
-		expect(res.body.usernames.history[2].date).toEqual("");
-		expect(res.body.usernames.history[2].followers).toEqual("12");
-		expect(res.body.usernames.history[2].folloswing).toEqual("8");
-		expect(res.body.usernames.history[2].num_of_posts).toEqual("15");
+		expect(res.body.usernames.history[2].date).toEqual(null);
+		expect(res.body.usernames.history[2].followers).toEqual(12);
+		expect(res.body.usernames.history[2].following).toEqual(8);
+		expect(res.body.usernames.history[2].num_of_posts).toEqual(17);
 
 		done();
 	});
-	it("should return data from /instagram/", async (done) => {
+
+	it("should access /instagram/latest/:name and return a JSON with the latest data", async (done) => {
+		const res = await request(app).get(`/instagram/latest/${nameTest}`).expect(httpStatus.OK);
+
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toBeInstanceOf(Object);
+		expect(res.body.results.followers).toEqual(12);
+		expect(res.body.results.following).toEqual(8);
+		expect(res.body.results.num_of_posts).toEqual(17);
+
+		done();
+	});
+
+	it("should access /instagram/:name/followers and return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
-		// const res = await request(app).get("/instagram/all").expect(httpStatus.OK);
+		const res = await request(app).get(`/instagram/${nameTest}/followers`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/:name/following and return an image (the graph)", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		const res = await request(app).get(`/instagram/${nameTest}/following`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/:name/post and return an image (the graph)", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		const res = await request(app).get(`/instagram/${nameTest}/posts`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/:name/likes and return an image (the graph)", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		await request(app).get(`/instagram/${nameTest}/likes`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

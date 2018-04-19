@@ -1,7 +1,7 @@
 const httpStatus = require("http-status");
 const twitterAccount = require("../models/twitter.model");
 const Chart = require("chartjs-node");
-const Resocie = require("../../config/resocie.json").spreadsheets[0];
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
@@ -363,13 +363,17 @@ const drawLineChart = async (req, res) => {
 const setCollectivesParams = async (req, res, next) => {
 	const pagesName = [];
 
-	const length = Resocie.periodos.length;
+	const length = ResocieSheets.periods.length;
 	for (let ind = 0; ind < length; ind += 1) {
-		pagesName.push(`'${Resocie.nome} ${Resocie.periodos[ind]}'`);
+		pagesName.push(`${ResocieSheets.name} ${ResocieSheets.periods[ind]}`);
 	}
 
-	req.sheets.ID = Resocie.ID;
-	req.sheets.pages = pagesName;
+	const sheets = [{
+		ID: ResocieSheets.ID,
+		pages: pagesName,
+	}];
+
+	req.sheets = sheets;
 
 	next();
 };

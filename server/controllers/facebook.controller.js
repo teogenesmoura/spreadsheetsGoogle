@@ -37,6 +37,11 @@ const listAccounts = async (req, res) => {
 	}
 };
 
+/**
+ * Route Guide Page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
 const help = async (req, res) => {
 	const routes = [{
 		root: "/ - Lista com todos os usuários registrados no banco de dados;",
@@ -64,7 +69,7 @@ const help = async (req, res) => {
  */
 const loadAccount = async (req, res, next, name) => {
 	try {
-		const account = await Facebook.findOne({ name }, "-_id");
+		const account = await Facebook.findOne({ name }, "-_id -__v");
 
 		req.account = account;
 
@@ -358,7 +363,6 @@ const plotLineChart = async (req, res) => {
  * @param {object} next - standard next function
  */
 const setCollectivesParams = async (req, res, next) => {
-	// *
 	const pagesName = [];
 
 	const length = ResocieSheets.periods.length;
@@ -374,7 +378,6 @@ const setCollectivesParams = async (req, res, next) => {
 	req.sheets = sheets;
 
 	next();
-	// */
 };
 
 /**

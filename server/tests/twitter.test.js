@@ -39,6 +39,18 @@ describe("Twitter endpoint", () => {
 		expect(res.body.account.username).toEqual("john");
 		expect(res.body.account.name).toEqual("Joao");
 		expect(res.body.account.type).toEqual("Presidente");
+		expect(res.body.account.samples).toBeInstanceOf(Array);
+		done();
+	});
+
+	it("GET /twitter/:username should return json with latest user information", async (done) => {
+		const res = await request(app).get("/twitter/john/latest").expect(httpStatus.OK);
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+		expect(res.body).toHaveProperty("account");
+		expect(res.body.account.username).toEqual("john");
+		expect(res.body.account.name).toEqual("Joao");
+		expect(res.body.account.type).toEqual("Presidente");
 		expect(res.body.account.lastSample).toEqual({
 			tweets: 323,
 			likes: 621,

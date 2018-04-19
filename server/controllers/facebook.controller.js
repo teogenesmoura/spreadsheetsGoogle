@@ -357,30 +357,6 @@ const plotLineChart = async (req, res) => {
 };
 
 /**
- * Assignment of the control variables of the acquisition of the desired spreadsheets
- * @param {object} req - standard request object from the Express library
- * @param {object} res - standard response object from the Express library
- * @param {object} next - standard next function
- */
-const setCollectivesParams = async (req, res, next) => {
-	const pagesName = [];
-
-	const length = ResocieSheets.periods.length;
-	for (let ind = 0; ind < length; ind += 1) {
-		pagesName.push(`${ResocieSheets.name} ${ResocieSheets.periods[ind]}`);
-	}
-
-	const sheets = [{
-		ID: ResocieSheets.ID,
-		pages: pagesName,
-	}];
-
-	req.sheets = sheets;
-
-	next();
-};
-
-/**
  * Insert all Facebook accounts available.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -389,12 +365,13 @@ const importAccounts = async (req, res) => {
 	const tabs = req.collectives;
 	const length = tabs.length;
 	const actors = {};
-	const categories = ResocieSheets.categories;
-	const nameCol = ResocieSheets.range[0].nameCol;
-	const linkCol = ResocieSheets.facebookRange[0].linkCol;
-	const likesCol = ResocieSheets.facebookRange[0].likesCol;
-	const followersCol = ResocieSheets.facebookRange[0].followersCol;
-	const dateCol = ResocieSheets.facebookRange[0].dateCol;
+	const categories = req.sheet.categories;
+	const facebookRange = req.sheet.facebookRange;
+	const nameCol = req.sheet.range[0].nameCol;
+	const linkCol = facebookRange[0].linkCol;
+	const likesCol = facebookRange[0].likesCol;
+	const followersCol = facebookRange[0].followersCol;
+	const dateCol = facebookRange[0].dateCol;
 	let cCategory = 0;
 	let lastDate;
 
@@ -419,10 +396,10 @@ const importAccounts = async (req, res) => {
 
 			// se não existe link para conta do facebook
 			let accountLink;
-			if (isCelInvalid(cRow[linkCol])) {
-				accountLink = null;
-			} else {
+			if (isCellValid(cRow[linkCol])) {
 				accountLink = cRow[linkCol];
+			} else {
+				accountLink = null;
 			}
 
 			if (actors[cRow[nameCol]] === undefined) {
@@ -437,10 +414,9 @@ const importAccounts = async (req, res) => {
 
 			if (accountLink) {
 				for (let posRow2 = linkCol; posRow2 <= dateCol; posRow2 += 1) {
-					if (isCelInvalid(cRow[posRow2])) {
+					if (!isCellValid(cRow[posRow2])) {
 						cRow[posRow2] = null;
-					} else if (posRow2 === likesCol
-								|| posRow2 === followersCol) {
+					} else if (posRow2 === likesCol	|| posRow2 === followersCol) {
 						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
 
 						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
@@ -469,7 +445,7 @@ const importAccounts = async (req, res) => {
 	});
 
 	await Promise.all(savePromises);
-	return listAccounts(req, res);
+	return res.redirect("/facebook");
 };
 
 /**
@@ -487,15 +463,12 @@ const evolutionMsg = (param) => {
  * @param {String} value - data to be validated
  * @returns true if it is not valid, false if it is valid
  */
-const isCelInvalid = (value) => {
-	if (!(value)
-		|| value === "-"
-		|| value === "s"
-		|| value === "s/") {
-		return true;
+const isCellValid = (value) => {
+	if (!(value) || value === "-" || value === "s" || value === "s/") {
+		return false;
 	}
 
-	return false;
+	return true;
 };
 
 module.exports = {
@@ -509,6 +482,5 @@ module.exports = {
 	getChartLimits,
 	getConfigLineChart,
 	plotLineChart,
-	setCollectivesParams,
 	importAccounts,
 };

@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest 'server/tests'",
     "lint": "esw *.js config server --color",
-    "start": "rm server/controllers/frentePopularInstagram.png | nodemon index.js",
+    "start": "nodemon index.js",
     "precommit": "npm run lint && npm run test"
   },
   "jest": {
@@ -13,12 +13,14 @@
       "<rootDir>/config/jest-setup.js"
     ]
   },
-  "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
   "contributors": [
     "Camila Pontes <cftpontes@gmail.com>",
+    "Larissa Bianca Lima <larissa_bianca@outlook.com>",
     "Mikael Mello <mikaelmmello@gmail.com>",
     "Pedro Egler <pedroh.egler@hotmail.com>",
-    "Rodrigo Guimarães <rodrigofegui@gmail.com>"
+    "Pedro Ivo Machado <pedroivomachado@hotmail.com>",
+    "Rodrigo Guimarães <rodrigofegui@gmail.com>",
+    "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)"
   ],
   "repository": {
     "type": "git",

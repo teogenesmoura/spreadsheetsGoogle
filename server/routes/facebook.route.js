@@ -21,7 +21,7 @@ router.route("/help")
 router.route("/import")
 	.get(
 		spreadsheetsCtrl.authenticate,
-		facebookCtrl.setCollectivesParams,
+		spreadsheetsCtrl.setResocieSheet,
 		spreadsheetsCtrl.listCollectives,
 		facebookCtrl.importAccounts,
 	);

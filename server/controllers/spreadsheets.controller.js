@@ -3,6 +3,7 @@ const ChartjsNode = require("chartjs-node");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
 const { client, authorizeUrl } = require("../../config/google-auth");
+const resocieSheet = require("../../config/resocie.json").spreadsheets[0];
 
 const fileName = "frentePopularInstagram.png";
 const pathOfFile = `${__dirname}/${fileName}`;
@@ -41,6 +42,26 @@ const authenticate = (req, res, next) => {
 };
 
 /**
+ * Assignment of the control variables of the acquisition of the desired spreadsheets
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const setResocieSheet = async (req, res, next) => {
+	const pagesName = [];
+
+	const length = resocieSheet.periods.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		pagesName.push(`${resocieSheet.name} ${resocieSheet.periods[ind]}`);
+	}
+
+	resocieSheet.pages = pagesName;
+	req.sheet = resocieSheet;
+
+	next();
+};
+
+/**
  *  Gets all data from a certain hard-coded spreadsheet from the Google API
  *  and pass it as an array in req.collectives
  *  @param {object} req - standard req object from the Express library
@@ -51,15 +72,15 @@ const listCollectives = async (req, res, next) => {
 	const auth = req.client;
 
 	// Hard-coded strings of the spreadsheet's properties
-	const ID = req.sheets[0].ID;
-	const pages = req.sheets[0].pages;
+	const id = req.sheet.id;
+	const pages = req.sheet.pages;
 
 	// Gets the collectives from all tabs and sets them all into req.collectives
 	const length = pages.length;
 	const allTabs = [];
 
 	for (let ind = 0; ind < length; ind += 1) {
-		allTabs.push(getCollective(auth, ID, pages[ind]));
+		allTabs.push(getCollective(auth, id, pages[ind]));
 	}
 
 	req.collectives = [];
@@ -70,7 +91,7 @@ const listCollectives = async (req, res, next) => {
 /**
  * Retrieves a spreadsheet from the Google API and return its data as an object
  * @param {object} auth - auth object to authenticate the request
- * @param {String} spreadsheetId - ID of the spreadsheet
+ * @param {String} spreadsheetId - id of the spreadsheet
  * @param {String} range - range of data to be collected
  * @returns {Promise} collectivesPromise - promise that resolves with the object
  * containing the spreadsheet's data
@@ -147,4 +168,9 @@ const generateCharts = async (req, res) => {
 	return res.sendFile(pathOfFile);
 };
 
-module.exports = { listCollectives, generateCharts, authenticate };
+module.exports = {
+	listCollectives,
+	generateCharts,
+	authenticate,
+	setResocieSheet,
+};

@@ -16,13 +16,16 @@ router.route("/")
 
 router.route("/import")
 	.get(
-		twitterCtrl.setCollectivesParams,
 		spreadsheetsCtrl.authenticate,
+		spreadsheetsCtrl.setResocieSheet,
 		spreadsheetsCtrl.listCollectives,
 		twitterCtrl.importData,
 	);
 
 router.route("/:username")
+	.get(twitterCtrl.getUser);
+
+router.route("/:username/latest")
 	.get(twitterCtrl.userLastSample);
 
 router.route("/:username/:query")

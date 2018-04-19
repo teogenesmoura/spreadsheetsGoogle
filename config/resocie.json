@@ -1,6 +1,6 @@
 {
 	"spreadsheets": [{
-		"ID": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
+		"id": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
 		"name": "Grupos",
 		"periods": [
 			"dez-2017",
@@ -24,6 +24,17 @@
 			"followersCol": 5,
 			"dateCol": 6
 		}],
+		"twitterRange": {
+			"nameRow": 0,
+			"profileRow": 7,
+			"tweetsRow": 8,
+			"followingRow": 9,
+			"followersRow": 10,
+			"likesRow": 11,
+			"momentsRow": 12,
+			"campaignsRow": 13,
+			"dateRow": 14
+		},
 		"range": [{
 			"nameCol": 0,
 			"twitterMin": 7,

@@ -407,11 +407,6 @@ const importAccounts = async (req, res) => {
 			const cRow = cSheet[posRow];
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (cRow[nameCol] === "ORGANIZAÇÕES DA SOCIEDADE CIVIL") {
-				console.log("Categoria Prox.");
-				console.log(categories[cCategory + 1]);
-			}
-
 			if (cRow[nameCol] === categories[cCategory + 1]) {
 				cCategory += 1;
 				continue; // eslint-disable-line no-continue
@@ -424,7 +419,7 @@ const importAccounts = async (req, res) => {
 
 			// se não existe link para conta do facebook
 			let accountLink;
-			if (!(cRow[linkCol]) || cRow[linkCol] === "-" || cRow[linkCol] === "s" || cRow[linkCol] === "s/") {
+			if (isCelInvalid(cRow[linkCol])) {
 				accountLink = null;
 			} else {
 				accountLink = cRow[linkCol];
@@ -436,27 +431,34 @@ const importAccounts = async (req, res) => {
 					class: categories[cCategory],
 					link: accountLink,
 				});
+
 				actors[cRow[nameCol]] = newAccount;
 			}
 
 			if (accountLink) {
 				for (let posRow2 = linkCol; posRow2 <= dateCol; posRow2 += 1) {
-					if (!(cRow[posRow2]) || cRow[posRow2] === "-" || cRow[posRow2] === "s" || cRow[posRow2] === "s/") {
+					if (isCelInvalid(cRow[posRow2])) {
 						cRow[posRow2] = null;
-					} else if (posRow2 === likesCol || posRow2 === followersCol) {
+					} else if (posRow2 === likesCol
+								|| posRow2 === followersCol) {
 						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
+
 						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
 					}
 				}
+
 				let newDate = cRow[dateCol];
 				if (newDate) newDate = newDate.split("/");
+
 				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
 				lastDate = newDate;
+
 				const newHistory = {
 					likes: cRow[likesCol],
 					followers: cRow[followersCol],
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
 				};
+
 				actors[cRow[nameCol]].history.push(newHistory);
 			}
 		}
@@ -465,6 +467,7 @@ const importAccounts = async (req, res) => {
 	Object.entries(actors).forEach((cActor) => {
 		savePromises.push(cActor[1].save());
 	});
+
 	await Promise.all(savePromises);
 	return listAccounts(req, res);
 };
@@ -477,6 +480,22 @@ const importAccounts = async (req, res) => {
  */
 const evolutionMsg = (param) => {
 	return `Evolução de ${param}`;
+};
+
+/**
+ * Data validation by recurrent criteria
+ * @param {String} value - data to be validated
+ * @returns true if it is not valid, false if it is valid
+ */
+const isCelInvalid = (value) => {
+	if (!(value)
+		|| value === "-"
+		|| value === "s"
+		|| value === "s/") {
+		return true;
+	}
+
+	return false;
 };
 
 module.exports = {

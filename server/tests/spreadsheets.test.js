@@ -19,7 +19,7 @@ describe("# GET /spreadsheets", () => {
 	it("should return server error with invalid code query", async (done) => {
 		await request(app)
 			.get("/spreadsheets?code=xxxxx")
-			.expect(httpStatus.INTERNAL_SERVER_ERROR);
+			.expect(httpStatus.UNAUTHORIZED);
 
 		done();
 	});

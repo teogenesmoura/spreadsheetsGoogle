@@ -13,11 +13,14 @@
       "<rootDir>/config/jest-setup.js"
     ]
   },
-  "author": "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)",
   "contributors": [
+    "Camila Pontes <cftpontes@gmail.com>",
+    "Larissa Bianca Lima <larissa_bianca@outlook.com>",
     "Mikael Mello <mikaelmmello@gmail.com>",
+    "Pedro Egler <pedroh.egler@hotmail.com>",
+    "Pedro Ivo Machado <pedroivomachado@hotmail.com>",
     "Rodrigo Guimarães <rodrigofegui@gmail.com>",
-    "Camila Pontes <cftpontes@gmail.com>"
+    "Teógenes Moura <mourateogenes@gmail.com> (http://www.teogenesmoura.com)"
   ],
   "repository": {
     "type": "git",

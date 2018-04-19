@@ -3,6 +3,7 @@ const ChartjsNode = require("chartjs-node");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
 const { client, authorizeUrl } = require("../../config/google-auth");
+const resocieSheet = require("../../config/resocie.json").spreadsheets[0];
 
 const fileName = "frentePopularInstagram.png";
 const pathOfFile = `${__dirname}/${fileName}`;
@@ -26,16 +27,38 @@ const authenticate = (req, res, next) => {
 
 	return cClient.getToken(code, async (err, tokens) => {
 		if (err) {
-			logger.error(`Error getting oAuth tokens: ${err}`);
+			const errorMsg = `Error getting oAuth tokens: ${err}`;
+			logger.error(errorMsg);
 			return res.status(httpStatus.UNAUTHORIZED).json({
 				error: true,
-				description: err,
+				description: errorMsg,
 			});
 		}
+
 		cClient.credentials = tokens;
 		req.client = cClient;
 		return next();
 	});
+};
+
+/**
+ * Assignment of the control variables of the acquisition of the desired spreadsheets
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const setResocieSheet = async (req, res, next) => {
+	const pagesName = [];
+
+	const length = resocieSheet.periods.length;
+	for (let ind = 0; ind < length; ind += 1) {
+		pagesName.push(`${resocieSheet.name} ${resocieSheet.periods[ind]}`);
+	}
+
+	resocieSheet.pages = pagesName;
+	req.sheet = resocieSheet;
+
+	next();
 };
 
 /**
@@ -49,22 +72,18 @@ const listCollectives = async (req, res, next) => {
 	const auth = req.client;
 
 	// Hard-coded strings of the spreadsheet's properties
-	const spreadsheetId = "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q";
-	const tabs = [
-		"'Grupos dez-2017'",
-		"'Grupos jan-2018'",
-		"'Grupos fev-2018'",
-		"'Grupos mar-2018'",
-		"'Grupos abril-2018'",
-	];
+	const id = req.sheet.id;
+	const pages = req.sheet.pages;
 
 	// Gets the collectives from all tabs and sets them all into req.collectives
-	const length = tabs.length;
-	req.collectives = [];
+	const length = pages.length;
 	const allTabs = [];
-	for (let i = 0; i < length; i += 1) {
-		allTabs.push(promisifiedListCollectives(auth, spreadsheetId, tabs[i]));
+
+	for (let ind = 0; ind < length; ind += 1) {
+		allTabs.push(getCollective(auth, id, pages[ind]));
 	}
+
+	req.collectives = [];
 	req.collectives = await Promise.all(allTabs);
 	return next();
 };
@@ -72,12 +91,12 @@ const listCollectives = async (req, res, next) => {
 /**
  * Retrieves a spreadsheet from the Google API and return its data as an object
  * @param {object} auth - auth object to authenticate the request
- * @param {String} spreadsheetId - ID of the spreadsheet
+ * @param {String} spreadsheetId - id of the spreadsheet
  * @param {String} range - range of data to be collected
  * @returns {Promise} collectivesPromise - promise that resolves with the object
  * containing the spreadsheet's data
  */
-const promisifiedListCollectives = (auth, spreadsheetId, range) => {
+const getCollective = (auth, spreadsheetId, range) => {
 	const collectivesPromise = new Promise((resolve, reject) => {
 		const sheets = google.sheets("v4");
 
@@ -91,7 +110,9 @@ const promisifiedListCollectives = (auth, spreadsheetId, range) => {
 				logger.error(`The API returned an error. Description: ${err}`);
 				reject(err);
 			}
+
 			const rows = res.data.values;
+
 			if (rows.length === 0) {
 				logger.error(`No data found on spreadsheet ${spreadsheetId} in range ${range}`);
 				reject(rows);
@@ -100,6 +121,7 @@ const promisifiedListCollectives = (auth, spreadsheetId, range) => {
 			}
 		});
 	});
+
 	return collectivesPromise;
 };
 
@@ -146,4 +168,9 @@ const generateCharts = async (req, res) => {
 	return res.sendFile(pathOfFile);
 };
 
-module.exports = { listCollectives, generateCharts, authenticate };
+module.exports = {
+	listCollectives,
+	generateCharts,
+	authenticate,
+	setResocieSheet,
+};

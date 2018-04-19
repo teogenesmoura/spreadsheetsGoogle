@@ -39,6 +39,19 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When requires, access should be granted
+	it("GET /facebook/help should return the routes' guide", async (done) => {
+		const res = await request(app).get("/facebook/help").expect(httpStatus.OK);
+
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toBeInstanceOf(Array);
+
+		done();
+	});
+
+	// When requires, access should be granted
 	it("GET /facebook/:name should return all data from a certain user", async (done) => {
 		const res = await request(app).get(`/facebook/${nameTest}`).expect(httpStatus.OK);
 
@@ -63,6 +76,25 @@ describe("Facebook endpoint", () => {
 		expect(res.body.results.history[2].likes).toEqual(45);
 		expect(res.body.results.history[2].followers).toEqual(1000);
 		expect(res.body.results.history[2].date).toEqual("1995-02-24T02:00:00.000Z");
+
+		done();
+	});
+
+	// When requires, access should be granted
+	it("GET /facebook/error should return message error", async (done) => {
+		const res = await request(app).get("/facebook/error").expect(httpStatus.OK);
+
+		expect(res.body).toHaveProperty("error");
+		expect(res.body.error).toBe(false);
+
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toEqual(null);
+
+		done();
+	});
+
+	it("GET /facebook/import shoul import all data from the spreadsheets to localBD", async (done) => {
+		await request(app).get("/facebook/import").expect(httpStatus.FOUND);
 
 		done();
 	});
@@ -101,6 +133,15 @@ describe("Facebook endpoint", () => {
 		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	// When required, access should be granted
+	it("GET /facebook/:name/qualquer should return an image (the graph)", async (done) => {
+		expect(nameTest).toBeDefined();
+
+		await request(app).get(`/facebook/${nameTest}/qualquer`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

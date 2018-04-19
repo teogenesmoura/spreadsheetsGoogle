@@ -1,6 +1,7 @@
 const httpStatus = require("http-status");
-const twitterAccount = require("../models/twitter.model");
 const Chart = require("chartjs-node");
+const twitterAccount = require("../models/twitter.model");
+const logger = require("../../config/logger");
 
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
@@ -25,6 +26,39 @@ const listAccounts = async (req, res) => {
 };
 
 /**
+ * Data recovery about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getUser = async (req, res) => {
+	try {
+		const account = req.account;
+		res.status(httpStatus.OK).json({
+			error: false,
+			account,
+		});
+	} catch (error) {
+		const errorMsg = "Internal server error while responding with account";
+		logger.error(`${errorMsg} - Details: ${error}`);
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
+	}
+};
+
+const matchTwitterUsername = (username) => {
+	try {
+		if (!(username) || !(username.includes("twitter.com"))) return null;
+		const twitterRegex = /((https?:\/\/)?(www\.)?twitter\.com\/)?(@|#!\/)?([A-Za-z0-9_]{1,15})(\/([-a-z]{1,20}))?/;
+		const splitUsername = username.match(twitterRegex);
+		return splitUsername[5];
+	} catch (err) {
+		return null;
+	}
+};
+
+/**
  * Parses the data of a spreadsheet to retrieve twitter accounts and add them into the database
  * @param {object} req - standard req object from the Express library
  * @param {object} res - standard res object from the Express library
@@ -34,100 +68,81 @@ const importData = async (req, res) => {
 	// <TODO>: Add error handling to avoid crashes and return 500 instead
 
 	// Different types of actors indicated in the spreadsheet
-	const types = [
-		"FRENTES / COLETIVOS",
-		"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
-		"PRÉ-CANDIDATURAS À PRESIDÊNCIA",
-	];
-	let cType = 0; // current type index
+	let cType = 1; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
 
 	const tabs = req.collectives;
 	const length = tabs.length;
+	const tRange = req.sheet.twitterRange;
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {
 			const row = cTab[j];
-			// row[0] = Actor name
-			// row[7] = Twitter username (profile url)
-			// row[8] = Number of tweets in that date
-			// row[9] = Number of people that account is following in that date
-			// row[10] = Number of followers in that date
-			// row[11] = Number of likes in that date
-			// row[12] = Number of moments in that date
-			// row[13] = List of campaigns in that date
-			// row[14] = Date of the sample
+			const name = row[tRange.nameRow];
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (row[0] === types[1]) {
-				cType = 1;
-				continue; // eslint-disable-line no-continue
-			} else if (row[0] === types[2]) {
-				cType = 2;
+			if (name === req.sheet.categories[cType] && cType < req.sheet.categories.length) {
+				cType += 1;
 				continue; // eslint-disable-line no-continue
 			}
 
 			// Se estiver em uma row com nome vazio ou a primeira
 			// continue
-			if (j <= 1 || !(row[0])) {
+			if (j <= 1 || !(name)) {
 				continue; // eslint-disable-line no-continue
 			}
 
 			// validation of username field with regex to capture only the username
 			// and not the whole profile url
-			let username;
-			if (!(row[7]) || !(row[7].includes("twitter.com"))) username = null;
-			else {
-				username = row[7].match(/((https?:\/\/)?(www\.)?twitter\.com\/)?(@|#!\/)?([A-Za-z0-9_]{1,15})(\/([-a-z]{1,20}))?/);
-				username = username[5];
-			}
+			const username = matchTwitterUsername(row[tRange.profileRow]);
 
-			// if current actors hasnt been defined yet, create a new schema
-			if (actors[row[0]] === undefined) {
+			// if current actor hasnt been defined yet, create a new schema
+			if (actors[name] === undefined) {
 				const newAccount = twitterAccount({
-					name: row[0],
+					name: name,
 					username: username,
-					type: types[cType],
+					type: req.sheet.categories[cType - 1],
 				});
-				actors[row[0]] = newAccount;
+				actors[name] = newAccount;
 			}
 
-			// if current actor has a twitter username, add a sample
-			if (username) {
-				// Checks all rows for "empty" fields, magic strings that are used
-				// to represent no data
-				for (let k = 8; k <= 14; k += 1) {
-					if (!(row[k]) || row[k] === "s/" || row[k] === "s") {
-						row[k] = null;
-					} else if (k <= 11) {
-						// if string is not empty, remove all dots and commas to avoid
-						// real numbers
-						row[k] = row[k].replace(/\.|,/g, "");
-					}
+			// if current actor does not have a twitter username, continue
+			if (username === null) continue; // eslint-disable-line no-continue
+
+			// Defines sample and adds it to the actor document
+			const sample = {
+				date: row[tRange.dateRow],
+				likes: row[tRange.likesRow],
+				followers: row[tRange.followersRow],
+				following: row[tRange.followingRow],
+				moments: row[tRange.momentsRow],
+				tweets: row[tRange.tweetsRow],
+				campaigns: row[tRange.campaignsRow],
+			};
+
+			// validates all keys to a sample
+			Object.entries(sample).forEach(([key, value]) => { // eslint-disable-line no-loop-func
+				if (key === "date") {
+					// Parses the date of the sample and use the last one if something wrong happens
+					let newDate = value;
+					if (newDate) newDate = newDate.split("/");
+					if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+					lastDate = newDate;
+					sample[key] = new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`);
+				} else if (!(value) || value === "s/" || value === "s") {
+					sample[key] = null;
+				} else if (key !== "campaigns") {
+					// if string is not empty, remove all dots and commas to avoid
+					// real numbers
+					sample[key] = value.replace(/\.|,/g, "");
 				}
+			});
 
-				// Parses the date of the sample and use the last one if something wrong happens
-				let newDate = row[14];
-				if (newDate) newDate = newDate.split("/");
-				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
-				lastDate = newDate;
-
-				// Defines sample and adds it to the actor document
-				const sample = {
-					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
-					likes: row[11],
-					followers: row[10],
-					following: row[9],
-					moments: row[12],
-					tweets: row[8],
-					campaigns: (row[13] ? row[13].split("#") : []),
-				};
-				actors[row[0]].samples.push(sample);
-			}
+			actors[name].samples.push(sample);
 		}
 	}
 
@@ -357,6 +372,7 @@ module.exports = {
 	listAccounts,
 	loadAccount,
 	setSampleKey,
+	getUser,
 	createDataset,
 	importData,
 	drawLineChart,

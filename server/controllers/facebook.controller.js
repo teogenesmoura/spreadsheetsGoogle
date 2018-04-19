@@ -2,9 +2,7 @@ const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
-
-const likesType = "likes";
-const followersType = "followers";
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
 const chartSize = 600;
 
@@ -40,6 +38,28 @@ const listAccounts = async (req, res) => {
 };
 
 /**
+ * Route Guide Page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const help = async (req, res) => {
+	const routes = [{
+		root: "/ - Lista com todos os usuários registrados no banco de dados;",
+		help: "/help - Exibição desta lista guia das rotas;",
+		import: "/import - Aquisição dos dados, referente ao Facebook, armazenados nas planilhas do Google;",
+		user: "/:name - Exibição de todos os dados registrados sobre um dado usuário;",
+		latest: "/latest/:name - Exibição do último histórico válido para um dado usuário;",
+		likes: "/:name/likes - Exibição da evolução de curtidas para um dado usuário;",
+		followers: "/:name/followers - Exibição da evolução de seguidores para um dado usuários.",
+	}];
+
+	res.status(httpStatus.OK).json({
+		error: false,
+		results: routes,
+	});
+};
+
+/**
  * Look for a specific registered Facebook account, by name.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -49,7 +69,7 @@ const listAccounts = async (req, res) => {
  */
 const loadAccount = async (req, res, next, name) => {
 	try {
-		const account = await Facebook.findOne({ name }, "-_id");
+		const account = await Facebook.findOne({ name }, "-_id -__v");
 
 		req.account = account;
 
@@ -148,10 +168,10 @@ const setHistoryKey = async (req, res, next) => {
 	let chartTitle;
 
 	switch (historyKey) {
-	case likesType:
+	case ResocieSheets.types[0].likesType:
 		chartTitle = evolutionMsg("curtidas");
 		break;
-	case followersType:
+	case ResocieSheets.types[0].followersType:
 		chartTitle = evolutionMsg("seguidores");
 		break;
 	default:
@@ -200,9 +220,9 @@ const getDataset = async (req, res, next) => {
 
 	const dataSet = [{
 		data: dataUser,
-		backgroundColor: blueTones[colorCtrl += 1],
-		borderColor: white,
-		fill: true,
+		backgroundColor: white,
+		borderColor: blueTones[colorCtrl += 1],
+		fill: false,
 		label: `${req.account.name} (${req.account.link})`,
 	}];
 
@@ -341,32 +361,91 @@ const plotLineChart = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const signUpInit = async (req, res) => {
-	console.log("Inserção de dados no banco");
+const importAccounts = async (req, res) => {
+	const tabs = req.collectives;
+	const length = tabs.length;
+	const actors = {};
+	const categories = req.sheet.categories;
+	const facebookRange = req.sheet.facebookRange;
+	const nameCol = req.sheet.range[0].nameCol;
+	const linkCol = facebookRange[0].linkCol;
+	const likesCol = facebookRange[0].likesCol;
+	const followersCol = facebookRange[0].followersCol;
+	const dateCol = facebookRange[0].dateCol;
+	let cCategory = 0;
+	let lastDate;
 
-	//	Atualização de dados
-	Facebook.findOne({ name: "Rodrigo" }, (err, account) => {
-		if (err) console.log(`error ${err}`);
+	for (let posSheet = 0; posSheet < length; posSheet += 1) {
+		const cSheet = tabs[posSheet];
+		const rowsCount = cSheet.length;
+		cCategory = 0;
 
-		account.name = "Rodrigo F.G.";
-		account.save((error) => {
-			if (error) console.log(`error ${error}`);
-			console.log("success update");
-		});
+		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
+			const cRow = cSheet[posRow];
+			// Se estivermos na row que indicao o novo tipo, atualiza
+			// a string do tipo atual e continua para a próxima row
+			if (cRow[nameCol] === categories[cCategory + 1]) {
+				cCategory += 1;
+				continue; // eslint-disable-line no-continue
+			}
+
+			// se o nome for vazio ou o primeiro, pular
+			if (!cRow[nameCol] || posRow < 1) {
+				continue; // eslint-disable-line no-continue
+			}
+
+			// se não existe link para conta do facebook
+			let accountLink;
+			if (isCellValid(cRow[linkCol])) {
+				accountLink = cRow[linkCol];
+			} else {
+				accountLink = null;
+			}
+
+			if (actors[cRow[nameCol]] === undefined) {
+				const newAccount = Facebook({
+					name: cRow[nameCol],
+					class: categories[cCategory],
+					link: accountLink,
+				});
+
+				actors[cRow[nameCol]] = newAccount;
+			}
+
+			if (accountLink) {
+				for (let posRow2 = linkCol; posRow2 <= dateCol; posRow2 += 1) {
+					if (!isCellValid(cRow[posRow2])) {
+						cRow[posRow2] = null;
+					} else if (posRow2 === likesCol	|| posRow2 === followersCol) {
+						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
+
+						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
+					}
+				}
+
+				let newDate = cRow[dateCol];
+				if (newDate) newDate = newDate.split("/");
+
+				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				lastDate = newDate;
+
+				const newHistory = {
+					likes: cRow[likesCol],
+					followers: cRow[followersCol],
+					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
+				};
+
+				actors[cRow[nameCol]].history.push(newHistory);
+			}
+		}
+	}
+	const savePromises = [];
+	Object.entries(actors).forEach((cActor) => {
+		savePromises.push(cActor[1].save());
 	});
 
-	//	Incremento no histórico temporal
-	Facebook.findOne({ name: "Rodrigo F.G." }, (err, account) => {
-		if (err) console.log(`error ${err}`);
-		const history = { likes: 24, followers: 240, date: Date.now() };
-		account.history.push(history);
-		account.save((error) => {
-			if (error) console.log(`error ${error}`);
-			console.log("success update");
-		});
-	});
-
-	res.redirect("/facebook");
+	await Promise.all(savePromises);
+	return res.redirect("/facebook");
 };
 
 /**
@@ -379,8 +458,22 @@ const evolutionMsg = (param) => {
 	return `Evolução de ${param}`;
 };
 
+/**
+ * Data validation by recurrent criteria
+ * @param {String} value - data to be validated
+ * @returns true if it is not valid, false if it is valid
+ */
+const isCellValid = (value) => {
+	if (!(value) || value === "-" || value === "s" || value === "s/") {
+		return false;
+	}
+
+	return true;
+};
+
 module.exports = {
 	listAccounts,
+	help,
 	loadAccount,
 	getUser,
 	getLatest,
@@ -389,5 +482,5 @@ module.exports = {
 	getChartLimits,
 	getConfigLineChart,
 	plotLineChart,
-	signUpInit,
+	importAccounts,
 };

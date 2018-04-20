@@ -367,7 +367,7 @@ const importAccounts = async (req, res) => {
 	const actors = {};
 	const categories = req.sheet.categories;
 	const facebookRange = req.sheet.facebookRange;
-	const nameCol = req.sheet.range[0].nameCol;
+	const nameCol = req.sheet.range.nameRow;
 	const linkCol = facebookRange[0].linkCol;
 	const likesCol = facebookRange[0].likesCol;
 	const followersCol = facebookRange[0].followersCol;

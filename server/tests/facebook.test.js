@@ -20,7 +20,7 @@ afterAll(async () => {
  * Tests behavior of sad path for now.
 */
 describe("Facebook endpoint", () => {
-	let nameTest;
+	let accountId;
 
 	// When required, access should be granted
 	it("GET /facebook should return a JSON with all the users in the db", async (done) => {
@@ -33,8 +33,7 @@ describe("Facebook endpoint", () => {
 		expect(res.body.results).toBeInstanceOf(Array);
 		expect(res.body.results.length).toEqual(facebookStub.length);
 
-		const splitLink = res.body.results[0].href.split("/");
-		nameTest = splitLink[splitLink.length - 1];
+		accountId = res.body.results[0]._id; // eslint-disable-line
 
 		done();
 	});
@@ -54,7 +53,7 @@ describe("Facebook endpoint", () => {
 
 	// When requires, access should be granted
 	it("GET /facebook/:name should return all data from a certain user", async (done) => {
-		const res = await request(app).get(`/facebook/${nameTest}`).expect(httpStatus.OK);
+		const res = await request(app).get(`/facebook/${accountId}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
@@ -82,14 +81,14 @@ describe("Facebook endpoint", () => {
 
 	// When requires, access should be granted
 	it("GET /facebook/error should return message error", async (done) => {
-		const res = await request(app).get("/facebook/error").expect(httpStatus.OK);
+		const res = await request(app)
+			.get("/facebook/error")
+			.expect(httpStatus.INTERNAL_SERVER_ERROR);
 
 		expect(res.body).toHaveProperty("error");
-		expect(res.body.error).toBe(false);
+		expect(res.body.error).toBe(true);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toEqual(null);
-
+		expect(res.body).toHaveProperty("description");
 		done();
 	});
 
@@ -101,7 +100,7 @@ describe("Facebook endpoint", () => {
 
 	// When requires, access should be granted
 	it("GET /facebook/latest/:username should return the latest data from a user", async (done) => {
-		const res = await request(app).get(`/facebook/latest/${nameTest}`).expect(httpStatus.OK);
+		const res = await request(app).get(`/facebook/latest/${accountId}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
@@ -117,9 +116,9 @@ describe("Facebook endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /facebook/:username/likes should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+		expect(accountId).toBeDefined();
 
-		const res = await request(app).get(`/facebook/${nameTest}/likes`).expect(httpStatus.OK);
+		const res = await request(app).get(`/facebook/${accountId}/likes`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
 
@@ -128,9 +127,9 @@ describe("Facebook endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /facebook/:username/followers should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+		expect(accountId).toBeDefined();
 
-		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);
+		const res = await request(app).get(`/facebook/${accountId}/followers`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
 
@@ -139,9 +138,9 @@ describe("Facebook endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /facebook/:username/qualquer should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+		expect(accountId).toBeDefined();
 
-		await request(app).get(`/facebook/${nameTest}/qualquer`).expect(httpStatus.NOT_FOUND);
+		await request(app).get(`/facebook/${accountId}/qualquer`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

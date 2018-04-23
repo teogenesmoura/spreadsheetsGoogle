@@ -174,19 +174,19 @@ const showLinkMap = async (req, res) => {
 		links: [
 			{
 				rel: "social-network-facebook",
-				href: "http://localhost:3000/facebook/",
+				href: `${req.protocol}://${req.get("host")}/facebook/`,
 			},
 			{
 				rel: "social-network-instagram",
-				href: "http://localhost:3000/instagram/",
+				href: `${req.protocol}://${req.get("host")}/instagram/`,
 			},
 			{
 				rel: "social-network-twitter",
-				href: "http://localhost:3000/twitter/",
+				href: `${req.protocol}://${req.get("host")}/twitter/`,
 			},
 			{
 				rel: "social-network-youtube",
-				href: "http://localhost:3000/youtube/",
+				href: `${req.protocol}://${req.get("host")}/youtube/`,
 			},
 		],
 	});

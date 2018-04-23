@@ -29,20 +29,20 @@ router.route("/import")
  * Access to the data home page of a given user.
  * Presentation of all the data registered.
  */
-router.route("/:username")
+router.route("/:id")
 	.get(facebookCtrl.getUser);
 
 /**
  * Access to the latest valid data of a given user.
  */
-router.route("/latest/:username")
+router.route("/latest/:id")
 	.get(facebookCtrl.getLatest);
 
 
 /**
  * Presentation of the temporal evolution of a given query for a given user.
  */
-router.route("/:username/:query")
+router.route("/:id/:query")
 	.get(
 		facebookCtrl.setHistoryKey,
 		facebookCtrl.getDataset,
@@ -54,6 +54,6 @@ router.route("/:username/:query")
 /**
  * Search for a user in the database
  */
-router.param("username", facebookCtrl.loadAccount);
+router.param("id", facebookCtrl.loadAccount);
 
 module.exports = router;

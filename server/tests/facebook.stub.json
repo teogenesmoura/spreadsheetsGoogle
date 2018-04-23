@@ -2,8 +2,9 @@
 	"facebook": [
 		{
 			"name": "José Maria",
+			"username": "jose",
 			"class": "joseClass",
-			"link": "joseLink",
+			"link": "joseLink/jose/",
 			"history": [
 				{
 					"likes": 42,
@@ -24,8 +25,9 @@
 		},
 		{
 			"name": "Ana Francisca",
+			"username": "ana",
 			"class": "anaClass",
-			"link": "anaLink",
+			"link": "anaLink/ana/",
 			"history": [
 				{
 					"likes": 24,

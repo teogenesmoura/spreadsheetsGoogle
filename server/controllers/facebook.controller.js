@@ -19,8 +19,18 @@ const white = "#ffffff";
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name -_id");
-
+		const accounts = await Facebook.find({}, "name");
+		const length = accounts.length;
+		for (let i = 0; i < length; i += 1) {
+			accounts[i] = accounts[i].toObject();
+			accounts[i].links = [];
+			const id = accounts[i]._id; // eslint-disable-line
+			const link = {
+				rel: "facebook.account",
+				href: `${req.protocol}://${req.get("host")}/facebook/${id}`,
+			};
+			accounts[i].links.push(link);
+		}
 		res.status(httpStatus.OK).json({
 			error: false,
 			results: accounts,
@@ -67,17 +77,18 @@ const help = async (req, res) => {
  * @param {object} name - standard identifier of a Facebook account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, name) => {
+const loadAccount = async (req, res, next, id) => {
 	try {
-		const account = await Facebook.findOne({ name }, "-_id -__v");
+		const account = await Facebook.findOne({ _id: id }, "	");
 
 		req.account = account;
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error loading user: ${name} from database`;
+		let errorMsg = `Error loading user ${id} from database`;
+		errorMsg = `${errorMsg} - Details: ${error}`;
 
-		logger.error(`${errorMsg} - Details: ${error}`);
+		logger.error(errorMsg);
 
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
@@ -408,6 +419,11 @@ const importAccounts = async (req, res) => {
 					class: categories[cCategory],
 					link: accountLink,
 				});
+
+				if (accountLink != null) {
+					const splitAccLink = accountLink.split("/");
+					newAccount.username = splitAccLink[splitAccLink.length - 2];
+				}
 
 				actors[cRow[nameCol]] = newAccount;
 			}

@@ -12,17 +12,22 @@ const logger = require("../../config/logger");
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await twitterAccount.find({}, "username");
-		const accLinks = [];
-		accounts.forEach((account) => {
-			const link = {};
-			link.rel = account.username;
-			link.href = `http://localhost:3000/twitter/${account.username}`;
-			accLinks.push(link);
-		});
+		const accounts = await twitterAccount.find({}, "name username");
+		const length = accounts.length;
+		for (let i = 0; i < length; i += 1) {
+			accounts[i] = accounts[i].toObject();
+			accounts[i].links = [];
+			if (accounts[i].username) {
+				const link = {
+					rel: "twitter.account",
+					href: `${req.protocol}://${req.get("host")}/twitter/${accounts[i].username}`,
+				};
+				accounts[i].links.push(link);
+			}
+		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: accLinks,
+			usernames: accounts,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

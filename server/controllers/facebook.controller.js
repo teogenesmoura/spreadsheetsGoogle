@@ -19,11 +19,18 @@ const white = "#ffffff";
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name -_id");
+		const accounts = await Facebook.find({}, "name username");
+		const accLinks = [];
+		accounts.forEach((account) => {
+			const link = {};
+			link.rel = account.name;
+			link.href = `http://localhost:3000/facebook/${account.username}`;
+			accLinks.push(link);
+		});
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: accounts,
+			results: accLinks,
 		});
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
@@ -67,15 +74,15 @@ const help = async (req, res) => {
  * @param {object} name - standard identifier of a Facebook account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, name) => {
+const loadAccount = async (req, res, next, username) => {
 	try {
-		const account = await Facebook.findOne({ name }, "-_id -__v");
+		const account = await Facebook.findOne({ username }, "-_id -__v");
 
 		req.account = account;
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error loading user: ${name} from database`;
+		const errorMsg = `Error loading user: ${username} from database`;
 
 		logger.error(`${errorMsg} - Details: ${error}`);
 
@@ -408,6 +415,11 @@ const importAccounts = async (req, res) => {
 					class: categories[cCategory],
 					link: accountLink,
 				});
+
+				if (accountLink != null) {
+					const splitAccLink = accountLink.split("/");
+					newAccount.username = splitAccLink[splitAccLink.length - 2];
+				}
 
 				actors[cRow[nameCol]] = newAccount;
 			}

@@ -5,8 +5,9 @@ const facebookRoute = require("./facebook.route");
 
 const router = express.Router();
 
+router.use("/", spreadsheetsRoute);
 // mount spreadsheets routes at /spreadsheets
-router.use("/spreadsheets", spreadsheetsRoute);
+// router.use("/spreadsheets", spreadsheetsRoute);
 
 // mount facebook routes at /facebook
 router.use("/facebook", facebookRoute);

@@ -27,7 +27,7 @@ describe("Twitter endpoint", () => {
 		expect(res.body).toHaveProperty("usernames");
 		expect(res.body.usernames).toBeInstanceOf(Array);
 		expect(res.body.usernames.length).toEqual(twitterMockAccounts.length);
-		usernameTest = res.body.usernames[0].username;
+		usernameTest = res.body.usernames[0].rel;
 		done();
 	});
 

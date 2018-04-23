@@ -30,10 +30,11 @@ describe("Facebook endpoint", () => {
 		expect(res.body.error).toBe(false);
 
 		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Object);
+		expect(res.body.results).toBeInstanceOf(Array);
 		expect(res.body.results.length).toEqual(facebookStub.length);
 
-		nameTest = res.body.results[0].name;
+		const splitLink = res.body.results[0].href.split("/");
+		nameTest = splitLink[splitLink.length - 1];
 
 		done();
 	});
@@ -46,7 +47,7 @@ describe("Facebook endpoint", () => {
 		expect(res.body.error).toBe(false);
 
 		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Array);
+		expect(res.body.results).toBeInstanceOf(Object);
 
 		done();
 	});
@@ -62,7 +63,7 @@ describe("Facebook endpoint", () => {
 		expect(res.body.results).toBeInstanceOf(Object);
 		expect(res.body.results.name).toEqual("José Maria");
 		expect(res.body.results.class).toEqual("joseClass");
-		expect(res.body.results.link).toEqual("joseLink");
+		expect(res.body.results.link).toEqual("joseLink/jose/");
 		expect(res.body.results.history.length).toEqual(3);
 
 		expect(res.body.results.history[0].likes).toEqual(42);
@@ -76,7 +77,6 @@ describe("Facebook endpoint", () => {
 		expect(res.body.results.history[2].likes).toEqual(45);
 		expect(res.body.results.history[2].followers).toEqual(1000);
 		expect(res.body.results.history[2].date).toEqual("1995-02-24T02:00:00.000Z");
-
 		done();
 	});
 
@@ -100,7 +100,7 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When requires, access should be granted
-	it("GET /facebook/latest/:name should return the latest data from a user", async (done) => {
+	it("GET /facebook/latest/:username should return the latest data from a user", async (done) => {
 		const res = await request(app).get(`/facebook/latest/${nameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -116,7 +116,7 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When required, access should be granted
-	it("GET /facebook/:name/likes should return an image (the graph)", async (done) => {
+	it("GET /facebook/:username/likes should return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${nameTest}/likes`).expect(httpStatus.OK);
@@ -127,7 +127,7 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When required, access should be granted
-	it("GET /facebook/:name/followers should return an image (the graph)", async (done) => {
+	it("GET /facebook/:username/followers should return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${nameTest}/followers`).expect(httpStatus.OK);
@@ -138,7 +138,7 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When required, access should be granted
-	it("GET /facebook/:name/qualquer should return an image (the graph)", async (done) => {
+	it("GET /facebook/:username/qualquer should return an image (the graph)", async (done) => {
 		expect(nameTest).toBeDefined();
 
 		await request(app).get(`/facebook/${nameTest}/qualquer`).expect(httpStatus.NOT_FOUND);

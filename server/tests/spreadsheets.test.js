@@ -2,9 +2,6 @@ const request = require("supertest");
 const httpStatus = require("http-status");
 const app = require("../../index");
 
-/**
- * Test case for the /spreadsheets endpoint. Tests behavior of sad path for now
- */
 describe("# GET /", () => {
 	// When required, access should be granted
 	it("GET / should the name and link to each social media", async (done) => {

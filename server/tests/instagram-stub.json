@@ -1,0 +1,53 @@
+{
+    "instagram":
+    [
+        {
+            "name": "Jorge da Silva",
+            "username": "foo",
+            "history": [
+                {
+                "date": "2018-04-01T12:30:00.500Z",
+                "followers": 10,
+                "following": 1,
+                "num_of_posts": 10
+                },
+                {
+                "date": "2018-04-05T12:30:00.505Z",
+                "followers": 15,
+                "following": 6,
+                "num_of_posts": 15
+                },
+                {
+                "date": "",
+                "followers": 12,
+                "following": 8,
+                "num_of_posts": 17
+                }
+            ]
+        },
+        {
+            "name": "Maria da Silva",
+            "username": "bar",
+            "history": [
+                {
+                "date": "2017-02-15T12:30:00.500Z",
+                "followers": 100,
+                "following": 5,
+                "num_of_posts": 30
+                },
+                {
+                "date": "2017-12-24T12:30:00.505Z",
+                "followers": 86,
+                "following": 5,
+                "num_of_posts": 31
+                },
+                {
+                "date": "2018-01-01T0:05:0.412Z",
+                "followers": 90,
+                "following": 6,
+                "num_of_posts": 32
+                }
+            ]
+        }
+    ]
+}

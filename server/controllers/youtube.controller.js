@@ -3,7 +3,12 @@ const youtubeAccount = require("../models/youtube.model");
 const ChartNode = require("chartjs-node");
 const logger = require("../../config/logger");
 
-// Carrega todos os usuários do banco de dados
+/**
+ * Search for all YouTube Accounts on the database.
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @return {object} accounts - list all accounts showing the name of valid accounts
+ */
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await youtubeAccount.find({}, "name -_id");
@@ -12,15 +17,22 @@ const listAccounts = async (req, res) => {
 			accounts: accounts,
 		});
 	} catch (error) {
-		const msg = "Erro ao carregar os usuários do YouTube do banco de dados";
-		logger.error(msg);
+		const msgError = "Erro ao carregar os usuários do YouTube do banco de dados";
+		logger.error(msgError);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
-			description: msg,
+			description: msgError,
 		});
 	}
 };
+
+/**
+ * Insert YouTube accounts available from spreadsheet to database
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @return {redirect} - redirect for /youtube page if import successful
+ */
 
 const importData = async (req, res) => {
 	const actors = {};
@@ -31,38 +43,40 @@ const importData = async (req, res) => {
 	const nameRow = req.sheet.range.nameRow;
 	const dateRow = youtubeRange.dateRow;
 	const channelRow = youtubeRange.channelRow;
-	const subscribRow = youtubeRange.subscribRow;
+	const subscribsRow = youtubeRange.subscribsRow;
 	const videosRow = youtubeRange.videosRow;
 	const viewsRow = youtubeRange.viewsRow;
 	let cCategory;
 	let lastDate;
 
-	for (let ind = 0; ind < length; ind += 1) {
-		const cTab = tabs[ind];
+	for (let i = 0; i < length; i += 1) {
+		const cTab = tabs[i];
 		const rowsCount = cTab.length;
 		cCategory = 0;
 
 		for (let j = 0; j < rowsCount; j += 1) {
 			const cRow = cTab[j];
 
+			// se a row for vazia ou a primeira, continua
 			if (j < 1 || !(cRow[nameRow])) {
 				continue; // eslint-disable-line no-continue
 			}
 
+			// Se estivermos na row que indicao o novo tipo, atualiza
+			// a string do tipo atual e continua para a próxima row
 			if (cRow[nameRow] === categories[cCategory + 1]) {
 				cCategory += 1;
 				continue; // eslint-disable-line no-continue
 			}
-			// Se estiver em uma row com nome vazio ou a primeira
-			// continue
-
+			// Se o canal é válido, cria um novo schema para o canal
 			let channel;
 			if (isCellValid(cRow[channelRow])) {
 				channel = cRow[channelRow];
 			} else {
 				channel = null;
 			}
-			// Cria um novo schema para caso nao exista no bd
+
+			// Caso não exista o usuario atual, cria um novo schema para o usuario
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = youtubeAccount({
 					name: cRow[nameRow],
@@ -70,35 +84,29 @@ const importData = async (req, res) => {
 					channelUrl: channel,
 				});
 				actors[cRow[nameRow]] = newAccount;
-			}	
+			}
 
+			// Se o canal não for null verifica se os inscritos,
+			// videos e vizualizações são válidos
 			if (channel) {
-				console.log(channel);
-				for (let k = subscribRow; k <= viewsRow; k += 1) {
-					console.log("valor k");
-					console.log(k);
-					console.log(cRow[k]);
-
+				for (let k = subscribsRow; k <= viewsRow; k += 1) {
 					if (!isCellValid(cRow[k])) {
-						console.log("invalido");
 						cRow[k] = null;
 					} else {
-						// restringir esta parte
 						cRow[k] = parseInt(cRow[k].replace(/\.|,/g, ""), 10);
-						console.log(cRow);
 						if (Number.isNaN(cRow[k])) cRow[k] = null;
 					}
 				}
 
-				// Parses the date of the sample and use the last one if something wrong happens
+				// Insere a data no schema e caso ocorra erros insera a ultima data
 				let newDate = cRow[dateRow];
 				if (newDate) newDate = newDate.split("/");
 				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
 				lastDate = newDate;
 
-				// Defines sample and adds it to the actor document
+				// Define os schemas e adicioana os dados dos atores
 				const newHistory = {
-					subscribers: cRow[subscribRow],
+					subscribers: cRow[subscribsRow],
 					videos: cRow[videosRow],
 					views: cRow[viewsRow],
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
@@ -113,22 +121,30 @@ const importData = async (req, res) => {
 		savePromises.push(actors[cActor].save());
 	});
 	await Promise.all(savePromises);
+
 	return res.redirect("/youtube");
 };
 
-// Carrega uma conta de usuário específico
+/**
+ * Look for a specific registered Youtube account, by name.
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @param {object} name - standard identifier of a Youtube account
+ * @returns Execution of the next feature, over the data found
+ */
 const loadAccount = async (req, res, next, name) => {
 	try {
 		const account = await youtubeAccount.findOne({ name }, "-_id -_v");
 		req.account = account;
 		return next();
 	} catch (error) {
-		const msg = `Erro ao carregar o usuário ${name} no banco de dados`;
-		logger.error(msg);
+		const msgError = `Erro ao carregar o usuário ${name} no banco de dados`;
+		logger.error(msgError);
 
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
-			description: msg,
+			description: msgError,
 		});
 	}
 };
@@ -142,21 +158,29 @@ const getUser = async (req, res) => {
 			account: account,
 		});
 	} catch (error) {
-		const msg = "Erro interno do servidor enquanto buscava a conta";
-		logger.error(msg);
+		const msgError = "Erro interno do servidor enquanto buscava a conta";
+		logger.error(msgError);
 
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
-			description: msg,
+			description: msgError,
 		});
 	}
 };
 
+/**
+ * Layer to query requested identification
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the history key generated
+ */
 const setHistoryKey = async (req, res, next) => {
 	const historyKey = req.params.query;
 
 	// Título do gráfico gerado
 	let mainLabel;
+	const msgError = `Não existe a caracteristica ${historyKey} para o YouTube`;
 
 	// Analisa o caminho da rota que chegou nesta função para
 	// ter um título com o parâmetro correto.
@@ -171,12 +195,11 @@ const setHistoryKey = async (req, res, next) => {
 		mainLabel = "Evolução do número de usuários que segue";
 		break;
 	default:
-		const msg = `Não existe a caracteristica ${channelKey} para o YouTube`;
-		logger.error(msg);
+		logger.error(msgError);
 
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
-			description: msg,
+			description: msgError,
 		});
 	}
 
@@ -187,44 +210,54 @@ const setHistoryKey = async (req, res, next) => {
 	return next();
 };
 
-// Responde com uma imagem (gráfico)
+/**
+ * Recovery of the requested historical data set
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data set generated
+ */
 const getDataset = async (req, res, next) => {
 	// Carrega as samples da conta do usuário
 	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
 
 	const data = [];
-	// const labels = [];
 
 	// Itera sobre todas as samples e adiciona aquelas que tem o dado procurado
 	// na array de dados `data`
 	const length = history.length;
-	for (let ind = 0; ind < length; ind += 1) {
-		const value = history[ind][historyKey];
+	for (let i = 0; i < length; i += 1) {
+		const value = history[i][historyKey];
 
 		if (value !== undefined && value !== null) {
-			const date = new Date(history[ind].date);
+			const date = new Date(history[i].date);
 			data.push({
 				x: date,
 				y: value,
 			});
-			// labels.push(date);
 		}
 	}
 
 	const dataset = [{
 		data: data,
-		backgroundColor: "#ff0000",
-		borderColor: "#ffffff",
+		backgroundColor: "#000000",
+		borderColor: "#e62117",
 		fill: false,
-		label: `${req.account.name} (${req.account.chanelUrl})`,
+		label: `${req.account.name} (${req.account.channelUrl})`,
 	}];
 
 	req.chart.datasets = dataset;
 	next();
 };
 
-// Desenha um gráfico de linha que usa o tempo como eixo X
+/**
+ * Standard setting for generating a line chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
+ */
 const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
 	const datasets = req.chart.datasets;
@@ -273,8 +306,13 @@ const drawLineChart = async (req, res) => {
 	res.end();
 };
 
+/**
+ * Data validation by recurrent criteria
+ * @param {String} value - data to be validated
+ * @returns true if it is not valid, false if it is valid
+ */
 const isCellValid = (value) => {
-	if (!(value) || value === "-" || value === "s" || value === "s/" || value === "S" || value ==="S/") {
+	if (!(value) || value === "-" || value === "s" || value === "s/" || value === "S" || value === "S/") {
 		return false;
 	}
 

@@ -8,12 +8,14 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(youtubeCtrl.listAccounts);
 
-// Importa os dados da tabela para o banco de dados
+// Importa os dados da tabela para o banco de dados -> youtube/import
 router.route("/import")
-	.get(spreadsheetsCtrl.authenticate, 
-		spreadsheetsCtrl.setResocieSheet, 
-		spreadsheetsCtrl.listCollectives, 
-		youtubeCtrl.importData);
+	.get(
+		spreadsheetsCtrl.authenticate,
+		spreadsheetsCtrl.setResocieSheet,
+		spreadsheetsCtrl.listCollectives,
+		youtubeCtrl.importData,
+	);
 
 // Lista os dados de um usuario especifico
 router.route("/:name")
@@ -23,7 +25,6 @@ router.route("/:name")
 router.route("/:name/:query")
 	.get(youtubeCtrl.getDataset, youtubeCtrl.drawLineChart);
 
-// Lista um usuario do banco de dados
 router.param("name", youtubeCtrl.loadAccount);
 
 router.param("query", youtubeCtrl.setHistoryKey);

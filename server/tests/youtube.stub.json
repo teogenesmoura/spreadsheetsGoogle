@@ -1,0 +1,54 @@
+{
+	"accounts": [
+		{
+			"name": "Mariana",
+			"category": "marianacategory",
+			"channelUrl": "youtube.com/user/marianachannel",
+			"history": [
+				{
+					"subscribers": 542,
+					"videos": 420,
+					"views": 24,
+					"date": "1994-12-24T02:00:00.000Z"
+				},
+				{
+					"subscribers": 500,
+					"videos": 840,
+					"views": 84,
+					"date": "1995-01-24T02:00:00.000Z"
+				},				
+				{
+					"subscribers": 532,
+					"videos": 1000,
+					"views": 420,
+					"date": "1995-02-24T02:00:00.000Z"
+				}
+			]
+		},
+		{
+			"name": "Luiza",
+			"category": "luizacategory",
+			"channelUrl": "youtube.com/channel/UCmo_qwwtofscJjjND_Pm-UA",
+			"history": [
+				{
+					"subscribers": 45,
+					"videos": 450,
+					"views": 45,
+					"date": "1994-12-24T02:00:00.000Z"
+				},
+				{
+					"subscribers": 100,
+					"videos": 840,
+					"views": 840,
+					"date": "1995-01-24T02:00:00.000Z"
+				},				
+				{
+					"subscribers": 250,
+					"videos": 1000,
+					"views": 4200,
+					"date": "1995-02-24T02:00:00.000Z"
+				}
+			]
+		}
+	]
+}

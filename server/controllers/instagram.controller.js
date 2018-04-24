@@ -29,6 +29,113 @@ const listAccounts = async (req, res) => {
 	}
 };
 
+const matchInstagramUsername = (profileUrl) => {
+	try {
+		if (!(profileUrl) || !(profileUrl.includes("instagram.com"))) return null;
+		const igRegex = /(https?:\/\/)?(www\.)?instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
+		const splitUsername = profileUrl.match(igRegex);
+		return splitUsername[3];
+	} catch (err) {
+		return null;
+	}
+};
+
+/**
+ * Parses the data of a spreadsheet to retrieve twitter accounts and add them into the database
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @returns {json} - { error: false } if successful
+ */
+const importData = async (req, res) => {
+	// <TODO>: Add error handling to avoid crashes and return 500 instead
+
+	// Different types of actors indicated in the spreadsheet
+	let cType = 1; // current type index
+	let lastDate; // date of last inserted sample
+	const actors = {}; // map of actor objects to avoid creating duplicates
+
+	const tabs = req.collectives;
+	const length = tabs.length;
+	const iRange = req.sheet.instagramRange;
+	for (let i = 0; i < length; i += 1) {
+		const cTab = tabs[i];
+
+		const rowsCount = cTab.length;
+		for (let j = 0; j < rowsCount; j += 1) {
+			const row = cTab[j];
+			const name = row[iRange.nameRow];
+
+			// Se estivermos na row que indicao o novo tipo, atualiza
+			// a string do tipo atual e continua para a próxima row
+			if (name === req.sheet.categories[cType] && cType < req.sheet.categories.length) {
+				cType += 1;
+				continue; // eslint-disable-line no-continue
+			}
+
+			// Se estiver em uma row com nome vazio ou a primeira
+			// continue
+			if (j <= 1 || !(name)) {
+				continue; // eslint-disable-line no-continue
+			}
+
+			// validation of username field with regex to capture only the username
+			// and not the whole profile url
+			const username = matchInstagramUsername(row[iRange.profileRow]);
+
+			// if current actor hasnt been defined yet, create a new schema
+			if (actors[name] === undefined) {
+				const newAccount = instagramAccount({
+					name: name,
+					username: username,
+					type: req.sheet.categories[cType - 1],
+				});
+				actors[name] = newAccount;
+			}
+
+			// if current actor does not have a twitter username, continue
+			if (username === null) continue; // eslint-disable-line no-continue
+
+			// Defines sample and adds it to the actor document
+			const sample = {
+				date: row[iRange.dateRow],
+				followers: row[iRange.followersRow],
+				following: row[iRange.followingRow],
+				num_of_posts: row[iRange.postsRow],
+			};
+
+			// validates all keys to a sample
+			Object.entries(sample).forEach(([key, value]) => { // eslint-disable-line no-loop-func
+				if (key === "date") {
+					// Parses the date of the sample and use the last one if something wrong happens
+					let newDate = value;
+					if (newDate) newDate = newDate.split("/");
+					if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+					lastDate = newDate;
+					sample[key] = new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`);
+				} else if (!(value) || value === "s/" || value === "s") {
+					sample[key] = null;
+				} else if (key !== "campaigns") {
+					// if string is not empty, remove all dots and commas to avoid
+					// real numbers
+					sample[key] = value.replace(/\.|,/g, "");
+				}
+			});
+
+			actors[name].history.push(sample);
+		}
+	}
+
+	// Executes save() for all actors and finishes when all of them finish
+	const savePromises = [];
+	Object.entries(actors).forEach(([key]) => {
+		savePromises.push(actors[key].save());
+	});
+	await Promise.all(savePromises);
+	return res.status(httpStatus.OK).json({
+		error: false,
+	});
+};
+
 const loadAccount = async (req, res, next, username) => {
 	try {
 		const account = await instagramAccount.findOne({ username });
@@ -106,7 +213,7 @@ const getLatest = async (req, res) => {
 };
 
 const setHistoryKey = async (req, res, next) => {
-	const historyKey = req.params.query;
+	let historyKey = req.params.query;
 	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
 
 	let chartTitle;
@@ -119,6 +226,7 @@ const setHistoryKey = async (req, res, next) => {
 		chartTitle = evolutionMsg("Seguidores");
 		break;
 	case postType:
+		historyKey = "num_of_posts";
 		chartTitle = evolutionMsg("Numero de postagens");
 		break;
 	default:
@@ -233,6 +341,7 @@ const evolutionMsg = (param) => {
 module.exports = {
 	listAccounts,
 	loadAccount,
+	importData,
 	getUser,
 	getLatest,
 	setHistoryKey,

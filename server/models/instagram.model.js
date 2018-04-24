@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const nameModel = "instagramAccounts";
-const collectionName = "agentAccount";
+const collectionName = "instagramAccount";
 
 /**
  * Modelo da coleção do Instagram para um banco de dados não relacional (MongoDB).
@@ -34,9 +34,13 @@ const instagramAccountSchema = new mongoose.Schema({
 		type: String,
 		default: null,
 	},
+	type: {
+		type: String,
+		default: null,
+	},
 	history: {
 		type: [instagramHistory],
-		default: null,
+		default: [],
 	},
 });
 

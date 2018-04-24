@@ -12,7 +12,19 @@ const logger = require("../../config/logger");
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await twitterAccount.find({}, "name username -_id");
+		const accounts = await twitterAccount.find({}, "name username");
+		const length = accounts.length;
+		for (let i = 0; i < length; i += 1) {
+			accounts[i] = accounts[i].toObject();
+			accounts[i].links = [];
+			if (accounts[i].username) {
+				const link = {
+					rel: "twitter.account",
+					href: `${req.protocol}://${req.get("host")}/twitter/${accounts[i].username}`,
+				};
+				accounts[i].links.push(link);
+			}
+		}
 		res.status(httpStatus.OK).json({
 			error: false,
 			usernames: accounts,

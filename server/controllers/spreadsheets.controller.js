@@ -168,9 +168,34 @@ const generateCharts = async (req, res) => {
 	return res.sendFile(pathOfFile);
 };
 
+const showLinkMap = async (req, res) => {
+	res.status(httpStatus.OK).json({
+		error: false,
+		links: [
+			{
+				rel: "social-network-facebook",
+				href: `${req.protocol}://${req.get("host")}/facebook/`,
+			},
+			{
+				rel: "social-network-instagram",
+				href: `${req.protocol}://${req.get("host")}/instagram/`,
+			},
+			{
+				rel: "social-network-twitter",
+				href: `${req.protocol}://${req.get("host")}/twitter/`,
+			},
+			{
+				rel: "social-network-youtube",
+				href: `${req.protocol}://${req.get("host")}/youtube/`,
+			},
+		],
+	});
+};
+
 module.exports = {
 	listCollectives,
 	generateCharts,
 	authenticate,
 	setResocieSheet,
+	showLinkMap,
 };

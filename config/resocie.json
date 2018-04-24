@@ -42,7 +42,15 @@
 			"videosRow": 21,
 			"viewsRow": 22
 		},
-		"range": {
+		"instagramRange": {
+			"nameRow": 0,
+			"profileRow": 15,
+			"followersRow": 16,
+			"followingRow": 17,
+			"postsRow": 18,
+			"dateRow": 14
+		},
+		"range": [{
 			"nameRow": 0,
 			"twitterMin": 7,
 			"twitterMax": 14,

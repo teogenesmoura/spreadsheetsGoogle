@@ -19,10 +19,8 @@ mongoose.connect(mongoUri, { keepAlive: 1 });
 mongoose.connection.on("error", () => {
 	throw new Error(`unable to connect to database: ${mongoUri}`);
 });
-
 mongoose.connection.once("open", () => {
 	logger.info(`Connected to database on host ${mongoUri}`);
-	console.log(`Connected to database on host ${mongoUri}`);
 });
 
 if (config.env !== "test") {

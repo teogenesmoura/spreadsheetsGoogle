@@ -50,7 +50,7 @@
 			"postsRow": 18,
 			"dateRow": 14
 		},
-		"range": [{
+		"range": {
 			"nameRow": 0,
 			"twitterMin": 7,
 			"twitterMax": 14,

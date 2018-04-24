@@ -11,7 +11,7 @@ const logger = require("../../config/logger");
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await youtubeAccount.find({}, "name -_id");
+		const accounts = await youtubeAccount.find({}, "name channelUrl -_id");
 		res.status(httpStatus.OK).json({
 			error: false,
 			accounts: accounts,

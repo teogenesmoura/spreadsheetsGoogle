@@ -18,12 +18,12 @@
 			"likesType": "likes",
 			"followersType": "followers"
 		}],
-		"facebookRange": [{
+		"facebookRange": {
 			"linkCol": 3,
 			"likesCol": 4,
 			"followersCol": 5,
 			"dateCol": 6
-		}],
+		},
 		"twitterRange": {
 			"nameRow": 0,
 			"profileRow": 7,
@@ -35,6 +35,13 @@
 			"campaignsRow": 13,
 			"dateRow": 14
 		},
+		"youtubeRange": {
+			"dateRow": 14,
+			"channelRow": 19,
+			"subscribsRow": 20,
+			"videosRow": 21,
+			"viewsRow": 22
+		},
 		"instagramRange": {
 			"nameRow": 0,
 			"profileRow": 15,
@@ -43,14 +50,12 @@
 			"postsRow": 18,
 			"dateRow": 14
 		},
-		"range": [{
-			"nameCol": 0,
+		"range": {
+			"nameRow": 0,
 			"twitterMin": 7,
 			"twitterMax": 14,
 			"instagramMin": 15,
-			"instagramMax": 18,
-			"youtubeMin": 19,
-			"youtubeMax": 22
-		}]
+			"instagramMax": 18
+		}
 	}]
 }

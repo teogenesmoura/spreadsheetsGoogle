@@ -20,7 +20,7 @@ afterAll(async () => {
 });
 
 describe("GET /instagram", () => {
-	let nameTest;
+	let usernameTest;
 
 	it("should reach /instagram/", async (done) => {
 		const res = await request(app).get("/instagram").expect(httpStatus.OK);
@@ -32,13 +32,13 @@ describe("GET /instagram", () => {
 		expect(res.body.usernames).toBeInstanceOf(Array);
 		expect(res.body.usernames.length).toEqual(instagramStub.length);
 
-		nameTest = res.body.usernames[0].name;
+		usernameTest = res.body.usernames[0].username;
 
 		done();
 	});
 
-	it("should access /instagram/:name and return a JSON with all data", async (done) => {
-		const res = await request(app).get(`/instagram/${nameTest}`).expect(httpStatus.OK);
+	it("should access /instagram/:username and return a JSON with all data", async (done) => {
+		const res = await request(app).get(`/instagram/${usernameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
@@ -46,7 +46,7 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("usernames");
 		expect(res.body.usernames).toBeInstanceOf(Object);
 		expect(res.body.usernames.name).toEqual("Jorge da Silva");
-		expect(res.body.usernames.link).toEqual("http://instagram.com/foo");
+		expect(res.body.usernames.username).toEqual("foo");
 		expect(res.body.usernames.history.length).toEqual(3);
 
 		expect(res.body.usernames.history[0].date).toEqual("2018-04-01T12:30:00.500Z");
@@ -67,8 +67,8 @@ describe("GET /instagram", () => {
 		done();
 	});
 
-	it("should access /instagram/latest/:name and return a JSON with the latest data", async (done) => {
-		const res = await request(app).get(`/instagram/latest/${nameTest}`).expect(httpStatus.OK);
+	it("should access /instagram/latest/:username and return a JSON with the latest data", async (done) => {
+		const res = await request(app).get(`/instagram/latest/${usernameTest}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
@@ -82,40 +82,40 @@ describe("GET /instagram", () => {
 		done();
 	});
 
-	it("should access /instagram/:name/followers and return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+	it("should access /instagram/:username/followers and return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
 
-		const res = await request(app).get(`/instagram/${nameTest}/followers`).expect(httpStatus.OK);
-
-		expect(res.header["content-type"]).toEqual("image/png");
-
-		done();
-	});
-
-	it("should access /instagram/:name/following and return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
-
-		const res = await request(app).get(`/instagram/${nameTest}/following`).expect(httpStatus.OK);
+		const res = await request(app).get(`/instagram/${usernameTest}/followers`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
 
 		done();
 	});
 
-	it("should access /instagram/:name/post and return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+	it("should access /instagram/:username/following and return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
 
-		const res = await request(app).get(`/instagram/${nameTest}/posts`).expect(httpStatus.OK);
+		const res = await request(app).get(`/instagram/${usernameTest}/following`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
 
 		done();
 	});
 
-	it("should access /instagram/:name/likes and return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
+	it("should access /instagram/:username/post and return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
 
-		await request(app).get(`/instagram/${nameTest}/likes`).expect(httpStatus.NOT_FOUND);
+		const res = await request(app).get(`/instagram/${usernameTest}/posts`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/:username/likes and return an image (the graph)", async (done) => {
+		expect(usernameTest).toBeDefined();
+
+		await request(app).get(`/instagram/${usernameTest}/likes`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

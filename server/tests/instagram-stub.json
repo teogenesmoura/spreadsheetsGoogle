@@ -3,7 +3,7 @@
     [
         {
             "name": "Jorge da Silva",
-            "link": "http://instagram.com/foo",
+            "username": "foo",
             "history": [
                 {
                 "date": "2018-04-01T12:30:00.500Z",
@@ -27,7 +27,7 @@
         },
         {
             "name": "Maria da Silva",
-            "link": "http://instagram.com/bar",
+            "username": "bar",
             "history": [
                 {
                 "date": "2017-02-15T12:30:00.500Z",

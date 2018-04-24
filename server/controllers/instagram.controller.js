@@ -14,7 +14,7 @@ const chartSize = 600;
 
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await instagramAccount.find({}, "name -_id");
+		const accounts = await instagramAccount.find({}, "name username -_id");
 		res.status(httpStatus.OK).json({
 			error: false,
 			usernames: accounts,
@@ -29,15 +29,15 @@ const listAccounts = async (req, res) => {
 	}
 };
 
-const loadAccount = async (req, res, next, name) => {
+const loadAccount = async (req, res, next, username) => {
 	try {
-		const account = await instagramAccount.findOne({ name });
+		const account = await instagramAccount.findOne({ username });
 		req.account = account;
 		return next();
 	} catch (e) {
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
 			error: true,
-			description: `Não consegui recuperar informações do usuário ${name}`,
+			description: `Não consegui recuperar informações do usuário ${username}`,
 		});
 	}
 };
@@ -94,7 +94,7 @@ const getLatest = async (req, res) => {
 			results: latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error while getting samples of Instagram user ${req.account.name}`;
+		const errorMsg = `Error while getting samples of Instagram user ${req.account.username}`;
 
 		logger.error(errorMsg);
 
@@ -107,7 +107,7 @@ const getLatest = async (req, res) => {
 
 const setHistoryKey = async (req, res, next) => {
 	const historyKey = req.params.query;
-	const errorMsg = `Requisição inválida para o usuário ${req.account.name}`;
+	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
 
 	let chartTitle;
 
@@ -163,7 +163,7 @@ const getDataset = async (req, res, next) => {
 		backgroundColor: "#ffffff",
 		borderColor: "#4286f4",
 		fill: false,
-		label: `${req.account.name} (${req.account.link})`,
+		label: `${req.account.name} (${req.account.username})`,
 	}];
 
 	req.chart.dataSets = dataSet;

@@ -106,24 +106,22 @@ const loadAccount = async (req, res, next, id) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account;
+		const account = req.account.toObject();
 		const id = account._id; // eslint-disable-line
-		account.links = [];
-		const likesLink = {
-			rel: "facebook.account.likes",
-			href: `${req.protocol}://${req.get("host")}/facebook/${id}/likes`,
-		};
-		account.links.push(likesLink);
-		const followersLink = {
-			rel: "facebook.account.followers",
-			href: `${req.protocol}://${req.get("host")}/facebook/${id}/followers`,
-		};
-		account.links.push(followersLink);
+		account.links = [
+			{
+				rel: "facebook.account.likes",
+				href: `${req.protocol}://${req.get("host")}/facebook/${id}/likes`,
+			},
+			{
+				rel: "facebook.account.followers",
+				href: `${req.protocol}://${req.get("host")}/facebook/${id}/followers`,
+			},
+		];
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			links: account.links,
-			results: account,
+			account,
 		});
 	} catch (error) {
 		const errorMsg = "Internal server error while respondign with account";

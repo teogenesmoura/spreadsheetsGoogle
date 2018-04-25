@@ -28,7 +28,7 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("usernames");
+		// expect(res.body).toHaveProperty("account");
 		expect(res.body.usernames).toBeInstanceOf(Array);
 		expect(res.body.usernames.length).toEqual(instagramStub.length);
 
@@ -43,26 +43,28 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("usernames");
-		expect(res.body.usernames).toBeInstanceOf(Object);
-		expect(res.body.usernames.name).toEqual("Jorge da Silva");
-		expect(res.body.usernames.username).toEqual("foo");
-		expect(res.body.usernames.history.length).toEqual(3);
+		expect(res.body).toHaveProperty("account");
+		expect(res.body.account).toBeInstanceOf(Object);
+		expect(res.body.account).toHaveProperty("links");
+		expect(res.body.account.links.length).toEqual(3);
+		expect(res.body.account.name).toEqual("Jorge da Silva");
+		expect(res.body.account.username).toEqual("foo");
+		expect(res.body.account.history.length).toEqual(3);
 
-		expect(res.body.usernames.history[0].date).toEqual("2018-04-01T12:30:00.500Z");
-		expect(res.body.usernames.history[0].followers).toEqual(10);
-		expect(res.body.usernames.history[0].following).toEqual(1);
-		expect(res.body.usernames.history[0].num_of_posts).toEqual(10);
+		expect(res.body.account.history[0].date).toEqual("2018-04-01T12:30:00.500Z");
+		expect(res.body.account.history[0].followers).toEqual(10);
+		expect(res.body.account.history[0].following).toEqual(1);
+		expect(res.body.account.history[0].num_of_posts).toEqual(10);
 
-		expect(res.body.usernames.history[1].date).toEqual("2018-04-05T12:30:00.505Z");
-		expect(res.body.usernames.history[1].followers).toEqual(15);
-		expect(res.body.usernames.history[1].following).toEqual(6);
-		expect(res.body.usernames.history[1].num_of_posts).toEqual(15);
+		expect(res.body.account.history[1].date).toEqual("2018-04-05T12:30:00.505Z");
+		expect(res.body.account.history[1].followers).toEqual(15);
+		expect(res.body.account.history[1].following).toEqual(6);
+		expect(res.body.account.history[1].num_of_posts).toEqual(15);
 
-		expect(res.body.usernames.history[2].date).toEqual(null);
-		expect(res.body.usernames.history[2].followers).toEqual(12);
-		expect(res.body.usernames.history[2].following).toEqual(8);
-		expect(res.body.usernames.history[2].num_of_posts).toEqual(17);
+		expect(res.body.account.history[2].date).toEqual(null);
+		expect(res.body.account.history[2].followers).toEqual(12);
+		expect(res.body.account.history[2].following).toEqual(8);
+		expect(res.body.account.history[2].num_of_posts).toEqual(17);
 
 		done();
 	});

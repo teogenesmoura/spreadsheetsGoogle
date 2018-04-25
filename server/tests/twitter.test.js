@@ -36,6 +36,8 @@ describe("Twitter endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 		expect(res.body).toHaveProperty("account");
+		expect(res.body.account).toHaveProperty("links");
+		expect(res.body.account.links.length).toEqual(5);
 		expect(res.body.account.username).toEqual("john");
 		expect(res.body.account.name).toEqual("Joao");
 		expect(res.body.account.type).toEqual("Presidente");

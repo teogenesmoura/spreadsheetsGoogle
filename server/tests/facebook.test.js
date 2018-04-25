@@ -58,24 +58,26 @@ describe("Facebook endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Object);
-		expect(res.body.results.name).toEqual("José Maria");
-		expect(res.body.results.class).toEqual("joseClass");
-		expect(res.body.results.link).toEqual("joseLink/jose/");
-		expect(res.body.results.history.length).toEqual(3);
+		expect(res.body).toHaveProperty("account");
+		expect(res.body.account).toBeInstanceOf(Object);
+		expect(res.body.account).toHaveProperty("links");
+		expect(res.body.account.links.length).toEqual(2);
+		expect(res.body.account.name).toEqual("José Maria");
+		expect(res.body.account.class).toEqual("joseClass");
+		expect(res.body.account.link).toEqual("joseLink/jose/");
+		expect(res.body.account.history.length).toEqual(3);
 
-		expect(res.body.results.history[0].likes).toEqual(42);
-		expect(res.body.results.history[0].followers).toEqual(420);
-		expect(res.body.results.history[0].date).toEqual("1994-12-24T02:00:00.000Z");
+		expect(res.body.account.history[0].likes).toEqual(42);
+		expect(res.body.account.history[0].followers).toEqual(420);
+		expect(res.body.account.history[0].date).toEqual("1994-12-24T02:00:00.000Z");
 
-		expect(res.body.results.history[1].likes).toEqual(40);
-		expect(res.body.results.history[1].followers).toEqual(840);
-		expect(res.body.results.history[1].date).toEqual("1995-01-24T02:00:00.000Z");
+		expect(res.body.account.history[1].likes).toEqual(40);
+		expect(res.body.account.history[1].followers).toEqual(840);
+		expect(res.body.account.history[1].date).toEqual("1995-01-24T02:00:00.000Z");
 
-		expect(res.body.results.history[2].likes).toEqual(45);
-		expect(res.body.results.history[2].followers).toEqual(1000);
-		expect(res.body.results.history[2].date).toEqual("1995-02-24T02:00:00.000Z");
+		expect(res.body.account.history[2].likes).toEqual(45);
+		expect(res.body.account.history[2].followers).toEqual(1000);
+		expect(res.body.account.history[2].date).toEqual("1995-02-24T02:00:00.000Z");
 		done();
 	});
 

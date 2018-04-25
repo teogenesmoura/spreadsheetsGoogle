@@ -41,8 +41,10 @@ describe("Youtube endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("account");
+		// expect(res.body).toHaveProperty("account");
 		expect(res.body.account).toBeInstanceOf(Object);
+		expect(res.body.account).toHaveProperty("links");
+		expect(res.body.account.links.length).toEqual(3);
 		expect(res.body.account.name).toEqual("Mariana");
 		expect(res.body.account.category).toEqual("marianacategory");
 		expect(res.body.account.channelUrl).toEqual("youtube.com/user/marianachannel");

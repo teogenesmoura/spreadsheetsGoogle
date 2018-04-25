@@ -164,29 +164,26 @@ const loadAccount = async (req, res, next, id) => {
 
 const getUser = async (req, res) => {
 	try {
-		const account = req.account;
+		const account = req.account.toObject();
 		const id = account._id; // eslint-disable-line
-		account.links = [];
-		const videosLink = {
-			rel: "youtube.account.videos",
-			href: `${req.protocol}://${req.get("host")}/youtube/${id}/videos`,
-		};
-		account.links.push(videosLink);
-		const viewsLink = {
-			rel: "youtube.account.views",
-			href: `${req.protocol}://${req.get("host")}/youtube/${id}/views`,
-		};
-		account.links.push(viewsLink);
-		const subscribersLink = {
-			rel: "youtube.account.subscribers",
-			href: `${req.protocol}://${req.get("host")}/youtube/${id}/subscribers`,
-		};
-		account.links.push(subscribersLink);
+		account.links = [
+			{
+				rel: "youtube.account.videos",
+				href: `${req.protocol}://${req.get("host")}/youtube/${id}/videos`,
+			},
+			{
+				rel: "youtube.account.views",
+				href: `${req.protocol}://${req.get("host")}/youtube/${id}/views`,
+			},
+			{
+				rel: "youtube.account.subscribers",
+				href: `${req.protocol}://${req.get("host")}/youtube/${id}/subscribers`,
+			},
+		];
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			links: account.links,
-			account: account,
+			account,
 		});
 	} catch (error) {
 		const msgError = "Erro interno do servidor enquanto buscava a conta";

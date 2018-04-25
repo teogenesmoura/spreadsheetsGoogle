@@ -19,21 +19,23 @@ const white = "#ffffff";
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name");
+		const accounts = await Facebook.find({}, "name link");
 		const length = accounts.length;
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
 			const id = accounts[i]._id; // eslint-disable-line
-			const link = {
-				rel: "facebook.account",
-				href: `${req.protocol}://${req.get("host")}/facebook/${id}`,
-			};
-			accounts[i].links.push(link);
+			if (accounts[i].link) {
+				const link = {
+					rel: "facebook.account",
+					href: `${req.protocol}://${req.get("host")}/facebook/${id}`,
+				};
+				accounts[i].links.push(link);
+			}
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: accounts,
+			accounts,
 		});
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
@@ -104,11 +106,22 @@ const loadAccount = async (req, res, next, id) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account;
+		const account = req.account.toObject();
+		const id = account._id; // eslint-disable-line
+		account.links = [
+			{
+				rel: "facebook.account.likes",
+				href: `${req.protocol}://${req.get("host")}/facebook/${id}/likes`,
+			},
+			{
+				rel: "facebook.account.followers",
+				href: `${req.protocol}://${req.get("host")}/facebook/${id}/followers`,
+			},
+		];
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: account,
+			account,
 		});
 	} catch (error) {
 		const errorMsg = "Internal server error while respondign with account";
@@ -151,7 +164,7 @@ const getLatest = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: latest,
+			latest,
 		});
 	} catch (error) {
 		const errorMsg = `Error while getting samples of Facebook user ${req.account.name}`;

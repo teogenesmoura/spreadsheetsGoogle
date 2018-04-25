@@ -27,7 +27,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: accounts,
+			accounts,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -44,7 +44,29 @@ const listAccounts = async (req, res) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account;
+		const account = req.account.toObject();
+		account.links = [
+			{
+				rel: "twitter.account.tweets",
+				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/tweets`,
+			},
+			{
+				rel: "twitter.account.followers",
+				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/followers`,
+			},
+			{
+				rel: "twitter.account.following",
+				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/following`,
+			},
+			{
+				rel: "twitter.account.likes",
+				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/likes`,
+			},
+			{
+				rel: "twitter.account.moments",
+				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/moments`,
+			},
+		];
 		res.status(httpStatus.OK).json({
 			error: false,
 			account,
@@ -227,7 +249,7 @@ const userLastSample = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			account: account,
+			account,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

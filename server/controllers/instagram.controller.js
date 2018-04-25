@@ -14,10 +14,22 @@ const chartSize = 600;
 
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await instagramAccount.find({}, "name username -_id");
+		const accounts = await instagramAccount.find({}, "name username");
+		const length = accounts.length;
+		for (let i = 0; i < length; i += 1) {
+			accounts[i] = accounts[i].toObject();
+			accounts[i].links = [];
+			if (accounts[i].username) {
+				const link = {
+					rel: "instagram.account",
+					href: `${req.protocol}://${req.get("host")}/instagram/${accounts[i].username}`,
+				};
+				accounts[i].links.push(link);
+			}
+		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: accounts,
+			accounts,
 		});
 	} catch (e) {
 		const message = "Erro ao recuperar os dados de usuários do Instagram";
@@ -151,11 +163,24 @@ const loadAccount = async (req, res, next, username) => {
 
 const getUser = async (req, res) => {
 	try {
-		const account = req.account;
-
+		const account = req.account.toObject();
+		account.links = [
+			{
+				rel: "instagram.account.followers",
+				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/followers`,
+			},
+			{
+				rel: "instagram.account.following",
+				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/following`,
+			},
+			{
+				rel: "instagram.account.posts",
+				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/posts`,
+			},
+		];
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: account,
+			account,
 		});
 	} catch (error) {
 		const errorMsg = "Internal server error while responding with account";
@@ -198,7 +223,7 @@ const getLatest = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: latest,
+			latest,
 		});
 	} catch (error) {
 		const errorMsg = `Error while getting samples of Instagram user ${req.account.username}`;

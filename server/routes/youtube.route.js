@@ -18,14 +18,13 @@ router.route("/import")
 	);
 
 // Lista os dados de um usuario especifico
-router.route("/:name")
+router.route("/:id")
 	.get(youtubeCtrl.getUser);
-
 // Mostra o gráfico de um atributo especifico de um usuario Ex. /youtube/Joao/videos
-router.route("/:name/:query")
+router.route("/:id/:query")
 	.get(youtubeCtrl.getDataset, youtubeCtrl.drawLineChart);
 
-router.param("name", youtubeCtrl.loadAccount);
+router.param("id", youtubeCtrl.loadAccount);
 
 router.param("query", youtubeCtrl.setHistoryKey);
 

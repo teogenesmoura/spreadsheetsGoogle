@@ -28,11 +28,11 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		// expect(res.body).toHaveProperty("account");
-		expect(res.body.usernames).toBeInstanceOf(Array);
-		expect(res.body.usernames.length).toEqual(instagramStub.length);
+		expect(res.body).toHaveProperty("accounts");
+		expect(res.body.accounts).toBeInstanceOf(Array);
+		expect(res.body.accounts.length).toEqual(instagramStub.length);
 
-		usernameTest = res.body.usernames[0].username;
+		usernameTest = res.body.accounts[0].username;
 
 		done();
 	});
@@ -75,11 +75,11 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Object);
-		expect(res.body.results.followers).toEqual(12);
-		expect(res.body.results.following).toEqual(8);
-		expect(res.body.results.num_of_posts).toEqual(17);
+		expect(res.body).toHaveProperty("latest");
+		expect(res.body.latest).toBeInstanceOf(Object);
+		expect(res.body.latest.followers).toEqual(12);
+		expect(res.body.latest.following).toEqual(8);
+		expect(res.body.latest.num_of_posts).toEqual(17);
 
 		done();
 	});

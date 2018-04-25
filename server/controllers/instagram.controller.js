@@ -29,7 +29,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: accounts,
+			accounts,
 		});
 	} catch (e) {
 		const message = "Erro ao recuperar os dados de usuários do Instagram";
@@ -223,7 +223,7 @@ const getLatest = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: latest,
+			latest,
 		});
 	} catch (error) {
 		const errorMsg = `Error while getting samples of Instagram user ${req.account.username}`;

@@ -35,7 +35,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: accounts,
+			accounts,
 		});
 	} catch (error) {
 		const errorMsg = "Error loading Facebook users from database";
@@ -164,7 +164,7 @@ const getLatest = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: latest,
+			latest,
 		});
 	} catch (error) {
 		const errorMsg = `Error while getting samples of Facebook user ${req.account.name}`;

@@ -27,7 +27,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			usernames: accounts,
+			accounts,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -249,7 +249,7 @@ const userLastSample = async (req, res) => {
 
 		res.status(httpStatus.OK).json({
 			error: false,
-			account: account,
+			account,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

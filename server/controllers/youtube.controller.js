@@ -27,7 +27,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			results: accounts,
+			accounts,
 		});
 	} catch (error) {
 		const msgError = "Erro ao carregar os usuários do YouTube do banco de dados";

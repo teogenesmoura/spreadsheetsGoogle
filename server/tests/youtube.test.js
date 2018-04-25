@@ -25,11 +25,11 @@ describe("Youtube endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Object);
-		expect(res.body.results.length).toEqual(youtubeStub.length);
+		expect(res.body).toHaveProperty("accounts");
+		expect(res.body.accounts).toBeInstanceOf(Object);
+		expect(res.body.accounts.length).toEqual(youtubeStub.length);
 
-		accountId = res.body.results[0]._id; // eslint-disable-line
+		accountId = res.body.accounts[0]._id; // eslint-disable-line
 
 		done();
 	});

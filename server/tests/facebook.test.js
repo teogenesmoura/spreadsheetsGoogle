@@ -29,11 +29,11 @@ describe("Facebook endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Array);
-		expect(res.body.results.length).toEqual(facebookStub.length);
+		expect(res.body).toHaveProperty("accounts");
+		expect(res.body.accounts).toBeInstanceOf(Array);
+		expect(res.body.accounts.length).toEqual(facebookStub.length);
 
-		accountId = res.body.results[0]._id; // eslint-disable-line
+		accountId = res.body.accounts[0]._id; // eslint-disable-line
 
 		done();
 	});
@@ -107,11 +107,11 @@ describe("Facebook endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("results");
-		expect(res.body.results).toBeInstanceOf(Object);
+		expect(res.body).toHaveProperty("latest");
+		expect(res.body.latest).toBeInstanceOf(Object);
 
-		expect(res.body.results.likes).toEqual(45);
-		expect(res.body.results.followers).toEqual(1000);
+		expect(res.body.latest.likes).toEqual(45);
+		expect(res.body.latest.followers).toEqual(1000);
 
 		done();
 	});

@@ -164,9 +164,25 @@ const loadAccount = async (req, res, next, username) => {
 const getUser = async (req, res) => {
 	try {
 		const account = req.account;
-
+		account.links = [];
+		const followersLink = {
+			rel: "instagram.account.followers",
+			href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/followers`,
+		};
+		account.links.push(followersLink);
+		const followingLink = {
+			rel: "instagram.account.following",
+			href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/following`,
+		};
+		account.links.push(followingLink);
+		const postsLink = {
+			rel: "instagram.account.num_of_posts",
+			href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/num_of_posts`,
+		};
+		account.links.push(postsLink);
 		res.status(httpStatus.OK).json({
 			error: false,
+			links: account.links,
 			usernames: account,
 		});
 	} catch (error) {

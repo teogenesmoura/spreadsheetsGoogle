@@ -45,8 +45,35 @@ const listAccounts = async (req, res) => {
 const getUser = async (req, res) => {
 	try {
 		const account = req.account;
+		account.links = [];
+		const tweetsLink = {
+			rel: "twitter.account.tweets",
+			href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/tweets`,
+		};
+		account.links.push(tweetsLink);
+		const followersLink = {
+			rel: "twitter.account.followers",
+			href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/followers`,
+		};
+		account.links.push(followersLink);
+		const followingLink = {
+			rel: "twitter.account.following",
+			href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/following`,
+		};
+		account.links.push(followingLink);
+		const likesLink = {
+			rel: "twitter.account.likes",
+			href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/likes`,
+		};
+		account.links.push(likesLink);
+		const momentsLink = {
+			rel: "twitter.account.moments",
+			href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/moments`,
+		};
+		account.links.push(momentsLink);
 		res.status(httpStatus.OK).json({
 			error: false,
+			links: account.links,
 			account,
 		});
 	} catch (error) {

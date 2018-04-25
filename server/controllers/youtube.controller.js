@@ -165,9 +165,27 @@ const loadAccount = async (req, res, next, id) => {
 const getUser = async (req, res) => {
 	try {
 		const account = req.account;
+		const id = account._id; // eslint-disable-line
+		account.links = [];
+		const videosLink = {
+			rel: "youtube.account.videos",
+			href: `${req.protocol}://${req.get("host")}/youtube/${id}/videos`,
+		};
+		account.links.push(videosLink);
+		const viewsLink = {
+			rel: "youtube.account.views",
+			href: `${req.protocol}://${req.get("host")}/youtube/${id}/views`,
+		};
+		account.links.push(viewsLink);
+		const subscribersLink = {
+			rel: "youtube.account.subscribers",
+			href: `${req.protocol}://${req.get("host")}/youtube/${id}/subscribers`,
+		};
+		account.links.push(subscribersLink);
 
 		res.status(httpStatus.OK).json({
 			error: false,
+			links: account.links,
 			account: account,
 		});
 	} catch (error) {

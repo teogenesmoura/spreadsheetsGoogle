@@ -16,7 +16,7 @@ afterAll(async () => {
  * Test case for the /youtube endpoint.
  */
 describe("Youtube endpoint", () => {
-	let nameTest;
+	let accountId;
 
 	// When required, access should be granted
 	it("GET /youtube should return a JSON with all the users in the db", async (done) => {
@@ -25,18 +25,18 @@ describe("Youtube endpoint", () => {
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
-		expect(res.body).toHaveProperty("accounts");
-		expect(res.body.accounts).toBeInstanceOf(Object);
-		expect(res.body.accounts.length).toEqual(youtubeStub.length);
+		expect(res.body).toHaveProperty("results");
+		expect(res.body.results).toBeInstanceOf(Object);
+		expect(res.body.results.length).toEqual(youtubeStub.length);
 
-		nameTest = res.body.accounts[0].name;
+		accountId = res.body.results[0]._id; // eslint-disable-line
 
 		done();
 	});
 
 	// When requires, access should be granted
 	it("GET /youtube/:name should return all data from a certain user", async (done) => {
-		const res = await request(app).get(`/youtube/${nameTest}`).expect(httpStatus.OK);
+		const res = await request(app).get(`/youtube/${accountId}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
@@ -74,8 +74,8 @@ describe("Youtube endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /youtube/:name/subscribers should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
-		const res = await request(app).get(`/youtube/${nameTest}/subscribers`).expect(httpStatus.OK);
+		expect(accountId).toBeDefined();
+		const res = await request(app).get(`/youtube/${accountId}/subscribers`).expect(httpStatus.OK);
 		expect(res.header["content-type"]).toEqual("image/png");
 
 		done();
@@ -83,8 +83,8 @@ describe("Youtube endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /youtube/:name/videos should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
-		const res = await request(app).get(`/youtube/${nameTest}/videos`).expect(httpStatus.OK);
+		expect(accountId).toBeDefined();
+		const res = await request(app).get(`/youtube/${accountId}/videos`).expect(httpStatus.OK);
 		expect(res.header["content-type"]).toEqual("image/png");
 
 		done();
@@ -92,8 +92,8 @@ describe("Youtube endpoint", () => {
 
 	// When required, access should be granted
 	it("GET /youtube/:name/views should return an image (the graph)", async (done) => {
-		expect(nameTest).toBeDefined();
-		const res = await request(app).get(`/youtube/${nameTest}/views`).expect(httpStatus.OK);
+		expect(accountId).toBeDefined();
+		const res = await request(app).get(`/youtube/${accountId}/views`).expect(httpStatus.OK);
 		expect(res.header["content-type"]).toEqual("image/png");
 
 		done();

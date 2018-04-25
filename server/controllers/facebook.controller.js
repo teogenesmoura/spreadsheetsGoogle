@@ -19,17 +19,19 @@ const white = "#ffffff";
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name");
+		const accounts = await Facebook.find({}, "name link");
 		const length = accounts.length;
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
 			const id = accounts[i]._id; // eslint-disable-line
-			const link = {
-				rel: "facebook.account",
-				href: `${req.protocol}://${req.get("host")}/facebook/${id}`,
-			};
-			accounts[i].links.push(link);
+			if (accounts[i].link) {
+				const link = {
+					rel: "facebook.account",
+					href: `${req.protocol}://${req.get("host")}/facebook/${id}`,
+				};
+				accounts[i].links.push(link);
+			}
 		}
 		res.status(httpStatus.OK).json({
 			error: false,

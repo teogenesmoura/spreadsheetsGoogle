@@ -11,10 +11,23 @@ const logger = require("../../config/logger");
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await youtubeAccount.find({}, "name channelUrl -_id");
+		const accounts = await youtubeAccount.find({}, "name channelUrl");
+		const length = accounts.length;
+		for (let i = 0; i < length; i += 1) {
+			accounts[i] = accounts[i].toObject();
+			accounts[i].links = [];
+			const id = accounts[i]._id; // eslint-disable-line
+			if (accounts[i].channelUrl) {
+				const link = {
+					rel: "youtube.account",
+					href: `${req.protocol}://${req.get("host")}/youtube/${id}`,
+				};
+				accounts[i].links.push(link);
+			}
+		}
 		res.status(httpStatus.OK).json({
 			error: false,
-			accounts: accounts,
+			results: accounts,
 		});
 	} catch (error) {
 		const msgError = "Erro ao carregar os usuários do YouTube do banco de dados";
@@ -133,13 +146,13 @@ const importData = async (req, res) => {
  * @param {object} name - standard identifier of a Youtube account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, name) => {
+const loadAccount = async (req, res, next, id) => {
 	try {
-		const account = await youtubeAccount.findOne({ name }, "-_id -_v");
+		const account = await youtubeAccount.findOne({ _id: id }, " -_v");
 		req.account = account;
 		return next();
 	} catch (error) {
-		const msgError = `Erro ao carregar o usuário ${name} no banco de dados`;
+		const msgError = `Erro ao carregar o usuário ${id} no banco de dados`;
 		logger.error(msgError);
 
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

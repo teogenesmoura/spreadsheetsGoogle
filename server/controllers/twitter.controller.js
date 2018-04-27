@@ -29,11 +29,10 @@ const listAccounts = async (req, res) => {
 			error: false,
 			accounts,
 		});
-	} catch (e) {
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: "Erro ao carregar os usuários do Twitter do banco de dados",
-		});
+	} catch (error) {
+		const errorMsg = "Erro ao carregar usuários do Twitter nos registros";
+
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -72,12 +71,9 @@ const getUser = async (req, res) => {
 			account,
 		});
 	} catch (error) {
-		const errorMsg = "Internal server error while responding with account";
-		logger.error(`${errorMsg} - Details: ${error}`);
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		const errorMsg = "Erro enquanto configura-se o usuário";
+
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -186,9 +182,7 @@ const importData = async (req, res) => {
 		savePromises.push(actors[key].save());
 	});
 	await Promise.all(savePromises);
-	return res.status(httpStatus.OK).json({
-		error: false,
-	});
+	return res.redirect("/twitter");
 };
 
 /**
@@ -203,11 +197,10 @@ const loadAccount = async (req, res, next, username) => {
 		const account = await twitterAccount.findOne({ username });
 		req.account = account;
 		return next();
-	} catch (e) {
-		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: `Erro ao carregar o usuário ${username} no banco de dados`,
-		});
+	} catch (error) {
+		const errorMsg = `Error ao carregar usuário ${username} dos registros do Twitter`;
+
+		return stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -251,11 +244,10 @@ const userLastSample = async (req, res) => {
 			error: false,
 			account,
 		});
-	} catch (e) {
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: "Erro ao carregar amostras",
-		});
+	} catch (error) {
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no Twitter`;
+
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -270,6 +262,7 @@ const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
 	const sampleKey = req.params.query;
+	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
 
 	// Título do gráfico gerado
 	let mainLabel;
@@ -295,9 +288,10 @@ const setSampleKey = async (req, res, next) => {
 	default:
 		// Se chegou até aqui, a função está sendo chamada por uma rota
 		// com um parâmetro diferente dos aceitáveis.
+		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
-			description: `Query invalida para usuário ${req.account.username}`,
+			description: errorMsg,
 		});
 	}
 
@@ -359,6 +353,8 @@ const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
 	const datasets = req.chart.datasets;
 	const chartNode = new Chart(600, 600);
+	const labelXAxes = "Data";
+	const labelYAxes = "Valor";
 	const config = {
 		type: "line",
 		data: {
@@ -382,13 +378,13 @@ const drawLineChart = async (req, res) => {
 					},
 					scaleLabel: {
 						display: true,
-						labelString: "Date",
+						labelString: labelXAxes,
 					},
 				}],
 				yAxes: [{
 					scaleLabel: {
 						display: true,
-						labelString: "value",
+						labelString: labelYAxes,
 					},
 				}],
 			},
@@ -401,6 +397,22 @@ const drawLineChart = async (req, res) => {
 	res.write(buffer);
 	res.end();
 };
+
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = async (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
+};
+
 
 module.exports = {
 	listAccounts,

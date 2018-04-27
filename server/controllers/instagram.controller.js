@@ -143,9 +143,7 @@ const importData = async (req, res) => {
 		savePromises.push(actors[key].save());
 	});
 	await Promise.all(savePromises);
-	return res.status(httpStatus.OK).json({
-		error: false,
-	});
+	return res.redirect("/instagram");
 };
 
 /**
@@ -162,7 +160,7 @@ const loadAccount = async (req, res, next, username) => {
 		req.account = account;
 		return next();
 	} catch (error) {
-		const errorMsg = `Error ao carregar usuário ${username} dos registros`;
+		const errorMsg = `Error ao carregar usuário ${username} dos registros do Instagram`;
 
 		return stdErrorHand(res, errorMsg, error);
 	}

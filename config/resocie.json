@@ -19,10 +19,10 @@
 			"followersType": "followers"
 		}],
 		"facebookRange": {
-			"linkCol": 3,
-			"likesCol": 4,
-			"followersCol": 5,
-			"dateCol": 6
+			"linkRow": 3,
+			"likesRow": 4,
+			"followersRow": 5,
+			"dateRow": 6
 		},
 		"twitterRange": {
 			"nameRow": 0,

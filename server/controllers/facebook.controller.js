@@ -82,7 +82,7 @@ const loadAccount = async (req, res, next, id) => {
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error ao carregar usuário ${id} dos registros`;
+		const errorMsg = `Error ao carregar usuário ${id} dos registros do Facebook`;
 
 		return stdErrorHand(res, errorMsg, error);
 	}
@@ -370,11 +370,11 @@ const importAccounts = async (req, res) => {
 	const actors = {};
 	const categories = req.sheet.categories;
 	const facebookRange = req.sheet.facebookRange;
-	const nameCol = req.sheet.range.nameRow;
-	const linkCol = facebookRange.linkCol;
-	const likesCol = facebookRange.likesCol;
-	const followersCol = facebookRange.followersCol;
-	const dateCol = facebookRange.dateCol;
+	const nameRow = req.sheet.range.nameRow;
+	const linkRow = facebookRange.linkRow;
+	const likesRow = facebookRange.likesRow;
+	const followersRow = facebookRange.followersRow;
+	const dateRow = facebookRange.dateRow;
 	let cCategory = 0;
 	let lastDate;
 
@@ -387,28 +387,28 @@ const importAccounts = async (req, res) => {
 			const cRow = cSheet[posRow];
 
 			// se o nome for vazio ou o primeiro, pular
-			if (!cRow[nameCol] || posRow < 1) {
+			if (!cRow[nameRow] || posRow < 1) {
 				continue; // eslint-disable-line no-continue
 			}
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (cRow[nameCol] === categories[cCategory + 1]) {
+			if (cRow[nameRow] === categories[cCategory + 1]) {
 				cCategory += 1;
 				continue; // eslint-disable-line no-continue
 			}
 
 			// se não existe link para conta do facebook
 			let accountLink;
-			if (isCellValid(cRow[linkCol])) {
-				accountLink = cRow[linkCol];
+			if (isCellValid(cRow[linkRow])) {
+				accountLink = cRow[linkRow];
 			} else {
 				accountLink = null;
 			}
 
-			if (actors[cRow[nameCol]] === undefined) {
+			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = Facebook({
-					name: cRow[nameCol],
+					name: cRow[nameRow],
 					class: categories[cCategory],
 					link: accountLink,
 				});
@@ -418,33 +418,33 @@ const importAccounts = async (req, res) => {
 					newAccount.username = splitAccLink[splitAccLink.length - 2];
 				}
 
-				actors[cRow[nameCol]] = newAccount;
+				actors[cRow[nameRow]] = newAccount;
 			}
 
 			if (accountLink) {
-				for (let posRow2 = linkCol; posRow2 <= dateCol; posRow2 += 1) {
+				for (let posRow2 = linkRow; posRow2 <= dateRow; posRow2 += 1) {
 					if (!isCellValid(cRow[posRow2])) {
 						cRow[posRow2] = null;
-					} else if (posRow2 === likesCol	|| posRow2 === followersCol) {
+					} else if (posRow2 === likesRow	|| posRow2 === followersRow) {
 						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
 
 						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
 					}
 				}
 
-				let newDate = cRow[dateCol];
+				let newDate = cRow[dateRow];
 				if (newDate) newDate = newDate.split("/");
 
 				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
 				lastDate = newDate;
 
 				const newHistory = {
-					likes: cRow[likesCol],
-					followers: cRow[followersCol],
+					likes: cRow[likesRow],
+					followers: cRow[followersRow],
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
 				};
 
-				actors[cRow[nameCol]].history.push(newHistory);
+				actors[cRow[nameRow]].history.push(newHistory);
 			}
 		}
 	}

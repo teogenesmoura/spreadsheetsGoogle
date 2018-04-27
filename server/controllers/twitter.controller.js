@@ -262,7 +262,7 @@ const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
 	const sampleKey = req.params.query;
-	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
+	const errorMsg = `Não existe a caracteristica ${sampleKey} para o Twitter`;
 
 	// Título do gráfico gerado
 	let mainLabel;
@@ -354,7 +354,7 @@ const drawLineChart = async (req, res) => {
 	const datasets = req.chart.datasets;
 	const chartNode = new Chart(600, 600);
 	const labelXAxes = "Data";
-	const labelYAxes = "Valor";
+	const labelYAxes = `Nº de ${req.chart.sampleKey}`;
 	const config = {
 		type: "line",
 		data: {

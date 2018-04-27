@@ -30,13 +30,9 @@ const listAccounts = async (req, res) => {
 			accounts,
 		});
 	} catch (error) {
-		const msgError = "Erro ao carregar os usuários do YouTube do banco de dados";
-		logger.error(msgError);
+		const errorMsg = "Erro ao carregar usuários do Youtube nos registros";
 
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: msgError,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -152,13 +148,9 @@ const loadAccount = async (req, res, next, id) => {
 		req.account = account;
 		return next();
 	} catch (error) {
-		const msgError = `Erro ao carregar o usuário ${id} no banco de dados`;
-		logger.error(msgError);
+		const errorMsg = `Error ao carregar usuário ${id} dos registros do YouTube`;
 
-		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: msgError,
-		});
+		return stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -186,13 +178,9 @@ const getUser = async (req, res) => {
 			account,
 		});
 	} catch (error) {
-		const msgError = "Erro interno do servidor enquanto buscava a conta";
-		logger.error(msgError);
+		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: msgError,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -208,7 +196,7 @@ const setHistoryKey = async (req, res, next) => {
 
 	// Título do gráfico gerado
 	let mainLabel;
-	const msgError = `Não existe a caracteristica ${historyKey} para o YouTube`;
+	const errorMsg = `Não existe a caracteristica ${historyKey} para o YouTube`;
 
 	// Analisa o caminho da rota que chegou nesta função para
 	// ter um título com o parâmetro correto.
@@ -223,11 +211,11 @@ const setHistoryKey = async (req, res, next) => {
 		mainLabel = "Evolução do número de usuários que segue";
 		break;
 	default:
-		logger.error(msgError);
+		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
 
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
-			description: msgError,
+			description: errorMsg,
 		});
 	}
 
@@ -291,6 +279,8 @@ const drawLineChart = async (req, res) => {
 	const datasets = req.chart.datasets;
 	const historyKey = req.chart.historyKey;
 	const chartNode = new ChartNode(600, 600);
+	const labelXAxes = "Data";
+	const labelYAxes = `Nº de ${historyKey}`;
 	const config = {
 		type: "line",
 		data: {
@@ -314,13 +304,13 @@ const drawLineChart = async (req, res) => {
 					},
 					scaleLabel: {
 						display: true,
-						labelString: "Data",
+						labelString: labelXAxes,
 					},
 				}],
 				yAxes: [{
 					scaleLabel: {
 						display: true,
-						labelString: `Nº de ${historyKey}`,
+						labelString: labelYAxes,
 					},
 				}],
 			},
@@ -345,6 +335,21 @@ const isCellValid = (value) => {
 	}
 
 	return true;
+};
+
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = async (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
 };
 
 module.exports = {

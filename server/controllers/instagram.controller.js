@@ -251,7 +251,7 @@ const getLatest = async (req, res) => {
  */
 const setHistoryKey = async (req, res, next) => {
 	let historyKey = req.params.query;
-	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
+	const errorMsg = `Não existe a caracteristica ${historyKey} para o Instagram`;
 
 	let chartTitle;
 
@@ -333,7 +333,7 @@ const getDataset = async (req, res, next) => {
  */
 const getConfigLineChart = async (req, res, next) => {
 	const labelXAxes = "Data";
-	const labelYAxes = "Valor";
+	const labelYAxes = `Nº de ${req.chart.historyKey}`;
 
 	const config = {
 		type: "line",

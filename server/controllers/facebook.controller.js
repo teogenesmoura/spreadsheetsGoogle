@@ -38,14 +38,9 @@ const listAccounts = async (req, res) => {
 			accounts,
 		});
 	} catch (error) {
-		const errorMsg = "Error loading Facebook users from database";
+		const errorMsg = "Erro ao carregar usuários do Facebook nos registros";
 
-		logger.error(`${errorMsg} - Details: ${error}`);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -87,15 +82,9 @@ const loadAccount = async (req, res, next, id) => {
 
 		return next();
 	} catch (error) {
-		let errorMsg = `Error loading user ${id} from database`;
-		errorMsg = `${errorMsg} - Details: ${error}`;
+		const errorMsg = `Error ao carregar usuário ${id} dos registros`;
 
-		logger.error(errorMsg);
-
-		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		return stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -124,14 +113,9 @@ const getUser = async (req, res) => {
 			account,
 		});
 	} catch (error) {
-		const errorMsg = "Internal server error while respondign with account";
+		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		logger.error(`${errorMsg} - Details: ${error}`);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -167,14 +151,9 @@ const getLatest = async (req, res) => {
 			latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error while getting samples of Facebook user ${req.account.name}`;
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no Facebook`;
 
-		logger.error(`${errorMsg} - Details: ${error}`);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -406,15 +385,16 @@ const importAccounts = async (req, res) => {
 
 		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
 			const cRow = cSheet[posRow];
+
+			// se o nome for vazio ou o primeiro, pular
+			if (!cRow[nameCol] || posRow < 1) {
+				continue; // eslint-disable-line no-continue
+			}
+
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
 			if (cRow[nameCol] === categories[cCategory + 1]) {
 				cCategory += 1;
-				continue; // eslint-disable-line no-continue
-			}
-
-			// se o nome for vazio ou o primeiro, pular
-			if (!cRow[nameCol] || posRow < 1) {
 				continue; // eslint-disable-line no-continue
 			}
 
@@ -498,6 +478,21 @@ const isCellValid = (value) => {
 	}
 
 	return true;
+};
+
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = async (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
 };
 
 module.exports = {

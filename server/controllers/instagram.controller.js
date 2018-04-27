@@ -9,9 +9,12 @@ const postType = "posts";
 const chartSize = 600;
 
 /**
- * Procura os nomes no banco de dados e retorna os usuários do instagram
+ * Search for all registered Facebook accounts.
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @return {object} result - list with all registered accounts, displaying the link and the name
+ * @return {String} description - error warning
  */
-
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await instagramAccount.find({}, "name username");
@@ -31,13 +34,10 @@ const listAccounts = async (req, res) => {
 			error: false,
 			accounts,
 		});
-	} catch (e) {
-		const message = "Erro ao recuperar os dados de usuários do Instagram";
-		logger.error(message);
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: message,
-		});
+	} catch (error) {
+		const errorMsg = "Erro ao carregar usuários do Instagram nos registros";
+
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -148,19 +148,31 @@ const importData = async (req, res) => {
 	});
 };
 
+/**
+ * Look for a specific registered Instagram account, by username.
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @param {object} username - standard identifier of a Instagram account
+ * @returns Execution of the next feature, over the data found
+ */
 const loadAccount = async (req, res, next, username) => {
 	try {
 		const account = await instagramAccount.findOne({ username });
 		req.account = account;
 		return next();
-	} catch (e) {
-		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: `Não consegui recuperar informações do usuário ${username}`,
-		});
+	} catch (error) {
+		const errorMsg = `Error ao carregar usuário ${username} dos registros`;
+
+		return stdErrorHand(res, errorMsg, error);
 	}
 };
 
+/**
+ * Data recovery about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
 const getUser = async (req, res) => {
 	try {
 		const account = req.account.toObject();
@@ -183,17 +195,17 @@ const getUser = async (req, res) => {
 			account,
 		});
 	} catch (error) {
-		const errorMsg = "Internal server error while responding with account";
+		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		logger.error(errorMsg);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
 const getLatest = async (req, res) => {
 	try {
 		const history = req.account.toObject().history;
@@ -226,17 +238,19 @@ const getLatest = async (req, res) => {
 			latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error while getting samples of Instagram user ${req.account.username}`;
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.username}, no Instagram`;
 
-		logger.error(errorMsg);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
+/**
+ * Layer to query requested identification
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the history key generated
+ */
 const setHistoryKey = async (req, res, next) => {
 	let historyKey = req.params.query;
 	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
@@ -270,6 +284,13 @@ const setHistoryKey = async (req, res, next) => {
 	return next();
 };
 
+/**
+ * Recovery of the requested historical data set
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data set generated
+ */
 const getDataset = async (req, res, next) => {
 	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
@@ -305,6 +326,13 @@ const getDataset = async (req, res, next) => {
 	next();
 };
 
+/**
+ * Standard setting for generating a line chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
+ */
 const getConfigLineChart = async (req, res, next) => {
 	const labelXAxes = "Data";
 	const labelYAxes = "Valor";
@@ -349,6 +377,11 @@ const getConfigLineChart = async (req, res, next) => {
 	next();
 };
 
+/**
+ * Generating and plotting the generated chart on the page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
 const plotLineChart = async (req, res) => {
 	const chart = new ChartNode(chartSize, chartSize);
 
@@ -361,6 +394,21 @@ const plotLineChart = async (req, res) => {
 
 const evolutionMsg = (param) => {
 	return `Evolução de ${param}`;
+};
+
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = async (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
 };
 
 module.exports = {

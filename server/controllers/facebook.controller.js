@@ -67,11 +67,11 @@ const help = async (req, res) => {
 };
 
 /**
- * Look for a specific registered Facebook account, by name.
+ * Look for a specific registered Facebook account, by id.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
- * @param {object} name - standard identifier of a Facebook account
+ * @param {object} id - standard identifier of a Facebook account
  * @returns Execution of the next feature, over the data found
  */
 const loadAccount = async (req, res, next, id) => {

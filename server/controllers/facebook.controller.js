@@ -78,11 +78,13 @@ const loadAccount = async (req, res, next, id) => {
 	try {
 		const account = await Facebook.findOne({ _id: id }, "	");
 
-		req.account = account;
+		if (req.account === undefined) req.account = [];
+
+		req.account.push(account);
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error ao carregar usuário ${id} dos registros do Facebook`;
+		const errorMsg = `Error ao carregar usuário [${id}] dos registros do Facebook`;
 
 		return stdErrorHand(res, errorMsg, error);
 	}
@@ -95,7 +97,7 @@ const loadAccount = async (req, res, next, id) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account.toObject();
+		const account = req.account[0].toObject();
 		const id = account._id; // eslint-disable-line
 		account.links = [
 			{
@@ -193,6 +195,20 @@ const setHistoryKey = async (req, res, next) => {
 	return next();
 };
 
+const createEnvCmp = async (req, res, next) => {
+	try {
+		const actors = req.query.actors.split(",");
+
+		req.actors = actors;
+
+		next();
+	} catch (error) {
+		const errorMsg = "Erro ao criar o ambiente para a comparação";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
 /**
  * Recovery of the requested historical data set
  * @param {object} req - standard request object from the Express library
@@ -201,38 +217,49 @@ const setHistoryKey = async (req, res, next) => {
  * @returns Execution of the next feature, over the data set generated
  */
 const getDataset = async (req, res, next) => {
-	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
-
+	const accounts = req.account;
 	const dataUser = [];
-	// const labels = [];
 
-	const length = history.length;
-	for (let ind = 0; ind < length; ind += 1) {
-		if (history[ind][historyKey] !== undefined
-			&& history[ind][historyKey] !== null) {
-			const date = new Date(history[ind].date);
-
-			dataUser.push({
-				x: date,
-				y: history[ind][historyKey],
-			});
-			// labels.push(date);
-		}
+	if (req.chart.dataSets === undefined) {
+		req.chart.dataSets = [];
 	}
 
-	const dataSet = [{
-		data: dataUser,
-		backgroundColor: white,
-		borderColor: blueTones[colorCtrl += 1],
-		fill: false,
-		label: `${req.account.name} (${req.account.link})`,
-	}];
+	if (req.chart.data === undefined) {
+		req.chart.data = [];
+	}
 
-	colorCtrl %= (blueTones.length - 1);
+	accounts.forEach(async (account) => {
+		const history = account.history;
+		const length = history.length;
+		// const labels = [];
 
-	req.chart.dataSets = dataSet;
-	req.chart.data = dataUser;
+		for (let ind = 0; ind < length; ind += 1) {
+			if (history[ind][historyKey] !== undefined
+				&& history[ind][historyKey] !== null) {
+				const date = new Date(history[ind].date);
+
+				dataUser.push({
+					x: date,
+					y: history[ind][historyKey],
+				});
+				// labels.push(date);
+			}
+		}
+
+		const dataSet = {
+			data: dataUser,
+			backgroundColor: white,
+			borderColor: blueTones[colorCtrl += 1],
+			fill: false,
+			label: `${account.name} (${account.link})`,
+		};
+
+		colorCtrl %= (blueTones.length - 1);
+
+		req.chart.dataSets.push(dataSet);
+		req.chart.data.push(dataUser);
+	});
 
 	next();
 };
@@ -245,34 +272,36 @@ const getDataset = async (req, res, next) => {
  * @returns Execution of the next feature, over the Y-axis limits of the chart
  */
 const getChartLimits = async (req, res, next) => {
-	const historyValid = req.chart.data;
-	const length = historyValid.length;
-
 	let minValue = Infinity;
 	let maxValue = -Infinity;
 	let averageValue = 0;
 	let desvPadValue = 0;
 	let value = 0;
 
-	for (let ind = 0; ind < length; ind += 1) {
-		value = historyValid[ind].y;
+	const historiesValid = req.chart.data;
+	let length = 0;
 
-		if (value < minValue) {
-			minValue = value;
-		} else if (value > maxValue) {
-			maxValue = value;
-		}
+	historiesValid.forEach(async (history) => {
+		history.forEach(async (point) => {
+			length += 1;
+			value = point.y;
 
-		averageValue += value;
-	}
+			if (value < minValue)		minValue = value;
+			else if (value > maxValue)	maxValue = value;
+
+			averageValue += value;
+		});
+	});
 
 	averageValue /= length;
 
-	for (let ind = 0; ind < length; ind += 1) {
-		value = historyValid[ind].y;
+	historiesValid.forEach(async (history) => {
+		history.forEach(async (point) => {
+			value = point.y;
 
-		desvPadValue += (value - averageValue) ** 2;
-	}
+			desvPadValue += (value - averageValue) ** 2;
+		});
+	});
 
 	desvPadValue /= length;
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
@@ -502,6 +531,7 @@ module.exports = {
 	getUser,
 	getLatest,
 	setHistoryKey,
+	createEnvCmp,
 	getDataset,
 	getChartLimits,
 	getConfigLineChart,

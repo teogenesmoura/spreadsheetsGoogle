@@ -2,11 +2,12 @@ const instagramAccount = require("../models/instagram.model");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
 const ChartNode = require("chartjs-node");
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
-const followingType = "following";
-const followersType = "followers";
-const postType = "posts";
+const white = "#ffffff";
+const blueTone = "#4286f4";
 const chartSize = 600;
+const MAX_LEN_LABEL = 80;
 
 /**
  * Search for all registered Facebook accounts.
@@ -75,7 +76,7 @@ const importData = async (req, res) => {
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {
 			const row = cTab[j];
-			const name = row[iRange.nameRow];
+			const name = row[iRange.nameRow].replace(/\n/g, " ");
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
@@ -154,12 +155,25 @@ const importData = async (req, res) => {
  * @param {object} username - standard identifier of a Instagram account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, username) => {
+const loadAccount = async (req, res, next) => {
 	try {
-		const account = await instagramAccount.findOne({ username });
-		req.account = account;
+		if (req.actors !== undefined) {
+			for (const cActor of req.actors) {	// eslint-disable-line
+				await findAccount(req, cActor);	// eslint-disable-line
+			} 									// eslint-disable-line
+		} else {
+			const username = await req.params.username;
+			await findAccount(req, username);
+		}
+
 		return next();
 	} catch (error) {
+		let username;
+		if (req.actors !== undefined) {
+			username = await req.actors;
+		} else {
+			username = await req.params.username;
+		}
 		const errorMsg = `Error ao carregar usuário ${username} dos registros do Instagram`;
 
 		return stdErrorHand(res, errorMsg, error);
@@ -173,7 +187,7 @@ const loadAccount = async (req, res, next, username) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account.toObject();
+		const account = req.account[0].toObject();
 		account.links = [
 			{
 				rel: "instagram.account.followers",
@@ -206,12 +220,13 @@ const getUser = async (req, res) => {
  */
 const getLatest = async (req, res) => {
 	try {
-		const history = req.account.toObject().history;
+		const history = req.account[0].toObject().history;
 		const length = history.length - 1;
 		const latest = {};
+		const limit = ResocieSheets.range.instagramTypes;
 		let count = 0;
 
-		for (let ind = length; ind >= 0 && count <= 3; ind -= 1) {
+		for (let ind = length; ind >= 0 && count <= limit; ind -= 1) {
 			if (latest.following === undefined
 				&& history[ind].following !== undefined) {
 				latest.following = history[ind].following;
@@ -229,7 +244,7 @@ const getLatest = async (req, res) => {
 			}
 		}
 
-		req.account.history.latest = latest;
+		req.account[0].history.latest = latest;
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -256,13 +271,13 @@ const setHistoryKey = async (req, res, next) => {
 	let chartTitle;
 
 	switch (historyKey) {
-	case followingType:
+	case ResocieSheets.types.followingType:
 		chartTitle = evolutionMsg("Seguindo");
 		break;
-	case followersType:
+	case ResocieSheets.types.followersType:
 		chartTitle = evolutionMsg("Seguidores");
 		break;
-	case postType:
+	case ResocieSheets.types.postType:
 		historyKey = "num_of_posts";
 		chartTitle = evolutionMsg("Numero de postagens");
 		break;
@@ -283,6 +298,26 @@ const setHistoryKey = async (req, res, next) => {
 };
 
 /**
+ * Split of actors to be compared
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const splitActors = async (req, res, next) => {
+	try {
+		const actors = req.query.actors.split(",");
+
+		req.actors = actors;
+
+		next();
+	} catch (error) {
+		const errorMsg = "Erro ao criar o ambiente para a comparação";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
  * Recovery of the requested historical data set
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -290,36 +325,54 @@ const setHistoryKey = async (req, res, next) => {
  * @returns Execution of the next feature, over the data set generated
  */
 const getDataset = async (req, res, next) => {
-	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
+	const accounts = req.account;
 
-	const dataUser = [];
-	// const labels = [];
-
-	const length = history.length;
-	for (let ind = 0; ind < length; ind += 1) {
-		if (history[ind][historyKey] !== undefined
-			&& history[ind][historyKey] !== null) {
-			const date = new Date(history[ind].date);
-
-			dataUser.push({
-				x: date,
-				y: history[ind][historyKey],
-			});
-			// labels.push(date);
-		}
+	if (req.chart.dataSets === undefined) {
+		req.chart.dataSets = [];
 	}
 
-	const dataSet = [{
-		data: dataUser,
-		backgroundColor: "#ffffff",
-		borderColor: "#4286f4",
-		fill: false,
-		label: `${req.account.name} (${req.account.username})`,
-	}];
+	if (req.chart.data === undefined) {
+		req.chart.data = [];
+	}
 
-	req.chart.dataSets = dataSet;
-	req.chart.data = dataUser;
+	accounts.forEach(async (account) => {
+		const dataUser = [];
+		const history = account.history;
+		const length = history.length;
+		// const labels = [];
+
+		for (let ind = 0; ind < length; ind += 1) {
+			if (history[ind][historyKey] !== undefined
+				&& history[ind][historyKey] !== null) {
+				const date = new Date(history[ind].date);
+
+				dataUser.push({
+					x: date,
+					y: history[ind][historyKey],
+				});
+				// labels.push(date);
+			}
+		}
+
+		let label;
+		if ((account.name.length + account.username.length) > MAX_LEN_LABEL) {
+			label = `${account.name}\n(${account.username})`;
+		} else {
+			label = `${account.name} (${account.username})`;
+		}
+
+		const dataSet = {
+			data: dataUser,
+			backgroundColor: white,
+			borderColor: blueTone,
+			fill: false,
+			label: label,
+		};
+
+		req.chart.dataSets.push(dataSet);
+		req.chart.data.push(dataUser);
+	});
 
 	next();
 };
@@ -342,6 +395,13 @@ const getConfigLineChart = async (req, res, next) => {
 			title: {
 				display: true,
 				text: req.chart.chartTitle,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
 			},
 			scales: {
 				xAxes: [{
@@ -390,8 +450,17 @@ const plotLineChart = async (req, res) => {
 	res.end();
 };
 
-const evolutionMsg = (param) => {
-	return `Evolução de ${param}`;
+/**
+ * Search for an account in the records and making it available
+ * @param {object} req - standard request object from the Express library
+ * @param {object} username - standard identifier of a Instagram account
+ */
+const findAccount = async (req, username) => {
+	const account = await instagramAccount.findOne({ username });
+
+	if (req.account === undefined) req.account = await [];
+
+	await req.account.push(account);
 };
 
 /**
@@ -409,6 +478,16 @@ const stdErrorHand = async (res, errorMsg, error) => {
 	});
 };
 
+/**
+ * Standard message for the analysis of the evolution of a characteristic
+ * of a given account
+ * @param {String} param - characteristic under analysis
+ * @returns standard message generated
+ */
+const evolutionMsg = (param) => {
+	return `Evolução de ${param}, no Instagram`;
+};
+
 module.exports = {
 	listAccounts,
 	loadAccount,
@@ -416,6 +495,7 @@ module.exports = {
 	getUser,
 	getLatest,
 	setHistoryKey,
+	splitActors,
 	getDataset,
 	getConfigLineChart,
 	plotLineChart,

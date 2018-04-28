@@ -141,9 +141,10 @@ const getLatest = async (req, res) => {
 		const history = req.account[0].toObject().history;
 		const length = history.length - 1;
 		const latest = {};
+		const limit = ResocieSheets.range.facebookTypes;
 		let count = 0;
 
-		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
+		for (let ind = length; ind >= 0 && count <= limit; ind -= 1) {
 			if (latest.likes === undefined
 				&& history[ind].likes !== undefined) {
 				latest.likes = history[ind].likes;
@@ -183,10 +184,10 @@ const setHistoryKey = async (req, res, next) => {
 	let chartTitle;
 
 	switch (historyKey) {
-	case ResocieSheets.types[0].likesType:
+	case ResocieSheets.types.likesType:
 		chartTitle = evolutionMsg("curtidas");
 		break;
-	case ResocieSheets.types[0].followersType:
+	case ResocieSheets.types.followersType:
 		chartTitle = evolutionMsg("seguidores");
 		break;
 	default:
@@ -552,7 +553,7 @@ const stdErrorHand = async (res, errorMsg, error) => {
  * @returns standard message generated
  */
 const evolutionMsg = (param) => {
-	return `Evolução de ${param}`;
+	return `Evolução de ${param}, no Facebook`;
 };
 
 /**

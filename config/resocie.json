@@ -14,10 +14,12 @@
 			"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
 			"PRÉ-CANDIDATURAS À PRESIDÊNCIA"
 		],
-		"types": [{
+		"types": {
 			"likesType": "likes",
-			"followersType": "followers"
-		}],
+			"followersType": "followers",
+			"followingType": "following",
+			"postType": "posts"
+		},
 		"facebookRange": {
 			"linkRow": 3,
 			"likesRow": 4,
@@ -52,6 +54,10 @@
 		},
 		"range": {
 			"nameRow": 0,
+			"facebookTypes": 2,
+			"instagramTypes": 3,
+			"twitterTypes": 6,
+			"youtubeTypes": 3,
 			"twitterMin": 7,
 			"twitterMax": 14,
 			"instagramMin": 15,

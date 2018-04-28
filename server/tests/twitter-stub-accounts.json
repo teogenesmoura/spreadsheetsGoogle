@@ -30,6 +30,37 @@
           "moments": 11
         }
       ]
+    },
+    {
+      "name": "Maria",
+      "username": "marie",
+      "type": "Governador",
+      "samples": [
+        {
+          "date": "2012-04-23T18:25:43.511Z",
+          "tweets": 400,
+          "likes": 420,
+          "followers": 650,
+          "following": 180,
+          "moments": 0
+        },
+        {
+          "date": "2012-05-23T18:25:43.511Z",
+          "tweets": 240,
+          "likes": 450,
+          "followers": 655,
+          "following": 20,
+          "moments": 10
+        },
+        {
+          "date": "2012-06-23T18:25:43.511Z",
+          "tweets": 420,
+          "likes": 400,
+          "followers": 855,
+          "following": 30,
+          "moments": 11
+        }
+      ]
     }
   ]
 }

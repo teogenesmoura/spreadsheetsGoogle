@@ -20,7 +20,10 @@
 			"followingType": "following",
 			"postType": "posts",
 			"tweetsType": "tweets",
-			"momentsType": "moments"
+			"momentsType": "moments",
+			"subscribersType": "subscribers",
+			"videosType": "videos",
+			"viewsType": "views"
 		},
 		"facebookRange": {
 			"linkRow": 3,

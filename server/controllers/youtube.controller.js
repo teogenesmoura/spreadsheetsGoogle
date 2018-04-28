@@ -2,6 +2,9 @@ const httpStatus = require("http-status");
 const youtubeAccount = require("../models/youtube.model");
 const ChartNode = require("chartjs-node");
 const logger = require("../../config/logger");
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
+
+const MAX_LEN_LABEL = 80;
 
 /**
  * Search for all YouTube Accounts on the database.
@@ -88,7 +91,7 @@ const importData = async (req, res) => {
 			// Caso não exista o usuario atual, cria um novo schema para o usuario
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = youtubeAccount({
-					name: cRow[nameRow],
+					name: cRow[nameRow].replace(/\n/g, " "),
 					category: categories[cCategory],
 					channelUrl: channel,
 				});
@@ -139,15 +142,27 @@ const importData = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
- * @param {object} name - standard identifier of a Youtube account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, id) => {
+const loadAccount = async (req, res, next) => {
 	try {
-		const account = await youtubeAccount.findOne({ _id: id }, " -_v");
-		req.account = account;
+		if (req.actors !== undefined) {
+			for (const cActor of req.actors) {	// eslint-disable-line
+				await findAccount(req, cActor);	// eslint-disable-line
+			} 									// eslint-disable-line
+		} else {
+			const id = await req.params.id;
+			await findAccount(req, id);
+		}
+
 		return next();
 	} catch (error) {
+		let id;
+		if (req.actors !== undefined) {
+			id = await req.actors;
+		} else {
+			id = await req.params.id;
+		}
 		const errorMsg = `Error ao carregar usuário ${id} dos registros do YouTube`;
 
 		return stdErrorHand(res, errorMsg, error);
@@ -156,7 +171,7 @@ const loadAccount = async (req, res, next, id) => {
 
 const getUser = async (req, res) => {
 	try {
-		const account = req.account.toObject();
+		const account = req.account[0].toObject();
 		const id = account._id; // eslint-disable-line
 		account.links = [
 			{
@@ -193,7 +208,6 @@ const getUser = async (req, res) => {
  */
 const setHistoryKey = async (req, res, next) => {
 	const historyKey = req.params.query;
-
 	// Título do gráfico gerado
 	let mainLabel;
 	const errorMsg = `Não existe a caracteristica ${historyKey} para o YouTube`;
@@ -201,14 +215,14 @@ const setHistoryKey = async (req, res, next) => {
 	// Analisa o caminho da rota que chegou nesta função para
 	// ter um título com o parâmetro correto.
 	switch (historyKey) {
-	case "subscribers":
-		mainLabel = "Evolução do número de curtidas";
+	case ResocieSheets.types.subscribersType:
+		mainLabel = evolutionMsg("curtidas");
 		break;
-	case "videos":
-		mainLabel = "Evolução do número de seguidores";
+	case ResocieSheets.types.videosType:
+		mainLabel = evolutionMsg("seguidores");
 		break;
-	case "views":
-		mainLabel = "Evolução do número de usuários que segue";
+	case ResocieSheets.types.viewsType:
+		mainLabel = evolutionMsg("visualizações");
 		break;
 	default:
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
@@ -227,6 +241,26 @@ const setHistoryKey = async (req, res, next) => {
 };
 
 /**
+ * Split of actors to be compared
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const splitActors = async (req, res, next) => {
+	try {
+		const actors = req.query.actors.split(",");
+
+		req.actors = actors;
+
+		next();
+	} catch (error) {
+		const errorMsg = "Erro ao criar o ambiente para a comparação";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
  * Recovery of the requested historical data set
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -234,36 +268,57 @@ const setHistoryKey = async (req, res, next) => {
  * @returns Execution of the next feature, over the data set generated
  */
 const getDataset = async (req, res, next) => {
-	// Carrega as samples da conta do usuário
-	const history = req.account.history;
 	const historyKey = req.chart.historyKey;
+	const accounts = req.account;
 
-	const data = [];
-
-	// Itera sobre todas as samples e adiciona aquelas que tem o dado procurado
-	// na array de dados `data`
-	const length = history.length;
-	for (let i = 0; i < length; i += 1) {
-		const value = history[i][historyKey];
-
-		if (value !== undefined && value !== null) {
-			const date = new Date(history[i].date);
-			data.push({
-				x: date,
-				y: value,
-			});
-		}
+	if (req.chart.dataSets === undefined) {
+		req.chart.dataSets = [];
 	}
 
-	const dataset = [{
-		data: data,
-		backgroundColor: "#000000",
-		borderColor: "#e62117",
-		fill: false,
-		label: `${req.account.name} (${req.account.channelUrl})`,
-	}];
+	/*
+	if (req.chart.data === undefined) {
+		req.chart.data = [];
+	}
+	// */
 
-	req.chart.datasets = dataset;
+	accounts.forEach(async (account) => {
+		const dataUser = [];
+		const history = account.history;
+		const length = history.length;
+		// const labels = [];
+
+		for (let ind = 0; ind < length; ind += 1) {
+			if (history[ind][historyKey] !== undefined
+				&& history[ind][historyKey] !== null) {
+				const date = new Date(history[ind].date);
+
+				dataUser.push({
+					x: date,
+					y: history[ind][historyKey],
+				});
+				// labels.push(date);
+			}
+		}
+
+		let label;
+		if ((account.name.length + account.channelUrl.length) > MAX_LEN_LABEL) {
+			label = `${account.name}\n(${account.channelUrl})`;
+		} else {
+			label = `${account.name} (${account.channelUrl})`;
+		}
+
+		const dataSet = {
+			data: dataUser,
+			backgroundColor: "#000000",
+			borderColor: "#e62117",
+			fill: false,
+			label: label,
+		};
+
+		req.chart.dataSets.push(dataSet);
+		// req.chart.data.push(dataUser);
+	});
+
 	next();
 };
 
@@ -276,11 +331,12 @@ const getDataset = async (req, res, next) => {
  */
 const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
-	const datasets = req.chart.datasets;
+	const datasets = req.chart.dataSets;
 	const historyKey = req.chart.historyKey;
 	const chartNode = new ChartNode(600, 600);
 	const labelXAxes = "Data";
 	const labelYAxes = `Nº de ${historyKey}`;
+
 	const config = {
 		type: "line",
 		data: {
@@ -290,6 +346,13 @@ const drawLineChart = async (req, res) => {
 			title: {
 				display: true,
 				text: mainLabel,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
 			},
 			scales: {
 				xAxes: [{
@@ -325,16 +388,16 @@ const drawLineChart = async (req, res) => {
 };
 
 /**
- * Data validation by recurrent criteria
- * @param {String} value - data to be validated
- * @returns true if it is not valid, false if it is valid
+ * Search for an account in the records and making it available
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a YouTune account
  */
-const isCellValid = (value) => {
-	if (!(value) || value === "-" || value === "s" || value === "s/" || value === "S" || value === "S/") {
-		return false;
-	}
+const findAccount = async (req, id) => {
+	const account = await youtubeAccount.findOne({ _id: id }, " -_v");
 
-	return true;
+	if (req.account === undefined) req.account = await [];
+
+	await req.account.push(account);
 };
 
 /**
@@ -352,13 +415,36 @@ const stdErrorHand = async (res, errorMsg, error) => {
 	});
 };
 
+/**
+ * Standard message for the analysis of the evolution of a characteristic
+ * of a given account
+ * @param {String} param - characteristic under analysis
+ * @returns standard message generated
+ */
+const evolutionMsg = (param) => {
+	return `Evolução de ${param}, no YouTube`;
+};
+
+/**
+ * Data validation by recurrent criteria
+ * @param {String} value - data to be validated
+ * @returns true if it is not valid, false if it is valid
+ */
+const isCellValid = (value) => {
+	if (!(value) || value === "-" || value === "s" || value === "s/" || value === "S" || value === "S/") {
+		return false;
+	}
+
+	return true;
+};
+
 module.exports = {
 	listAccounts,
 	loadAccount,
 	getUser,
 	setHistoryKey,
+	splitActors,
 	getDataset,
 	drawLineChart,
 	importData,
-
 };

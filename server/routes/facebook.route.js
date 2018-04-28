@@ -21,7 +21,14 @@ router.route("/help")
  * Comparison between actors for data on Facebook
  */
 router.route("/compare/:query")
-	.get(facebookCtrl.createEnvCmp);
+	.get(
+		facebookCtrl.splitActors,
+		facebookCtrl.loadAccount,
+		facebookCtrl.getDataset,
+		facebookCtrl.getChartLimits,
+		facebookCtrl.getConfigLineChart,
+		facebookCtrl.plotLineChart,
+	);
 /**
  *  Inserting all records, redirecting to Facebook main page
  */

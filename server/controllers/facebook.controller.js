@@ -9,6 +9,7 @@ const chartSize = 600;
 const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec"]; // , "#dfe3ee", "#f7f7f7"
 let colorCtrl = 0;
 const white = "#ffffff";
+const MAX_LEN_LABEL = 80;
 
 /**
  * Search for all registered Facebook accounts.
@@ -71,20 +72,29 @@ const help = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
- * @param {object} id - standard identifier of a Facebook account
  * @returns Execution of the next feature, over the data found
  */
-const loadAccount = async (req, res, next, id) => {
+const loadAccount = async (req, res, next) => {
 	try {
-		const account = await Facebook.findOne({ _id: id }, "	");
-
-		if (req.account === undefined) req.account = [];
-
-		req.account.push(account);
+		if (req.actors !== undefined) {
+			for (const cActor of req.actors) {	// eslint-disable-line
+				await findAccount(req, cActor);	// eslint-disable-line
+			} 									// eslint-disable-line
+		} else {
+			const id = await req.params.id;
+			await findAccount(req, id);
+		}
 
 		return next();
 	} catch (error) {
-		const errorMsg = `Error ao carregar usuário [${id}] dos registros do Facebook`;
+		let id;
+		if (req.actors !== undefined) {
+			id = await req.actors;
+		} else {
+			id = await req.params.id;
+		}
+
+		const errorMsg = `Error ao carregar usuário(s) [${id}] dos registros do Facebook`;
 
 		return stdErrorHand(res, errorMsg, error);
 	}
@@ -128,7 +138,7 @@ const getUser = async (req, res) => {
  */
 const getLatest = async (req, res) => {
 	try {
-		const history = req.account.toObject().history;
+		const history = req.account[0].toObject().history;
 		const length = history.length - 1;
 		const latest = {};
 		let count = 0;
@@ -146,7 +156,7 @@ const getLatest = async (req, res) => {
 			}
 		}
 
-		req.account.history.latest = latest;
+		req.account[0].history.latest = latest;
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -195,7 +205,13 @@ const setHistoryKey = async (req, res, next) => {
 	return next();
 };
 
-const createEnvCmp = async (req, res, next) => {
+/**
+ * Split of actors to be compared
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const splitActors = async (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
 
@@ -219,7 +235,6 @@ const createEnvCmp = async (req, res, next) => {
 const getDataset = async (req, res, next) => {
 	const historyKey = req.chart.historyKey;
 	const accounts = req.account;
-	const dataUser = [];
 
 	if (req.chart.dataSets === undefined) {
 		req.chart.dataSets = [];
@@ -230,6 +245,7 @@ const getDataset = async (req, res, next) => {
 	}
 
 	accounts.forEach(async (account) => {
+		const dataUser = [];
 		const history = account.history;
 		const length = history.length;
 		// const labels = [];
@@ -247,12 +263,19 @@ const getDataset = async (req, res, next) => {
 			}
 		}
 
+		let label;
+		if ((account.name.length + account.link.length) > MAX_LEN_LABEL) {
+			label = `${account.name}\n(${account.link})`;
+		} else {
+			label = `${account.name} (${account.link})`;
+		}
+
 		const dataSet = {
 			data: dataUser,
 			backgroundColor: white,
 			borderColor: blueTones[colorCtrl += 1],
 			fill: false,
-			label: `${account.name} (${account.link})`,
+			label: label,
 		};
 
 		colorCtrl %= (blueTones.length - 1);
@@ -272,8 +295,8 @@ const getDataset = async (req, res, next) => {
  * @returns Execution of the next feature, over the Y-axis limits of the chart
  */
 const getChartLimits = async (req, res, next) => {
-	let minValue = Infinity;
-	let maxValue = -Infinity;
+	let minValue = Number.MAX_VALUE;
+	let maxValue = Number.MIN_VALUE;
 	let averageValue = 0;
 	let desvPadValue = 0;
 	let value = 0;
@@ -287,7 +310,7 @@ const getChartLimits = async (req, res, next) => {
 			value = point.y;
 
 			if (value < minValue)		minValue = value;
-			else if (value > maxValue)	maxValue = value;
+			if (value > maxValue)		maxValue = value;
 
 			averageValue += value;
 		});
@@ -332,9 +355,17 @@ const getConfigLineChart = async (req, res, next) => {
 		type: "line",
 		data: { datasets: req.chart.dataSets },
 		options: {
+			response: true,
 			title: {
 				display: true,
 				text: req.chart.chartTitle,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
 			},
 			scales: {
 				xAxes: [{
@@ -437,7 +468,7 @@ const importAccounts = async (req, res) => {
 
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = Facebook({
-					name: cRow[nameRow],
+					name: cRow[nameRow].replace(/\n/g, " "),
 					class: categories[cCategory],
 					link: accountLink,
 				});
@@ -487,6 +518,34 @@ const importAccounts = async (req, res) => {
 };
 
 /**
+ * Search for an account in the records and making it available
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Facebook account
+ */
+const findAccount = async (req, id) => {
+	const account = await Facebook.findOne({ _id: id }, "-__v	");
+
+	if (req.account === undefined) req.account = await [];
+
+	await req.account.push(account);
+};
+
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = async (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
+};
+
+/**
  * Standard message for the analysis of the evolution of a characteristic
  * of a given account
  * @param {String} param - characteristic under analysis
@@ -509,21 +568,6 @@ const isCellValid = (value) => {
 	return true;
 };
 
-/**
- * Standard Error Handling
- * @param {object} res - standard response object from the Express library
- * @param {String} errorMsg - error message for the situation
- * @param {object} error - error that actually happened
- */
-const stdErrorHand = async (res, errorMsg, error) => {
-	logger.error(`${errorMsg} - Detalhes: ${error}`);
-
-	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-		error: true,
-		description: errorMsg,
-	});
-};
-
 module.exports = {
 	listAccounts,
 	help,
@@ -531,7 +575,7 @@ module.exports = {
 	getUser,
 	getLatest,
 	setHistoryKey,
-	createEnvCmp,
+	splitActors,
 	getDataset,
 	getChartLimits,
 	getConfigLineChart,

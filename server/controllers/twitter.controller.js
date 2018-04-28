@@ -2,6 +2,11 @@ const httpStatus = require("http-status");
 const Chart = require("chartjs-node");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
+const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
+
+const white = "#ffffff";
+const red = "#ff0000";
+const MAX_LEN_LABEL = 80;
 
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
@@ -43,7 +48,7 @@ const listAccounts = async (req, res) => {
  */
 const getUser = async (req, res) => {
 	try {
-		const account = req.account.toObject();
+		const account = req.account[0].toObject();
 		account.links = [
 			{
 				rel: "twitter.account.tweets",
@@ -111,7 +116,7 @@ const importData = async (req, res) => {
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {
 			const row = cTab[j];
-			const name = row[tRange.nameRow];
+			const name = row[tRange.nameRow].replace(/\n/g, " ");
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
@@ -189,15 +194,27 @@ const importData = async (req, res) => {
  * Loads a twitter Account and pass it into the req.account object
  * @param {object} req - standard req object from the Express library
  * @param {object} res - standard res object from the Express library
- * @param {object} next - standard next object from the Express libary
- * @param {string} username - username of the account to be loaded
+ * @param {object} next - standard next object from the Express library
  */
-const loadAccount = async (req, res, next, username) => {
+const loadAccount = async (req, res, next) => {
 	try {
-		const account = await twitterAccount.findOne({ username });
-		req.account = account;
+		if (req.actors !== undefined) {
+			for (const cActor of req.actors) {	// eslint-disable-line
+				await findAccount(req, cActor);	// eslint-disable-line
+			} 									// eslint-disable-line
+		} else {
+			const username = await req.params.username;
+			await findAccount(req, username);
+		}
+
 		return next();
 	} catch (error) {
+		let username;
+		if (req.actors !== undefined) {
+			username = await req.actors;
+		} else {
+			username = await req.params.username;
+		}
 		const errorMsg = `Error ao carregar usuário ${username} dos registros do Twitter`;
 
 		return stdErrorHand(res, errorMsg, error);
@@ -215,26 +232,33 @@ const loadAccount = async (req, res, next, username) => {
  */
 const userLastSample = async (req, res) => {
 	try {
-		const account = req.account.toObject();
-		const samples = req.account.samples;
+		const account = req.account[0].toObject();
+		const samples = req.account[0].samples;
 		const length = samples.length - 1;
+		const limit = ResocieSheets.range.twitterTypes;
 		const lastSample = {};
+		let count = 0;
 
-		for (let i = length; i >= 0; i -= 1) {
+		for (let i = length; i >= 0 && count <= limit; i -= 1) {
 			if (lastSample.likes === undefined && samples[i].likes !== undefined) {
 				lastSample.likes = samples[i].likes;
+				count += 1;
 			}
 			if (lastSample.tweets === undefined && samples[i].tweets !== undefined) {
 				lastSample.tweets = samples[i].tweets;
+				count += 1;
 			}
 			if (lastSample.followers === undefined && samples[i].followers !== undefined) {
 				lastSample.followers = samples[i].followers;
+				count += 1;
 			}
 			if (lastSample.following === undefined && samples[i].following !== undefined) {
 				lastSample.following = samples[i].following;
+				count += 1;
 			}
 			if (lastSample.moments === undefined && samples[i].moments !== undefined) {
 				lastSample.moments = samples[i].moments;
+				count += 1;
 			}
 		}
 
@@ -262,7 +286,7 @@ const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
 	const sampleKey = req.params.query;
-	const errorMsg = `Não existe a caracteristica ${sampleKey} para o Twitter`;
+	const errorMsg = `Não existe a caracteristica [${sampleKey}] para o Twitter`;
 
 	// Título do gráfico gerado
 	let mainLabel;
@@ -270,20 +294,20 @@ const setSampleKey = async (req, res, next) => {
 	// Analisa o caminho da rota que chegou nesta função para
 	// ter um título com o parâmetro correto.
 	switch (sampleKey) {
-	case "likes":
-		mainLabel = "Evolução do número de curtidas";
+	case ResocieSheets.types.likesType:
+		mainLabel = evolutionMsg("curtidas");
 		break;
-	case "followers":
-		mainLabel = "Evolução do número de seguidores";
+	case ResocieSheets.types.followersType:
+		mainLabel = evolutionMsg("seguidores");
 		break;
-	case "following":
-		mainLabel = "Evolução do número de usuários que segue";
+	case ResocieSheets.types.followingType:
+		mainLabel = evolutionMsg("usuários que segue");
 		break;
-	case "tweets":
-		mainLabel = "Evolução do número de tweets";
+	case ResocieSheets.types.tweetsType:
+		mainLabel = evolutionMsg("tweets");
 		break;
-	case "moments":
-		mainLabel = "Evolução do número de momentos";
+	case ResocieSheets.types.momentsType:
+		mainLabel = evolutionMsg("momentos");
 		break;
 	default:
 		// Se chegou até aqui, a função está sendo chamada por uma rota
@@ -303,6 +327,26 @@ const setSampleKey = async (req, res, next) => {
 };
 
 /**
+ * Split of actors to be compared
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const splitActors = async (req, res, next) => {
+	try {
+		const actors = req.query.actors.split(",");
+
+		req.actors = actors;
+
+		next();
+	} catch (error) {
+		const errorMsg = "Erro ao criar o ambiente para a comparação";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
  * Creates a dataset to be used on the creation of a Chart object later on, this
  * dataset is based in the req.chart.sampleKey string
  * @param {object} req - standard req object from the Express library
@@ -311,35 +355,57 @@ const setSampleKey = async (req, res, next) => {
  */
 const createDataset = async (req, res, next) => {
 	// Carrega as samples da conta do usuário
-	const samples = req.account.samples;
 	const sampleKey = req.chart.sampleKey;
+	const accounts = req.account;
 
-	const data = [];
-	const labels = [];
-
-	// Itera sobre todas as samples e adiciona aquelas que tem o dado procurado
-	// na array de dados `data`
-	const length = samples.length;
-	for (let i = 0; i < length; i += 1) {
-		if (samples[i][sampleKey] !== undefined && samples[i][sampleKey] !== null) {
-			const date = new Date(samples[i].date);
-			data.push({
-				x: date,
-				y: samples[i][sampleKey],
-			});
-			labels.push(date);
-		}
+	if (req.chart.dataSets === undefined) {
+		req.chart.dataSets = [];
 	}
 
-	const dataset = [{
-		data: data,
-		backgroundColor: "#ff0000",
-		borderColor: "#ff0000",
-		fill: false,
-		label: `${req.account.name} (${req.account.username})`,
-	}];
+	/*
+	if (req.chart.data === undefined) {
+		req.chart.data = [];
+	}
+	// */
 
-	req.chart.datasets = dataset;
+	accounts.forEach(async (account) => {
+		const dataUser = [];
+		const samples = account.samples;
+		const length = samples.length;
+		// const labels = [];
+
+		for (let ind = 0; ind < length; ind += 1) {
+			if (samples[ind][sampleKey] !== undefined
+				&& samples[ind][sampleKey] !== null) {
+				const date = new Date(samples[ind].date);
+
+				dataUser.push({
+					x: date,
+					y: samples[ind][sampleKey],
+				});
+				// labels.push(date);
+			}
+		}
+
+		let label;
+		if ((account.name.length + account.username.length) > MAX_LEN_LABEL) {
+			label = `${account.name}\n(${account.username})`;
+		} else {
+			label = `${account.name} (${account.username})`;
+		}
+
+		const dataSet = {
+			data: dataUser,
+			backgroundColor: white,
+			borderColor: red,
+			fill: false,
+			label: label,
+		};
+
+		req.chart.dataSets.push(dataSet);
+		// req.chart.data.push(dataUser);
+	});
+
 	next();
 };
 
@@ -351,10 +417,11 @@ const createDataset = async (req, res, next) => {
  */
 const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
-	const datasets = req.chart.datasets;
+	const datasets = req.chart.dataSets;
 	const chartNode = new Chart(600, 600);
 	const labelXAxes = "Data";
 	const labelYAxes = `Nº de ${req.chart.sampleKey}`;
+
 	const config = {
 		type: "line",
 		data: {
@@ -364,6 +431,13 @@ const drawLineChart = async (req, res) => {
 			title: {
 				display: true,
 				text: mainLabel,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
 			},
 			scales: {
 				xAxes: [{
@@ -399,6 +473,19 @@ const drawLineChart = async (req, res) => {
 };
 
 /**
+ * Search for an account in the records and making it available
+ * @param {object} req - standard request object from the Express library
+ * @param {object} username - standard identifier of a Twitter account
+ */
+const findAccount = async (req, username) => {
+	const account = await twitterAccount.findOne({ username });
+
+	if (req.account === undefined) req.account = await [];
+
+	await req.account.push(account);
+};
+
+/**
  * Standard Error Handling
  * @param {object} res - standard response object from the Express library
  * @param {String} errorMsg - error message for the situation
@@ -413,11 +500,21 @@ const stdErrorHand = async (res, errorMsg, error) => {
 	});
 };
 
+/**
+ * Standard message for the analysis of the evolution of a characteristic
+ * of a given account
+ * @param {String} param - characteristic under analysis
+ * @returns standard message generated
+ */
+const evolutionMsg = (param) => {
+	return `Evolução de ${param}, no Twitter`;
+};
 
 module.exports = {
 	listAccounts,
 	loadAccount,
 	setSampleKey,
+	splitActors,
 	getUser,
 	createDataset,
 	importData,

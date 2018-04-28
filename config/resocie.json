@@ -18,7 +18,9 @@
 			"likesType": "likes",
 			"followersType": "followers",
 			"followingType": "following",
-			"postType": "posts"
+			"postType": "posts",
+			"tweetsType": "tweets",
+			"momentsType": "moments"
 		},
 		"facebookRange": {
 			"linkRow": 3,
@@ -56,7 +58,7 @@
 			"nameRow": 0,
 			"facebookTypes": 2,
 			"instagramTypes": 3,
-			"twitterTypes": 6,
+			"twitterTypes": 5,
 			"youtubeTypes": 3,
 			"twitterMin": 7,
 			"twitterMax": 14,

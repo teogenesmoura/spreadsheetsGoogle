@@ -152,7 +152,6 @@ const importData = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
- * @param {object} username - standard identifier of a Instagram account
  * @returns Execution of the next feature, over the data found
  */
 const loadAccount = async (req, res, next) => {

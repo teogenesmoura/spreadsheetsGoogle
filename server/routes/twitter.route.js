@@ -14,6 +14,14 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(twitterCtrl.listAccounts);
 
+router.route("/compare/:query")
+	.get(
+		twitterCtrl.splitActors,
+		twitterCtrl.loadAccount,
+		twitterCtrl.createDataset,
+		twitterCtrl.drawLineChart,
+	);
+
 router.route("/import")
 	.get(
 		spreadsheetsCtrl.authenticate,
@@ -29,8 +37,12 @@ router.route("/:username/latest")
 	.get(twitterCtrl.userLastSample);
 
 router.route("/:username/:query")
-	.get(twitterCtrl.setSampleKey, twitterCtrl.createDataset, twitterCtrl.drawLineChart);
+	.get(
+		twitterCtrl.createDataset,
+		twitterCtrl.drawLineChart,
+	);
 
 router.param("username", twitterCtrl.loadAccount);
+router.param("query", twitterCtrl.setSampleKey);
 
 module.exports = router;

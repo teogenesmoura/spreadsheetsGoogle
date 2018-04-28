@@ -106,7 +106,7 @@ describe("GET /instagram", () => {
 		done();
 	});
 
-	it("should access /instagram/:username/post and return an image (the graph)", async (done) => {
+	it("should access /instagram/:username/posts and return an image (the graph)", async (done) => {
 		expect(usernameTest1).toBeDefined();
 
 		const res = await request(app).get(`/instagram/${usernameTest1}/posts`).expect(httpStatus.OK);
@@ -124,13 +124,44 @@ describe("GET /instagram", () => {
 		done();
 	});
 
-	it("should access /instagram/compare/:query?actors={:usermane} should return an image (the graph)", async (done) => {
+	it("should access /instagram/compare/followers?actors={:usermane} should return an image (the graph)", async (done) => {
 		expect(usernameTest1).toBeDefined();
 		expect(usernameTest2).toBeDefined();
 
-		const res = await request(app).get(`/instagram/compare/likes?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.OK);
+		const res = await request(app).get(`/instagram/compare/followers?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/compare/following?actors={:usermane} should return an image (the graph)", async (done) => {
+		expect(usernameTest1).toBeDefined();
+		expect(usernameTest2).toBeDefined();
+
+		const res = await request(app).get(`/instagram/compare/following?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/compare/post?actors={:usermane} should return an image (the graph)", async (done) => {
+		expect(usernameTest1).toBeDefined();
+		expect(usernameTest2).toBeDefined();
+
+		const res = await request(app).get(`/instagram/compare/posts?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	it("should access /instagram/compare/likes?actors={:usermane} should return an image (the graph)", async (done) => {
+		expect(usernameTest1).toBeDefined();
+		expect(usernameTest2).toBeDefined();
+
+		await request(app).get(`/instagram/compare/likes?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

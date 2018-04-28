@@ -119,13 +119,35 @@ describe("Facebook endpoint", () => {
 	});
 
 	// When requires, access should be granted
-	it("GET /facebook/compare/:query?actors={:id} should return an image (the graph)", async (done) => {
+	it("GET /facebook/compare/likes?actors={:id} should return an image (the graph)", async (done) => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
 
 		const res = await request(app).get(`/facebook/compare/likes?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	// When requires, access should be granted
+	it("GET /facebook/compare/followers?actors={:id} should return an image (the graph)", async (done) => {
+		expect(accountId1).toBeDefined();
+		expect(accountId2).toBeDefined();
+
+		const res = await request(app).get(`/facebook/compare/followers?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
+
+		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+
+	// When requires, access should be granted
+	it("GET /facebook/compare/views?actors={:id} should return an image (the graph)", async (done) => {
+		expect(accountId1).toBeDefined();
+		expect(accountId2).toBeDefined();
+
+		await request(app).get(`/facebook/compare/views?actors=${accountId1},${accountId2}`).expect(httpStatus.NOT_FOUND);
 
 		done();
 	});

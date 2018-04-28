@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const youtubeAccount = require("../models/youtube.model");
 const ChartNode = require("chartjs-node");
 const logger = require("../../config/logger");
+const color = require("./color.controller");
 const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
 const MAX_LEN_LABEL = 80;
@@ -309,8 +310,8 @@ const getDataset = async (req, res, next) => {
 
 		const dataSet = {
 			data: dataUser,
-			backgroundColor: "#000000",
-			borderColor: "#e62117",
+			backgroundColor: color.WHITE,
+			borderColor: color.getColor(),
 			fill: false,
 			label: label,
 		};
@@ -333,7 +334,7 @@ const drawLineChart = async (req, res) => {
 	const mainLabel = req.chart.mainLabel;
 	const datasets = req.chart.dataSets;
 	const historyKey = req.chart.historyKey;
-	const chartNode = new ChartNode(600, 600);
+	const chartNode = new ChartNode(700, 700);
 	const labelXAxes = "Data";
 	const labelYAxes = `Nº de ${historyKey}`;
 

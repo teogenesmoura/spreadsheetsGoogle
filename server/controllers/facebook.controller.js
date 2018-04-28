@@ -2,13 +2,11 @@ const httpStatus = require("http-status");
 const ChartNode = require("chartjs-node");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
+const color = require("./color.controller");
 const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
-const chartSize = 600;
+const chartSize = 700;
 
-const blueTones = ["#3b5998", "#5a7abf", "#8b9dc3", "#6b92e3", "#889eec"]; // , "#dfe3ee", "#f7f7f7"
-let colorCtrl = 0;
-const white = "#ffffff";
 const MAX_LEN_LABEL = 80;
 
 /**
@@ -273,13 +271,11 @@ const getDataset = async (req, res, next) => {
 
 		const dataSet = {
 			data: dataUser,
-			backgroundColor: white,
-			borderColor: blueTones[colorCtrl += 1],
+			backgroundColor: color.WHITE,
+			borderColor: color.getColor(),
 			fill: false,
 			label: label,
 		};
-
-		colorCtrl %= (blueTones.length - 1);
 
 		req.chart.dataSets.push(dataSet);
 		req.chart.data.push(dataUser);

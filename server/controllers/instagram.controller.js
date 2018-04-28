@@ -2,11 +2,10 @@ const instagramAccount = require("../models/instagram.model");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
 const ChartNode = require("chartjs-node");
+const color = require("./color.controller");
 const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
 
-const white = "#ffffff";
-const blueTone = "#4286f4";
-const chartSize = 600;
+const chartSize = 700;
 const MAX_LEN_LABEL = 80;
 
 /**
@@ -363,8 +362,8 @@ const getDataset = async (req, res, next) => {
 
 		const dataSet = {
 			data: dataUser,
-			backgroundColor: white,
-			borderColor: blueTone,
+			backgroundColor: color.WHITE,
+			borderColor: color.getColor(),
 			fill: false,
 			label: label,
 		};

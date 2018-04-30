@@ -25,7 +25,7 @@ router.route("/import")
 router.route("/:username")
 	.get(twitterCtrl.getUser);
 
-router.route("/:username/latest")
+router.route("/latest/:username")
 	.get(twitterCtrl.userLastSample);
 
 router.route("/:username/:query")

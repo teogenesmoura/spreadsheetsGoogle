@@ -2,6 +2,7 @@ const instagramAccount = require("../models/instagram.model");
 const httpStatus = require("http-status");
 const logger = require("../../config/logger");
 const ChartNode = require("chartjs-node");
+const mongoose = require("mongoose");
 
 const followingType = "following";
 const followersType = "followers";
@@ -16,6 +17,10 @@ const listAccounts = async (req, res) => {
 	try {
 		const accounts = await instagramAccount.find({}, "name username");
 		const length = accounts.length;
+		const importLink = {
+			rel: "instagram.import",
+			href: `${req.protocol}://${req.get("host")}/instagram/import`,
+		};
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
@@ -29,6 +34,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
+			import: importLink,
 			accounts,
 		});
 	} catch (e) {
@@ -65,6 +71,7 @@ const importData = async (req, res) => {
 	let cType = 1; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
+	mongoose.connection.collections.instagramAccount.drop();
 
 	const tabs = req.collectives;
 	const length = tabs.length;
@@ -143,9 +150,7 @@ const importData = async (req, res) => {
 		savePromises.push(actors[key].save());
 	});
 	await Promise.all(savePromises);
-	return res.status(httpStatus.OK).json({
-		error: false,
-	});
+	return res.redirect("/instagram");
 };
 
 const loadAccount = async (req, res, next, username) => {
@@ -165,6 +170,10 @@ const getUser = async (req, res) => {
 	try {
 		const account = req.account.toObject();
 		account.links = [
+			{
+				rel: "instagram.account.latest",
+				href: `${req.protocol}://${req.get("host")}/instagram/latest/${account.username}`,
+			},
 			{
 				rel: "instagram.account.followers",
 				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/followers`,

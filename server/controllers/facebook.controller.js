@@ -3,6 +3,7 @@ const ChartNode = require("chartjs-node");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
 const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
+const mongoose = require("mongoose");
 
 const chartSize = 600;
 
@@ -21,6 +22,10 @@ const listAccounts = async (req, res) => {
 	try {
 		const accounts = await Facebook.find({}, "name link");
 		const length = accounts.length;
+		const importLink = {
+			rel: "facebook.import",
+			href: `${req.protocol}://${req.get("host")}/facebook/import`,
+		};
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
@@ -35,6 +40,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
+			import: importLink,
 			accounts,
 		});
 	} catch (error) {
@@ -109,6 +115,10 @@ const getUser = async (req, res) => {
 		const account = req.account.toObject();
 		const id = account._id; // eslint-disable-line
 		account.links = [
+			{
+				rel: "facebook.account.latest",
+				href: `${req.protocol}://${req.get("host")}/facebook/latest/${id}`,
+			},
 			{
 				rel: "facebook.account.likes",
 				href: `${req.protocol}://${req.get("host")}/facebook/${id}/likes`,
@@ -398,6 +408,7 @@ const importAccounts = async (req, res) => {
 	const dateCol = facebookRange.dateCol;
 	let cCategory = 0;
 	let lastDate;
+	mongoose.connection.collections.facebook.drop();
 
 	for (let posSheet = 0; posSheet < length; posSheet += 1) {
 		const cSheet = tabs[posSheet];

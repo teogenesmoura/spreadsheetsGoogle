@@ -2,6 +2,7 @@ const httpStatus = require("http-status");
 const Chart = require("chartjs-node");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
+const mongoose = require("mongoose");
 
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
@@ -14,6 +15,10 @@ const listAccounts = async (req, res) => {
 	try {
 		const accounts = await twitterAccount.find({}, "name username");
 		const length = accounts.length;
+		const importLink = {
+			rel: "twitter.import",
+			href: `${req.protocol}://${req.get("host")}/twitter/import`,
+		};
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
@@ -27,6 +32,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
+			import: importLink,
 			accounts,
 		});
 	} catch (e) {
@@ -46,6 +52,10 @@ const getUser = async (req, res) => {
 	try {
 		const account = req.account.toObject();
 		account.links = [
+			{
+				rel: "twitter.account.latest",
+				href: `${req.protocol}://${req.get("host")}/twitter/latest/${account.username}`,
+			},
 			{
 				rel: "twitter.account.tweets",
 				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/tweets`,
@@ -109,6 +119,7 @@ const importData = async (req, res) => {
 	const tabs = req.collectives;
 	const length = tabs.length;
 	const tRange = req.sheet.twitterRange;
+	mongoose.connection.collections.twitterAccount.drop();
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 
@@ -186,9 +197,7 @@ const importData = async (req, res) => {
 		savePromises.push(actors[key].save());
 	});
 	await Promise.all(savePromises);
-	return res.status(httpStatus.OK).json({
-		error: false,
-	});
+	return res.redirect("/twitter");
 };
 
 /**
@@ -222,34 +231,31 @@ const loadAccount = async (req, res, next, username) => {
  */
 const userLastSample = async (req, res) => {
 	try {
-		const account = req.account.toObject();
 		const samples = req.account.samples;
 		const length = samples.length - 1;
-		const lastSample = {};
+		const latest = {};
 
 		for (let i = length; i >= 0; i -= 1) {
-			if (lastSample.likes === undefined && samples[i].likes !== undefined) {
-				lastSample.likes = samples[i].likes;
+			if (latest.likes === undefined && samples[i].likes !== undefined) {
+				latest.likes = samples[i].likes;
 			}
-			if (lastSample.tweets === undefined && samples[i].tweets !== undefined) {
-				lastSample.tweets = samples[i].tweets;
+			if (latest.tweets === undefined && samples[i].tweets !== undefined) {
+				latest.tweets = samples[i].tweets;
 			}
-			if (lastSample.followers === undefined && samples[i].followers !== undefined) {
-				lastSample.followers = samples[i].followers;
+			if (latest.followers === undefined && samples[i].followers !== undefined) {
+				latest.followers = samples[i].followers;
 			}
-			if (lastSample.following === undefined && samples[i].following !== undefined) {
-				lastSample.following = samples[i].following;
+			if (latest.following === undefined && samples[i].following !== undefined) {
+				latest.following = samples[i].following;
 			}
-			if (lastSample.moments === undefined && samples[i].moments !== undefined) {
-				lastSample.moments = samples[i].moments;
+			if (latest.moments === undefined && samples[i].moments !== undefined) {
+				latest.moments = samples[i].moments;
 			}
 		}
 
-		account.lastSample = lastSample;
-
 		res.status(httpStatus.OK).json({
 			error: false,
-			account,
+			latest,
 		});
 	} catch (e) {
 		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

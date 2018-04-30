@@ -20,6 +20,13 @@ router.route("/import")
 // Lista os dados de um usuario especifico
 router.route("/:id")
 	.get(youtubeCtrl.getUser);
+
+/**
+ * Access to the latest valid data of a given user.
+ */
+router.route("/latest/:id")
+	.get(youtubeCtrl.getLatest);
+
 // Mostra o gráfico de um atributo especifico de um usuario Ex. /youtube/Joao/videos
 router.route("/:id/:query")
 	.get(youtubeCtrl.getDataset, youtubeCtrl.drawLineChart);

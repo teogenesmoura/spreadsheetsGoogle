@@ -46,7 +46,7 @@ describe("GET /instagram", () => {
 		expect(res.body).toHaveProperty("account");
 		expect(res.body.account).toBeInstanceOf(Object);
 		expect(res.body.account).toHaveProperty("links");
-		expect(res.body.account.links.length).toEqual(3);
+		expect(res.body.account.links.length).toEqual(4);
 		expect(res.body.account.name).toEqual("Jorge da Silva");
 		expect(res.body.account.username).toEqual("foo");
 		expect(res.body.account.history.length).toEqual(3);

@@ -202,7 +202,7 @@ const loadAccount = async (req, res, next) => {
 				await findAccount(req, cActor);	// eslint-disable-line
 			} 									// eslint-disable-line
 		} else {
-			const username = await req.params.username;
+			const username = req.params.username;
 			await findAccount(req, username);
 		}
 
@@ -210,9 +210,9 @@ const loadAccount = async (req, res, next) => {
 	} catch (error) {
 		let username;
 		if (req.actors !== undefined) {
-			username = await req.actors;
+			username = req.actors;
 		} else {
-			username = await req.params.username;
+			username = req.params.username;
 		}
 		const errorMsg = `Error ao carregar usuário ${username} dos registros do Twitter`;
 
@@ -479,9 +479,9 @@ const drawLineChart = async (req, res) => {
 const findAccount = async (req, username) => {
 	const account = await twitterAccount.findOne({ username });
 
-	if (req.account === undefined) req.account = await [];
+	if (req.account === undefined) req.account = [];
 
-	await req.account.push(account);
+	req.account.push(account);
 };
 
 /**

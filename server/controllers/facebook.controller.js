@@ -79,7 +79,7 @@ const loadAccount = async (req, res, next) => {
 				await findAccount(req, cActor);	// eslint-disable-line
 			} 									// eslint-disable-line
 		} else {
-			const id = await req.params.id;
+			const id = req.params.id;
 			await findAccount(req, id);
 		}
 
@@ -87,9 +87,9 @@ const loadAccount = async (req, res, next) => {
 	} catch (error) {
 		let id;
 		if (req.actors !== undefined) {
-			id = await req.actors;
+			id = req.actors;
 		} else {
-			id = await req.params.id;
+			id = req.params.id;
 		}
 
 		const errorMsg = `Error ao carregar usuário(s) [${id}] dos registros do Facebook`;
@@ -522,9 +522,9 @@ const importAccounts = async (req, res) => {
 const findAccount = async (req, id) => {
 	const account = await Facebook.findOne({ _id: id }, "-__v	");
 
-	if (req.account === undefined) req.account = await [];
+	if (req.account === undefined) req.account = [];
 
-	await req.account.push(account);
+	req.account.push(account);
 };
 
 /**

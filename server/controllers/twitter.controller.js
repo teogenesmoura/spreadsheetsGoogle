@@ -1,5 +1,6 @@
 const httpStatus = require("http-status");
 const Chart = require("chartjs-node");
+const mongoose = require("mongoose");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
 const color = require("./color.controller");
@@ -18,6 +19,10 @@ const listAccounts = async (req, res) => {
 	try {
 		const accounts = await twitterAccount.find({}, "name username");
 		const length = accounts.length;
+		const importLink = {
+			rel: "twitter.import",
+			href: `${req.protocol}://${req.get("host")}/twitter/import`,
+		};
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
@@ -31,6 +36,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
+			import: importLink,
 			accounts,
 		});
 	} catch (error) {
@@ -49,6 +55,10 @@ const getUser = async (req, res) => {
 	try {
 		const account = req.account[0].toObject();
 		account.links = [
+			{
+				rel: "twitter.account.latest",
+				href: `${req.protocol}://${req.get("host")}/twitter/latest/${account.username}`,
+			},
 			{
 				rel: "twitter.account.tweets",
 				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/tweets`,
@@ -109,6 +119,7 @@ const importData = async (req, res) => {
 	const tabs = req.collectives;
 	const length = tabs.length;
 	const tRange = req.sheet.twitterRange;
+	mongoose.connection.collections.twitterAccount.drop();
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 

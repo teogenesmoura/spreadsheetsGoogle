@@ -63,7 +63,7 @@ describe("Facebook endpoint", () => {
 		expect(res.body).toHaveProperty("account");
 		expect(res.body.account).toBeInstanceOf(Object);
 		expect(res.body.account).toHaveProperty("links");
-		expect(res.body.account.links.length).toEqual(2);
+		expect(res.body.account.links.length).toEqual(3);
 		expect(res.body.account.name).toEqual("José Maria");
 		expect(res.body.account.class).toEqual("joseClass");
 		expect(res.body.account.link).toEqual("joseLink/jose/");

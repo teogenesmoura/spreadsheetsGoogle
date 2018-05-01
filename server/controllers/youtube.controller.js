@@ -1,6 +1,7 @@
 const httpStatus = require("http-status");
-const youtubeAccount = require("../models/youtube.model");
+const mongoose = require("mongoose");
 const ChartNode = require("chartjs-node");
+const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
 const color = require("./color.controller");
 const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
@@ -17,6 +18,10 @@ const listAccounts = async (req, res) => {
 	try {
 		const accounts = await youtubeAccount.find({}, "name channelUrl");
 		const length = accounts.length;
+		const importLink = {
+			rel: "youtube.import",
+			href: `${req.protocol}://${req.get("host")}/youtube/import`,
+		};
 		for (let i = 0; i < length; i += 1) {
 			accounts[i] = accounts[i].toObject();
 			accounts[i].links = [];
@@ -31,6 +36,7 @@ const listAccounts = async (req, res) => {
 		}
 		res.status(httpStatus.OK).json({
 			error: false,
+			import: importLink,
 			accounts,
 		});
 	} catch (error) {
@@ -62,6 +68,7 @@ const importData = async (req, res) => {
 	let cCategory;
 	let lastDate;
 
+	mongoose.connection.collections.youtubeAccount.drop();
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 		const rowsCount = cTab.length;
@@ -176,6 +183,10 @@ const getUser = async (req, res) => {
 		const id = account._id; // eslint-disable-line
 		account.links = [
 			{
+				rel: "youtube.account.latest",
+				href: `${req.protocol}://${req.get("host")}/youtube/latest/${id}`,
+			},
+			{
 				rel: "youtube.account.videos",
 				href: `${req.protocol}://${req.get("host")}/youtube/${id}/videos`,
 			},
@@ -197,6 +208,54 @@ const getUser = async (req, res) => {
 		const errorMsg = "Erro enquanto configura-se o usuário";
 
 		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getLatest = async (req, res) => {
+	try {
+		const history = req.account.toObject().history;
+		const length = history.length - 1;
+		const latest = {};
+		let count = 0;
+
+		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
+			if (latest.videos === undefined
+				&& history[ind].videos !== undefined) {
+				latest.videos = history[ind].videos;
+				count += 1;
+			}
+			if (latest.views === undefined
+				&& history[ind].views !== undefined) {
+				latest.views = history[ind].views;
+				count += 1;
+			}
+			if (latest.subscribers === undefined
+				&& history[ind].subscribers !== undefined) {
+				latest.subscribers = history[ind].subscribers;
+				count += 1;
+			}
+		}
+
+		req.account.history.latest = latest;
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			latest,
+		});
+	} catch (error) {
+		const errorMsg = `Error while getting samples of Youtube user ${req.account.name}`;
+
+		logger.error(`${errorMsg} - Details: ${error}`);
+
+		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: errorMsg,
+		});
 	}
 };
 
@@ -448,4 +507,5 @@ module.exports = {
 	getDataset,
 	drawLineChart,
 	importData,
+	getLatest,
 };

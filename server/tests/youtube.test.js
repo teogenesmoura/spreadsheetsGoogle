@@ -107,7 +107,7 @@ describe("Youtube endpoint", () => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
 
-		await request(app).get(`/youtube/compare/subscribers?actors=${accountId1},${accountId2}`).expect(httpStatus.NOT_FOUND);
+		await request(app).get(`/youtube/compare/subscribers?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
 
 		done();
 	});
@@ -116,7 +116,7 @@ describe("Youtube endpoint", () => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
 
-		await request(app).get(`/youtube/compare/videos?actors=${accountId1},${accountId2}`).expect(httpStatus.NOT_FOUND);
+		await request(app).get(`/youtube/compare/videos?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
 
 		done();
 	});
@@ -125,7 +125,7 @@ describe("Youtube endpoint", () => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
 
-		await request(app).get(`/youtube/compare/views?actors=${accountId1},${accountId2}`).expect(httpStatus.NOT_FOUND);
+		await request(app).get(`/youtube/compare/views?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
 
 		done();
 	});

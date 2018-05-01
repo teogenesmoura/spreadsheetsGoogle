@@ -59,7 +59,7 @@
 		},
 		"queriesRange": {
 			"facebookQueries": 2,
-			"instagramTypes": 3,
+			"instagramQueries": 3,
 			"twitterTypes": 5,
 			"youtubeTypes": 3
 		},
@@ -69,20 +69,21 @@
 				"likes",
 				"followers"
 			],
-			"likesType": "likes",
-			"followersType": "followers",
-			"followingType": "following",
-			"postType": "posts",
-			"tweetsType": "tweets",
-			"momentsType": "moments",
-			"subscribersType": "subscribers",
-			"videosType": "videos",
-			"viewsType": "views"
+			"instagramQueries": [
+				"followers",
+				"following",
+				"num_of_posts"
+			]
 		},
 		"queriesPT": {
 			"facebookQueriesPT": {
 				"likes": "curtidas",
 				"followers": "seguidores"
+			},
+			"instagramQueriesPT": {
+				"followers": "seguidores",
+				"following": "contas que segue",
+				"num_of_posts": "postagens"
 			}
 		}		
 	}

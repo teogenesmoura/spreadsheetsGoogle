@@ -142,11 +142,11 @@ const importData = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const getUser = async (req, res) => {
+const getUser = (req, res) => {
 	try {
 		const account = req.account[0].toObject();
 
-		account.links = await getQueriesLink(req, account.username); // eslint-disable-line
+		account.links = getQueriesLink(req, account.username); // eslint-disable-line
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -168,7 +168,7 @@ const getUser = async (req, res) => {
  * following properties: _id, name, username, lastSample (likes, tweets, followers, following,
  * moments).
  */
-const userLastSample = async (req, res) => {
+const userLastSample = (req, res) => {
 	try {
 		const samples = req.account[0].toObject().samples;
 		const length = samples.length - 1;
@@ -302,7 +302,7 @@ const loadAccount = async (req, res, next) => {
  * @param {object} res - standard res object from the Express library
  * @param {object} next - standard next object from the Express libary
  */
-const setSampleKey = async (req, res, next) => {
+const setSampleKey = (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
 	const queriesPT = ResocieObs.queriesPT.twitterQueriesPT;
@@ -339,7 +339,7 @@ const setSampleKey = async (req, res, next) => {
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
  */
-const splitActors = async (req, res, next) => {
+const splitActors = (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
 
@@ -360,7 +360,7 @@ const splitActors = async (req, res, next) => {
  * @param {object} res - standard res object from the Express library
  * @param {object} next - standard next object from the Express libary
  */
-const createDataset = async (req, res, next) => {
+const createDataset = (req, res, next) => {
 	// Carrega as samples da conta do usuário
 	const sampleKey = req.chart.sampleKey;
 	const accounts = req.account;
@@ -375,7 +375,7 @@ const createDataset = async (req, res, next) => {
 	}
 	// */
 
-	accounts.forEach(async (account) => {
+	accounts.forEach((account) => {
 		const dataUser = [];
 		const samples = account.samples;
 		const length = samples.length;
@@ -436,9 +436,8 @@ const findAccount = async (req, username) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} accounts - Accounts registered for Twitter
  */
-const getInitialLink = async (req, accounts) => {
-	await getAccountLink(req, accounts);
-
+const getInitialLink = (req, accounts) => {
+	getAccountLink(req, accounts);
 	return getImportLink(req, SOCIAL_MIDIA);
 };
 
@@ -447,7 +446,7 @@ const getInitialLink = async (req, accounts) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} accounts - Accounts registered for Twitter
  */
-const getAccountLink = async (req, accounts) => {
+const getAccountLink = (req, accounts) => {
 	const length = accounts.length;
 
 	for (let i = 0; i < length; i += 1) {
@@ -468,7 +467,7 @@ const getAccountLink = async (req, accounts) => {
  * Acquiring link to import from Twitter accounts
  * @param {object} req - standard request object from the Express library
  */
-const getImportLink = async (req) => {
+const getImportLink = (req) => {
 	return {
 		rel: `${SOCIAL_MIDIA}.import`,
 		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/import`,
@@ -480,14 +479,14 @@ const getImportLink = async (req) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} id - standard identifier of a Twitter account
  */
-const getQueriesLink = async (req, id) => {
+const getQueriesLink = (req, id) => {
 	const links = [];
 	const midiaQueries = ResocieObs.queries.twitterQueries;
 
-	links.push(await getCommomLink(req, id));
+	links.push(getCommomLink(req, id));
 
 	for (query of midiaQueries) {								// eslint-disable-line
-		await links.push(await getQueryLink(req, id, query));	// eslint-disable-line
+		links.push(getQueryLink(req, id, query));	// eslint-disable-line
 	}
 
 	return links;
@@ -498,7 +497,7 @@ const getQueriesLink = async (req, id) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} id - standard identifier of a Twitter account
  */
-const getCommomLink = async (req, id) => {
+const getCommomLink = (req, id) => {
 	const commom = ResocieObs.queries.commonQuery;
 
 	return {
@@ -513,7 +512,7 @@ const getCommomLink = async (req, id) => {
  * @param {object} id - standard identifier of a Twitter account
  * @param {object} query - query requested
  */
-const getQueryLink = async (req, id, query) => {
+const getQueryLink = (req, id, query) => {
 	return {
 		rel: `${SOCIAL_MIDIA}.account.${query}`,
 		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}/${query}`,
@@ -527,7 +526,7 @@ const getQueryLink = async (req, id, query) => {
  * @param {String} errorMsg - error message for the situation
  * @param {object} error - error that actually happened
  */
-const stdErrorHand = async (res, errorMsg, error) => {
+const stdErrorHand = (res, errorMsg, error) => {
 	logger.error(`${errorMsg} - Detalhes: ${error}`);
 
 	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

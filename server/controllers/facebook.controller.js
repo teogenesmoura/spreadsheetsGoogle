@@ -43,7 +43,7 @@ const listAccounts = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const help = async (req, res) => {
+const help = (req, res) => {
 	const routes = [{
 		root: "/ - Lista com todos os usuários registrados no banco de dados;",
 		help: "/help - Exibição desta lista guia das rotas;",
@@ -165,10 +165,10 @@ const importAccounts = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const getUser = async (req, res) => {
+const getUser = (req, res) => {
 	try {
 		const account = req.account[0].toObject();
-		account.links = await getQueriesLink(req, account._id); // eslint-disable-line
+		account.links = getQueriesLink(req, account._id); // eslint-disable-line
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -186,7 +186,7 @@ const getUser = async (req, res) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
  */
-const getLatest = async (req, res) => {
+const getLatest = (req, res) => {
 	try {
 		const history = req.account[0].toObject().history;
 		const length = history.length - 1;
@@ -274,7 +274,7 @@ const loadAccount = async (req, res, next) => {
  * @param {object} next - standard next function
  * @returns Execution of the next feature, over the history key generated
  */
-const setHistoryKey = async (req, res, next) => {
+const setHistoryKey = (req, res, next) => {
 	const queriesPT = ResocieObs.queriesPT.facebookQueriesPT;
 	const historyKey = req.params.query;
 	const historyKeyPT = queriesPT[historyKey];
@@ -307,7 +307,7 @@ const setHistoryKey = async (req, res, next) => {
  * @param {object} res - standard response object from the Express library
  * @param {object} next - standard next function
  */
-const splitActors = async (req, res, next) => {
+const splitActors = (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
 
@@ -340,7 +340,7 @@ const getDataset = async (req, res, next) => {
 		req.chart.data = [];
 	}
 
-	accounts.forEach(async (account) => {
+	accounts.forEach((account) => {
 		const dataUser = [];
 		const history = account.history;
 		const length = history.length;
@@ -389,7 +389,7 @@ const getDataset = async (req, res, next) => {
  * @param {object} next - standard next function
  * @returns Execution of the next feature, over the Y-axis limits of the chart
  */
-const getChartLimits = async (req, res, next) => {
+const getChartLimits = (req, res, next) => {
 	let minValue = Number.MAX_VALUE;
 	let maxValue = Number.MIN_VALUE;
 	let averageValue = 0;
@@ -399,8 +399,8 @@ const getChartLimits = async (req, res, next) => {
 	const historiesValid = req.chart.data;
 	let length = 0;
 
-	historiesValid.forEach(async (history) => {
-		history.forEach(async (point) => {
+	historiesValid.forEach((history) => {
+		history.forEach((point) => {
 			length += 1;
 			value = point.y;
 
@@ -413,10 +413,9 @@ const getChartLimits = async (req, res, next) => {
 
 	averageValue /= length;
 
-	historiesValid.forEach(async (history) => {
-		history.forEach(async (point) => {
+	historiesValid.forEach((history) => {
+		history.forEach((point) => {
 			value = point.y;
-
 			desvPadValue += (value - averageValue) ** 2;
 		});
 	});
@@ -442,7 +441,7 @@ const getChartLimits = async (req, res, next) => {
  * @param {object} next - standard next function
  * @returns Execution of the next feature, over the chart's configuration
  */
-const getConfigLineChart = async (req, res, next) => {
+const getConfigLineChart = (req, res, next) => {
 	const labelXAxes = "Data";
 	const labelYAxes = `Nº de ${req.chart.historyKeyPT}`;
 
@@ -518,9 +517,8 @@ const findAccount = async (req, id) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} accounts - Accounts registered for Facebook
  */
-const getInitialLink = async (req, accounts) => {
-	await getAccountLink(req, accounts);
-
+const getInitialLink = (req, accounts) => {
+	getAccountLink(req, accounts);
 	return getImportLink(req, SOCIAL_MIDIA);
 };
 
@@ -529,7 +527,7 @@ const getInitialLink = async (req, accounts) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} accounts - Accounts registered for Facebook
  */
-const getAccountLink = async (req, accounts) => {
+const getAccountLink = (req, accounts) => {
 	const length = accounts.length;
 
 	for (let i = 0; i < length; i += 1) {
@@ -551,7 +549,7 @@ const getAccountLink = async (req, accounts) => {
  * Acquiring link to import from Facebook accounts
  * @param {object} req - standard request object from the Express library
  */
-const getImportLink = async (req) => {
+const getImportLink = (req) => {
 	return {
 		rel: `${SOCIAL_MIDIA}.import`,
 		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/import`,
@@ -563,14 +561,14 @@ const getImportLink = async (req) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} id - standard identifier of a Facebook account
  */
-const getQueriesLink = async (req, id) => {
+const getQueriesLink = (req, id) => {
 	const links = [];
 	const midiaQueries = ResocieObs.queries.facebookQueries;
 
-	links.push(await getCommomLink(req, id));
+	links.push(getCommomLink(req, id));
 
 	for (query of midiaQueries) {								// eslint-disable-line
-		await links.push(await getQueryLink(req, id, query));	// eslint-disable-line
+		links.push(getQueryLink(req, id, query));	// eslint-disable-line
 	}
 
 	return links;
@@ -581,7 +579,7 @@ const getQueriesLink = async (req, id) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} id - standard identifier of a Facebook account
  */
-const getCommomLink = async (req, id) => {
+const getCommomLink = (req, id) => {
 	const commom = ResocieObs.queries.commonQuery;
 
 	return {
@@ -596,7 +594,7 @@ const getCommomLink = async (req, id) => {
  * @param {object} id - standard identifier of a Facebook account
  * @param {object} query - query requested
  */
-const getQueryLink = async (req, id, query) => {
+const getQueryLink = (req, id, query) => {
 	return {
 		rel: `${SOCIAL_MIDIA}.account.${query}`,
 		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}/${query}`,
@@ -610,7 +608,7 @@ const getQueryLink = async (req, id, query) => {
  * @param {String} errorMsg - error message for the situation
  * @param {object} error - error that actually happened
  */
-const stdErrorHand = async (res, errorMsg, error) => {
+const stdErrorHand = (res, errorMsg, error) => {
 	logger.error(`${errorMsg} - Detalhes: ${error}`);
 
 	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({

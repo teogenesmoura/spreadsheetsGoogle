@@ -1,13 +1,18 @@
+/*	Required modules */
 const httpStatus = require("http-status");
 const Chart = require("chartjs-node");
 const mongoose = require("mongoose");
+const Color = require("./color.controller");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
-const color = require("./color.controller");
-const ResocieSheets = require("../../config/resocie.json").spreadsheets;
+const ResocieObs = require("../../config/resocie.json").observatory;
 
+/*	Global constants */
+const CHART_SIZE = 700;
 const MAX_LEN_LABEL = 80;
+const SOCIAL_MIDIA = ResocieObs.socialMidia.twitterMidia;
 
+/*	Route final methods */
 /**
  * Retrieves all twitterAccount documents on the db and lists its name and username properties
  * @param {object} req - standard req object from the Express library
@@ -18,87 +23,18 @@ const MAX_LEN_LABEL = 80;
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await twitterAccount.find({}, "name username");
-		const length = accounts.length;
-		const importLink = {
-			rel: "twitter.import",
-			href: `${req.protocol}://${req.get("host")}/twitter/import`,
-		};
-		for (let i = 0; i < length; i += 1) {
-			accounts[i] = accounts[i].toObject();
-			accounts[i].links = [];
-			if (accounts[i].username) {
-				const link = {
-					rel: "twitter.account",
-					href: `${req.protocol}://${req.get("host")}/twitter/${accounts[i].username}`,
-				};
-				accounts[i].links.push(link);
-			}
-		}
+
+		const importLink = await getInitialLink(req, accounts);
+
 		res.status(httpStatus.OK).json({
 			error: false,
 			import: importLink,
 			accounts,
 		});
 	} catch (error) {
-		const errorMsg = "Erro ao carregar usuários do Twitter nos registros";
+		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
 		stdErrorHand(res, errorMsg, error);
-	}
-};
-
-/**
- * Data recovery about a given user
- * @param {object} req - standard request object from the Express library
- * @param {object} res - standard response object from the Express library
- */
-const getUser = async (req, res) => {
-	try {
-		const account = req.account[0].toObject();
-		account.links = [
-			{
-				rel: "twitter.account.latest",
-				href: `${req.protocol}://${req.get("host")}/twitter/latest/${account.username}`,
-			},
-			{
-				rel: "twitter.account.tweets",
-				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/tweets`,
-			},
-			{
-				rel: "twitter.account.followers",
-				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/followers`,
-			},
-			{
-				rel: "twitter.account.following",
-				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/following`,
-			},
-			{
-				rel: "twitter.account.likes",
-				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/likes`,
-			},
-			{
-				rel: "twitter.account.moments",
-				href: `${req.protocol}://${req.get("host")}/twitter/${account.username}/moments`,
-			},
-		];
-		res.status(httpStatus.OK).json({
-			error: false,
-			account,
-		});
-	} catch (error) {
-		const errorMsg = "Erro enquanto configura-se o usuário";
-
-		stdErrorHand(res, errorMsg, error);
-	}
-};
-
-const matchTwitterUsername = (username) => {
-	try {
-		if (!(username) || !(username.includes("twitter.com"))) return null;
-		const twitterRegex = /((https?:\/\/)?(www\.)?twitter\.com\/)?(@|#!\/)?([A-Za-z0-9_]{1,15})(\/([-a-z]{1,20}))?/;
-		const splitUsername = username.match(twitterRegex);
-		return splitUsername[5];
-	} catch (err) {
-		return null;
 	}
 };
 
@@ -115,11 +51,12 @@ const importData = async (req, res) => {
 	let cType = 1; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
-
 	const tabs = req.collectives;
 	const length = tabs.length;
 	const tRange = req.sheet.twitterRange;
+
 	mongoose.connection.collections.twitterAccount.drop();
+
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 
@@ -201,6 +138,133 @@ const importData = async (req, res) => {
 };
 
 /**
+ * Data recovery about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getUser = async (req, res) => {
+	try {
+		const account = req.account[0].toObject();
+
+		account.links = await getQueriesLink(req, account.username); // eslint-disable-line
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			account,
+		});
+	} catch (error) {
+		const errorMsg = "Erro enquanto configura-se o usuário";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Creates a sample from the last defined samples for each property
+ * since samples are only required to have a date filled
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @returns {json} - with the properties error (false if no error occurred) and account with the
+ * following properties: _id, name, username, lastSample (likes, tweets, followers, following,
+ * moments).
+ */
+const userLastSample = async (req, res) => {
+	try {
+		const samples = req.account[0].toObject().samples;
+		const length = samples.length - 1;
+		const latest = {};
+		const limit = ResocieObs.queriesRange.twitterQueries;
+		const queries = ResocieObs.queries.twitterQueries;
+		let count = 0;
+
+		for (let ind = length; ind >= 0 && count <= limit; ind -= 1) {
+			for (query of queries) {						// eslint-disable-line
+				if (latest[query] === undefined				// eslint-disable-line
+					&& samples[ind][query] !== undefined) {	// eslint-disable-line
+					latest[query] = samples[ind][query];	// eslint-disable-line
+					count += 1;
+				}
+			}
+		}
+
+		req.account[0].samples.latest = latest;
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			latest,
+		});
+	} catch (error) {
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Draws the chart into a buffer and send it as a response to the request.
+ * @param {object} req - standard req object from the Express library
+ * @param {object} res - standard res object from the Express library
+ * @param {object} next - standard next object from the Express libary
+ */
+const drawLineChart = async (req, res) => {
+	const mainLabel = req.chart.mainLabel;
+	const datasets = req.chart.dataSets;
+	const chartNode = new Chart(CHART_SIZE, CHART_SIZE);
+	const labelXAxes = "Data";
+	const labelYAxes = `Nº de ${req.chart.sampleKeyPT}`;
+
+	const config = {
+		type: "line",
+		data: {
+			datasets: datasets,
+		},
+		options: {
+			title: {
+				display: true,
+				text: mainLabel,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
+			},
+			scales: {
+				xAxes: [{
+					type: "time",
+					time: {
+						tooltipFormat: "ll HH:mm",
+					},
+					ticks: {
+						major: {
+							fontStyle: "bold",
+						},
+					},
+					scaleLabel: {
+						display: true,
+						labelString: labelXAxes,
+					},
+				}],
+				yAxes: [{
+					scaleLabel: {
+						display: true,
+						labelString: labelYAxes,
+					},
+				}],
+			},
+		},
+	};
+
+	await chartNode.drawChart(config);
+	const buffer = await chartNode.getImageBuffer("image/png");
+	res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
+	res.write(buffer);
+	res.end();
+};
+
+/*	Route middlewares */
+/**
  * Loads a twitter Account and pass it into the req.account object
  * @param {object} req - standard req object from the Express library
  * @param {object} res - standard res object from the Express library
@@ -225,63 +289,9 @@ const loadAccount = async (req, res, next) => {
 		} else {
 			username = req.params.username;
 		}
-		const errorMsg = `Error ao carregar usuário ${username} dos registros do Twitter`;
+		const errorMsg = `Error ao carregar usuário(s) [${username}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
 
 		return stdErrorHand(res, errorMsg, error);
-	}
-};
-
-/**
- * Creates a sample from the last defined samples for each property
- * since samples are only required to have a date filled
- * @param {object} req - standard req object from the Express library
- * @param {object} res - standard res object from the Express library
- * @returns {json} - with the properties error (false if no error occurred) and account with the
- * following properties: _id, name, username, lastSample (likes, tweets, followers, following,
- * moments).
- */
-const userLastSample = async (req, res) => {
-	try {
-		const account = req.account[0].toObject();
-		const samples = req.account[0].samples;
-		const length = samples.length - 1;
-		const limit = ResocieSheets.range.twitterTypes;
-		const lastSample = {};
-		let count = 0;
-
-		for (let i = length; i >= 0 && count <= limit; i -= 1) {
-			if (lastSample.likes === undefined && samples[i].likes !== undefined) {
-				lastSample.likes = samples[i].likes;
-				count += 1;
-			}
-			if (lastSample.tweets === undefined && samples[i].tweets !== undefined) {
-				lastSample.tweets = samples[i].tweets;
-				count += 1;
-			}
-			if (lastSample.followers === undefined && samples[i].followers !== undefined) {
-				lastSample.followers = samples[i].followers;
-				count += 1;
-			}
-			if (lastSample.following === undefined && samples[i].following !== undefined) {
-				lastSample.following = samples[i].following;
-				count += 1;
-			}
-			if (lastSample.moments === undefined && samples[i].moments !== undefined) {
-				lastSample.moments = samples[i].moments;
-				count += 1;
-			}
-		}
-
-		account.lastSample = lastSample;
-
-		res.status(httpStatus.OK).json({
-			error: false,
-			account,
-		});
-	} catch (error) {
-		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no Twitter`;
-
-		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -295,33 +305,19 @@ const userLastSample = async (req, res) => {
 const setSampleKey = async (req, res, next) => {
 	// Pega o último elemento da URL para ver qual o parâmetro
 	// da conta a ser analisado. Ex: /twitter/john/likes -> likes
+	const queriesPT = ResocieObs.queriesPT.twitterQueriesPT;
 	const sampleKey = req.params.query;
-	const errorMsg = `Não existe a caracteristica [${sampleKey}] para o Twitter`;
+	const sampleKeyPT = queriesPT[sampleKey];
+	const errorMsg = `Não existe a caracteristica [${sampleKey}] para o ${capitalize(SOCIAL_MIDIA)}`;
 
 	// Título do gráfico gerado
 	let mainLabel;
 
 	// Analisa o caminho da rota que chegou nesta função para
 	// ter um título com o parâmetro correto.
-	switch (sampleKey) {
-	case ResocieSheets.types.likesType:
-		mainLabel = evolutionMsg("curtidas");
-		break;
-	case ResocieSheets.types.followersType:
-		mainLabel = evolutionMsg("seguidores");
-		break;
-	case ResocieSheets.types.followingType:
-		mainLabel = evolutionMsg("usuários que segue");
-		break;
-	case ResocieSheets.types.tweetsType:
-		mainLabel = evolutionMsg("tweets");
-		break;
-	case ResocieSheets.types.momentsType:
-		mainLabel = evolutionMsg("momentos");
-		break;
-	default:
-		// Se chegou até aqui, a função está sendo chamada por uma rota
-		// com um parâmetro diferente dos aceitáveis.
+	if (sampleKeyPT !== undefined) {
+		mainLabel = evolutionMsg(sampleKeyPT);
+	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
@@ -331,6 +327,7 @@ const setSampleKey = async (req, res, next) => {
 
 	req.chart = {
 		sampleKey: sampleKey,
+		sampleKeyPT: sampleKeyPT,
 		mainLabel: mainLabel,
 	};
 	return next();
@@ -404,10 +401,11 @@ const createDataset = async (req, res, next) => {
 			label = `${account.name} (${account.username})`;
 		}
 
+		const color = Color.getColor();
 		const dataSet = {
 			data: dataUser,
-			backgroundColor: color.WHITE,
-			borderColor: color.getColor(),
+			backgroundColor: color,
+			borderColor: color,
 			fill: false,
 			label: label,
 		};
@@ -419,69 +417,7 @@ const createDataset = async (req, res, next) => {
 	next();
 };
 
-/**
- * Draws the chart into a buffer and send it as a response to the request.
- * @param {object} req - standard req object from the Express library
- * @param {object} res - standard res object from the Express library
- * @param {object} next - standard next object from the Express libary
- */
-const drawLineChart = async (req, res) => {
-	const mainLabel = req.chart.mainLabel;
-	const datasets = req.chart.dataSets;
-	const chartNode = new Chart(700, 700);
-	const labelXAxes = "Data";
-	const labelYAxes = `Nº de ${req.chart.sampleKey}`;
-
-	const config = {
-		type: "line",
-		data: {
-			datasets: datasets,
-		},
-		options: {
-			title: {
-				display: true,
-				text: mainLabel,
-			},
-			legend: {
-				display: true,
-				position: "top",
-				labels: {
-					padding: 15,
-				},
-			},
-			scales: {
-				xAxes: [{
-					type: "time",
-					time: {
-						tooltipFormat: "ll HH:mm",
-					},
-					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
-					},
-					scaleLabel: {
-						display: true,
-						labelString: labelXAxes,
-					},
-				}],
-				yAxes: [{
-					scaleLabel: {
-						display: true,
-						labelString: labelYAxes,
-					},
-				}],
-			},
-		},
-	};
-
-	await chartNode.drawChart(config);
-	const buffer = await chartNode.getImageBuffer("image/png");
-	res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
-	res.write(buffer);
-	res.end();
-};
-
+/*	Methods of abstraction upon request */
 /**
  * Search for an account in the records and making it available
  * @param {object} req - standard request object from the Express library
@@ -495,6 +431,96 @@ const findAccount = async (req, username) => {
 	req.account.push(account);
 };
 
+/**
+ * Acquiring the links to the home page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Twitter
+ */
+const getInitialLink = async (req, accounts) => {
+	await getAccountLink(req, accounts);
+
+	return getImportLink(req, SOCIAL_MIDIA);
+};
+
+/**
+ * Acquire links to all registered Twitter accounts
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Twitter
+ */
+const getAccountLink = async (req, accounts) => {
+	const length = accounts.length;
+
+	for (let i = 0; i < length; i += 1) {
+		accounts[i] = accounts[i].toObject();
+		accounts[i].links = [];
+
+		if (accounts[i].username) {
+			const link = {
+				rel: `${SOCIAL_MIDIA}.account`,
+				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${accounts[i].username}`,
+			};
+			accounts[i].links.push(link);
+		}
+	}
+};
+
+/**
+ * Acquiring link to import from Twitter accounts
+ * @param {object} req - standard request object from the Express library
+ */
+const getImportLink = async (req) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.import`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/import`,
+	};
+};
+
+/**
+ * Acquiring the links to the possible queries for Twitter
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Twitter account
+ */
+const getQueriesLink = async (req, id) => {
+	const links = [];
+	const midiaQueries = ResocieObs.queries.twitterQueries;
+
+	links.push(await getCommomLink(req, id));
+
+	for (query of midiaQueries) {								// eslint-disable-line
+		await links.push(await getQueryLink(req, id, query));	// eslint-disable-line
+	}
+
+	return links;
+};
+
+/**
+ * Acquisition of the link to the common query among all social media
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Twitter account
+ */
+const getCommomLink = async (req, id) => {
+	const commom = ResocieObs.queries.commonQuery;
+
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${commom}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${commom}/${id}`,
+	};
+};
+
+/**
+ * Acquire the link to a given query for Twitter
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Twitter account
+ * @param {object} query - query requested
+ */
+const getQueryLink = async (req, id, query) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${query}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}/${query}`,
+	};
+};
+
+/*	Methods of abstraction upon response */
 /**
  * Standard Error Handling
  * @param {object} res - standard response object from the Express library
@@ -510,6 +536,7 @@ const stdErrorHand = async (res, errorMsg, error) => {
 	});
 };
 
+/*	Methods of abstraction */
 /**
  * Standard message for the analysis of the evolution of a characteristic
  * of a given account
@@ -517,17 +544,39 @@ const stdErrorHand = async (res, errorMsg, error) => {
  * @returns standard message generated
  */
 const evolutionMsg = (param) => {
-	return `Evolução de ${param}, no Twitter`;
+	return `Evolução de ${param}, no ${capitalize(SOCIAL_MIDIA)}`;
+};
+
+/**
+ * Capitalization of a given string
+ * @param {string} str - string for modification
+ */
+const capitalize = (str) => {
+	return str.replace(/\b\w/g, l => l.toUpperCase()); // eslint-disable-line
+};
+
+const matchTwitterUsername = (username) => {
+	try {
+		if (!(username) || !(username.includes("twitter.com"))) return null;
+		const twitterRegex = /((https?:\/\/)?(www\.)?twitter\.com\/)?(@|#!\/)?([A-Za-z0-9_]{1,15})(\/([-a-z]{1,20}))?/;
+		const splitUsername = username.match(twitterRegex);
+		return splitUsername[5];
+	} catch (err) {
+		return null;
+	}
 };
 
 module.exports = {
 	listAccounts,
+	importData,
+	getUser,
+	userLastSample,
+	drawLineChart,
 	loadAccount,
 	setSampleKey,
 	splitActors,
-	getUser,
 	createDataset,
-	importData,
-	drawLineChart,
-	userLastSample,
+	evolutionMsg,
+	capitalize,
+	matchTwitterUsername,
 };

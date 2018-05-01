@@ -3,6 +3,7 @@ const httpStatus = require("http-status");
 const app = require("../../index");
 const twitterAccount = require("../models/twitter.model");
 const twitterMockAccounts = require("./twitter-stub-accounts.json").accounts;
+const twitterCtrl = require("../controllers/twitter.controller");
 
 beforeAll(async () => {
 	await twitterAccount.collection.insert(twitterMockAccounts);
@@ -148,6 +149,32 @@ describe("Twitter endpoint", () => {
 		const res = await request(app).get(`/twitter/compare/moments?actors=${usernameTest1},${usernameTest2}`).expect(httpStatus.OK);
 
 		expect(res.header["content-type"]).toEqual("image/png");
+
+		done();
+	});
+});
+
+describe("Twitter methods", () => {
+	const param = "qualquer coisa";
+
+	it("Recovery of evolution message", async (done) => {
+		const result = "Evolução de qualquer coisa, no Twitter";
+		const delivery = twitterCtrl.evolutionMsg(param);
+
+		expect(delivery).toEqual(result);
+
+		done();
+	});
+
+	it("Recovery of a string capitalized", async (done) => {
+		const result = "Qualquer Coisa";
+		const param1 = "qualquercoisa";
+		const result1 = "Qualquercoisa";
+		const delivery = twitterCtrl.capitalize(param);
+		const delivery1 = twitterCtrl.capitalize(param1);
+
+		expect(delivery).toEqual(result);
+		expect(delivery1).toEqual(result1);
 
 		done();
 	});

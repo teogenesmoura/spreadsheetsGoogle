@@ -60,7 +60,7 @@
 		"queriesRange": {
 			"facebookQueries": 2,
 			"instagramQueries": 3,
-			"twitterTypes": 5,
+			"twitterQueries": 5,
 			"youtubeTypes": 3
 		},
 		"queries": {
@@ -73,6 +73,13 @@
 				"followers",
 				"following",
 				"num_of_posts"
+			],
+			"twitterQueries": [
+				"tweets",
+				"followers",
+				"following",
+				"likes",
+				"moments"
 			]
 		},
 		"queriesPT": {
@@ -84,6 +91,13 @@
 				"followers": "seguidores",
 				"following": "contas que segue",
 				"num_of_posts": "postagens"
+			},
+			"twitterQueriesPT": {
+				"tweets": "tweets",
+				"followers": "seguidores",
+				"following": "contas que segue",
+				"likes": "curtidas",
+				"moments": "momentos"
 			}
 		}		
 	}

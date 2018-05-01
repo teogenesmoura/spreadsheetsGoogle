@@ -1,5 +1,5 @@
 {
-	"spreadsheets": [{
+	"spreadsheets": {
 		"id": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
 		"name": "Grupos",
 		"periods": [
@@ -14,17 +14,6 @@
 			"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
 			"PRÉ-CANDIDATURAS À PRESIDÊNCIA"
 		],
-		"types": {
-			"likesType": "likes",
-			"followersType": "followers",
-			"followingType": "following",
-			"postType": "posts",
-			"tweetsType": "tweets",
-			"momentsType": "moments",
-			"subscribersType": "subscribers",
-			"videosType": "videos",
-			"viewsType": "views"
-		},
 		"facebookRange": {
 			"linkRow": 3,
 			"likesRow": 4,
@@ -58,15 +47,43 @@
 			"dateRow": 14
 		},
 		"range": {
-			"nameRow": 0,
-			"facebookTypes": 2,
+			"nameRow": 0
+		}
+	},
+	"observatory": {
+		"socialMidia": {
+			"facebookMidia": "facebook",
+			"instagramMidia": "instagram",
+			"twitterMidia": "twitter",
+			"youtubeMidia": "youtube"
+		},
+		"queriesRange": {
+			"facebookQueries": 2,
 			"instagramTypes": 3,
 			"twitterTypes": 5,
-			"youtubeTypes": 3,
-			"twitterMin": 7,
-			"twitterMax": 14,
-			"instagramMin": 15,
-			"instagramMax": 18
-		}
-	}]
+			"youtubeTypes": 3
+		},
+		"queries": {
+			"commonQuery": "latest",
+			"facebookQueries": [
+				"likes",
+				"followers"
+			],
+			"likesType": "likes",
+			"followersType": "followers",
+			"followingType": "following",
+			"postType": "posts",
+			"tweetsType": "tweets",
+			"momentsType": "moments",
+			"subscribersType": "subscribers",
+			"videosType": "videos",
+			"viewsType": "views"
+		},
+		"queriesPT": {
+			"facebookQueriesPT": {
+				"likes": "curtidas",
+				"followers": "seguidores"
+			}
+		}		
+	}
 }

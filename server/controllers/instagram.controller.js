@@ -4,7 +4,7 @@ const ChartNode = require("chartjs-node");
 const instagramAccount = require("../models/instagram.model");
 const logger = require("../../config/logger");
 const color = require("./color.controller");
-const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
+const ResocieSheets = require("../../config/resocie.json").spreadsheets;
 
 const chartSize = 700;
 const MAX_LEN_LABEL = 80;

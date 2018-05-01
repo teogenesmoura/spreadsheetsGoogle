@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
 const color = require("./color.controller");
-const ResocieSheets = require("../../config/resocie.json").spreadsheets[0];
+const ResocieSheets = require("../../config/resocie.json").spreadsheets;
 
 const MAX_LEN_LABEL = 80;
 

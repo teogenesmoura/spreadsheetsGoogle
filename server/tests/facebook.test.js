@@ -3,14 +3,12 @@ const httpStatus = require("http-status");
 const app = require("../../index");
 const facebookAccount = require("../models/facebook.model");
 const facebookStub = require("./facebook.stub.json").facebook;
+const facebookCtrl = require("../controllers/facebook.controller");
 
 beforeAll(async () => {
 	await facebookAccount.collection.insert(facebookStub);
 });
 
-/**
- * Possibility of all tests accessing the same server
- */
 afterAll(async () => {
 	await facebookAccount.collection.drop();
 });
@@ -184,3 +182,41 @@ describe("Facebook endpoint", () => {
 	});
 });
 
+describe("Facebook methods", () => {
+	const param = "qualquer coisa";
+
+	it("Recovery of evolution message", async (done) => {
+		const result = "Evolução de qualquer coisa, no Facebook";
+		const delivery = facebookCtrl.evolutionMsg(param);
+
+		expect(delivery).toEqual(result);
+
+		done();
+	});
+
+	it("Recovery of a string capitalized", async (done) => {
+		const result = "Qualquer Coisa";
+		const param1 = "qualquercoisa";
+		const result1 = "Qualquercoisa";
+		const delivery = facebookCtrl.capitalize(param);
+		const delivery1 = facebookCtrl.capitalize(param1);
+
+		expect(delivery).toEqual(result);
+		expect(delivery1).toEqual(result1);
+
+		done();
+	});
+
+	it("Recovery of a cell valid or invalid", async (done) => {
+		expect(facebookCtrl.isCellValid(param)).toBe(true);
+		expect(facebookCtrl.isCellValid(null)).toBe(false);
+		expect(facebookCtrl.isCellValid(undefined)).toBe(false);
+		expect(facebookCtrl.isCellValid("-")).toBe(false);
+		expect(facebookCtrl.isCellValid("s")).toBe(false);
+		expect(facebookCtrl.isCellValid("s/")).toBe(false);
+		expect(facebookCtrl.isCellValid("S")).toBe(false);
+		expect(facebookCtrl.isCellValid("S/")).toBe(false);
+
+		done();
+	});
+});

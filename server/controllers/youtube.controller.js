@@ -1,13 +1,18 @@
+/*	Required modules */
+const ChartNode = require("chartjs-node");
 const httpStatus = require("http-status");
 const mongoose = require("mongoose");
-const ChartNode = require("chartjs-node");
+const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
-const color = require("./color.controller");
-const ResocieSheets = require("../../config/resocie.json").spreadsheets;
+const ResocieObs = require("../../config/resocie.json").observatory;
 
+/*	Global constants */
+const CHART_SIZE = 700;
 const MAX_LEN_LABEL = 80;
+const SOCIAL_MIDIA = ResocieObs.socialMidia.youtubeMidia;
 
+/*	Route final methods */
 /**
  * Search for all YouTube Accounts on the database.
  * @param {object} req - standard req object from the Express library
@@ -17,30 +22,16 @@ const MAX_LEN_LABEL = 80;
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await youtubeAccount.find({}, "name channelUrl");
-		const length = accounts.length;
-		const importLink = {
-			rel: "youtube.import",
-			href: `${req.protocol}://${req.get("host")}/youtube/import`,
-		};
-		for (let i = 0; i < length; i += 1) {
-			accounts[i] = accounts[i].toObject();
-			accounts[i].links = [];
-			const id = accounts[i]._id; // eslint-disable-line
-			if (accounts[i].channelUrl) {
-				const link = {
-					rel: "youtube.account",
-					href: `${req.protocol}://${req.get("host")}/youtube/${id}`,
-				};
-				accounts[i].links.push(link);
-			}
-		}
+
+		const importLink = await getInitialLink(req, accounts);
+
 		res.status(httpStatus.OK).json({
 			error: false,
 			import: importLink,
 			accounts,
 		});
 	} catch (error) {
-		const errorMsg = "Erro ao carregar usuários do Youtube nos registros";
+		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
 		stdErrorHand(res, errorMsg, error);
 	}
@@ -146,6 +137,132 @@ const importData = async (req, res) => {
 };
 
 /**
+ * Data recovery about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getUser = async (req, res) => {
+	try {
+		const account = req.account[0].toObject();
+
+		account.links = await getQueriesLink(req, account._id); // eslint-disable-line
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			account,
+		});
+	} catch (error) {
+		const errorMsg = "Erro enquanto configura-se o usuário";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getLatest = async (req, res) => {
+	try {
+		const history = req.account[0].toObject().history;
+		const length = history.length - 1;
+		const latest = {};
+		const limit = ResocieObs.queriesRange.youtubeQueries;
+		const queries = ResocieObs.queries.youtubeQueries;
+		let count = 0;
+
+		for (let ind = length; ind >= 0; ind -= 1) {
+			for (query of queries) {						// eslint-disable-line
+				if (latest[query] === undefined				// eslint-disable-line
+					&& history[ind][query] !== undefined) {	// eslint-disable-line
+					latest[query] = history[ind][query];	// eslint-disable-line
+					count += 1;
+				}
+			}
+
+			if (count <= limit) break;
+		}
+
+		req.account[0].history.latest = latest;
+
+		res.status(httpStatus.OK).json({
+			error: false,
+			latest,
+		});
+	} catch (error) {
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Standard setting for generating a line chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
+ */
+const drawLineChart = async (req, res) => {
+	const mainLabel = req.chart.mainLabel;
+	const datasets = req.chart.dataSets;
+	const chartNode = new ChartNode(CHART_SIZE, CHART_SIZE);
+	const labelXAxes = "Data";
+	const labelYAxes = `Nº de ${req.chart.historyKeyPT}`;
+
+	const config = {
+		type: "line",
+		data: {
+			datasets: datasets,
+		},
+		options: {
+			title: {
+				display: true,
+				text: mainLabel,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
+			},
+			scales: {
+				xAxes: [{
+					type: "time",
+					time: {
+						tooltipFormat: "ll HH:mm",
+					},
+					ticks: {
+						major: {
+							fontStyle: "bold",
+						},
+					},
+					scaleLabel: {
+						display: true,
+						labelString: labelXAxes,
+					},
+				}],
+				yAxes: [{
+					scaleLabel: {
+						display: true,
+						labelString: labelYAxes,
+					},
+				}],
+			},
+		},
+	};
+
+	await chartNode.drawChart(config);
+	const buffer = await chartNode.getImageBuffer("image/png");
+	res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
+	res.write(buffer);
+	res.end();
+};
+
+/*	Route middlewares */
+/**
  * Look for a specific registered Youtube account, by name.
  * @param {object} req - standard request object from the Express library
  * @param {object} res - standard response object from the Express library
@@ -171,91 +288,9 @@ const loadAccount = async (req, res, next) => {
 		} else {
 			id = req.params.id;
 		}
-		const errorMsg = `Error ao carregar usuário ${id} dos registros do YouTube`;
+		const errorMsg = `Error ao carregar usuário(s) [${id}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
 
 		return stdErrorHand(res, errorMsg, error);
-	}
-};
-
-const getUser = async (req, res) => {
-	try {
-		const account = req.account[0].toObject();
-		const id = account._id; // eslint-disable-line
-		account.links = [
-			{
-				rel: "youtube.account.latest",
-				href: `${req.protocol}://${req.get("host")}/youtube/latest/${id}`,
-			},
-			{
-				rel: "youtube.account.videos",
-				href: `${req.protocol}://${req.get("host")}/youtube/${id}/videos`,
-			},
-			{
-				rel: "youtube.account.views",
-				href: `${req.protocol}://${req.get("host")}/youtube/${id}/views`,
-			},
-			{
-				rel: "youtube.account.subscribers",
-				href: `${req.protocol}://${req.get("host")}/youtube/${id}/subscribers`,
-			},
-		];
-
-		res.status(httpStatus.OK).json({
-			error: false,
-			account,
-		});
-	} catch (error) {
-		const errorMsg = "Erro enquanto configura-se o usuário";
-
-		stdErrorHand(res, errorMsg, error);
-	}
-};
-
-/**
- * Data recovery latest about a given user
- * @param {object} req - standard request object from the Express library
- * @param {object} res - standard response object from the Express library
- */
-const getLatest = async (req, res) => {
-	try {
-		const history = req.account.toObject().history;
-		const length = history.length - 1;
-		const latest = {};
-		let count = 0;
-
-		for (let ind = length; ind >= 0 && count <= 2; ind -= 1) {
-			if (latest.videos === undefined
-				&& history[ind].videos !== undefined) {
-				latest.videos = history[ind].videos;
-				count += 1;
-			}
-			if (latest.views === undefined
-				&& history[ind].views !== undefined) {
-				latest.views = history[ind].views;
-				count += 1;
-			}
-			if (latest.subscribers === undefined
-				&& history[ind].subscribers !== undefined) {
-				latest.subscribers = history[ind].subscribers;
-				count += 1;
-			}
-		}
-
-		req.account.history.latest = latest;
-
-		res.status(httpStatus.OK).json({
-			error: false,
-			latest,
-		});
-	} catch (error) {
-		const errorMsg = `Error while getting samples of Youtube user ${req.account.name}`;
-
-		logger.error(`${errorMsg} - Details: ${error}`);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
 	}
 };
 
@@ -267,26 +302,17 @@ const getLatest = async (req, res) => {
  * @returns Execution of the next feature, over the history key generated
  */
 const setHistoryKey = async (req, res, next) => {
+	const queriesPT = ResocieObs.queriesPT.youtubeQueriesPT;
 	const historyKey = req.params.query;
-	// Título do gráfico gerado
+	const historyKeyPT = queriesPT[historyKey];
+	const errorMsg = `Não existe a caracteristica [${historyKey}] para o ${capitalize(SOCIAL_MIDIA)}`;
+
 	let mainLabel;
-	const errorMsg = `Não existe a caracteristica ${historyKey} para o YouTube`;
 
-	// Analisa o caminho da rota que chegou nesta função para
-	// ter um título com o parâmetro correto.
-	switch (historyKey) {
-	case ResocieSheets.types.subscribersType:
-		mainLabel = evolutionMsg("curtidas");
-		break;
-	case ResocieSheets.types.videosType:
-		mainLabel = evolutionMsg("seguidores");
-		break;
-	case ResocieSheets.types.viewsType:
-		mainLabel = evolutionMsg("visualizações");
-		break;
-	default:
+	if (historyKeyPT !== undefined) {
+		mainLabel = evolutionMsg(historyKeyPT);
+	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
-
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
 			description: errorMsg,
@@ -295,8 +321,10 @@ const setHistoryKey = async (req, res, next) => {
 
 	req.chart = {
 		historyKey: historyKey,
+		historyKeyPT: historyKeyPT,
 		mainLabel: mainLabel,
 	};
+
 	return next();
 };
 
@@ -367,10 +395,11 @@ const getDataset = async (req, res, next) => {
 			label = `${account.name} (${account.channelUrl})`;
 		}
 
+		const color = Color.getColor();
 		const dataSet = {
 			data: dataUser,
-			backgroundColor: color.WHITE,
-			borderColor: color.getColor(),
+			backgroundColor: color,
+			borderColor: color,
 			fill: false,
 			label: label,
 		};
@@ -382,71 +411,7 @@ const getDataset = async (req, res, next) => {
 	next();
 };
 
-/**
- * Standard setting for generating a line chart
- * @param {object} req - standard request object from the Express library
- * @param {object} res - standard response object from the Express library
- * @param {object} next - standard next function
- * @returns Execution of the next feature, over the chart's configuration
- */
-const drawLineChart = async (req, res) => {
-	const mainLabel = req.chart.mainLabel;
-	const datasets = req.chart.dataSets;
-	const historyKey = req.chart.historyKey;
-	const chartNode = new ChartNode(700, 700);
-	const labelXAxes = "Data";
-	const labelYAxes = `Nº de ${historyKey}`;
-
-	const config = {
-		type: "line",
-		data: {
-			datasets: datasets,
-		},
-		options: {
-			title: {
-				display: true,
-				text: mainLabel,
-			},
-			legend: {
-				display: true,
-				position: "top",
-				labels: {
-					padding: 15,
-				},
-			},
-			scales: {
-				xAxes: [{
-					type: "time",
-					time: {
-						tooltipFormat: "ll HH:mm",
-					},
-					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
-					},
-					scaleLabel: {
-						display: true,
-						labelString: labelXAxes,
-					},
-				}],
-				yAxes: [{
-					scaleLabel: {
-						display: true,
-						labelString: labelYAxes,
-					},
-				}],
-			},
-		},
-	};
-
-	await chartNode.drawChart(config);
-	const buffer = await chartNode.getImageBuffer("image/png");
-	res.writeHead(httpStatus.OK, { "Content-Type": "image/png" });
-	res.write(buffer);
-	res.end();
-};
-
+/*	Methods of abstraction upon request */
 /**
  * Search for an account in the records and making it available
  * @param {object} req - standard request object from the Express library
@@ -460,6 +425,98 @@ const findAccount = async (req, id) => {
 	req.account.push(account);
 };
 
+/**
+ * Acquiring the links to the home page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Youtube
+ */
+const getInitialLink = async (req, accounts) => {
+	await getAccountLink(req, accounts);
+
+	return getImportLink(req, SOCIAL_MIDIA);
+};
+
+/**
+ * Acquire links to all registered Youtube accounts
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Youtube
+ */
+const getAccountLink = async (req, accounts) => {
+	const length = accounts.length;
+
+	for (let i = 0; i < length; i += 1) {
+		accounts[i] = accounts[i].toObject();
+		accounts[i].links = [];
+		const id = accounts[i]._id; // eslint-disable-line
+
+		if (accounts[i].channelUrl) {
+			const link = {
+				rel: `${SOCIAL_MIDIA}.account`,
+				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}`,
+			};
+			accounts[i].links.push(link);
+		}
+	}
+};
+
+/**
+ * Acquiring link to import from Youtube accounts
+ * @param {object} req - standard request object from the Express library
+ */
+const getImportLink = async (req) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.import`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/import`,
+	};
+};
+
+/**
+ * Acquiring the links to the possible queries for Youtbe
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Youtube account
+ */
+const getQueriesLink = async (req, id) => {
+	const links = [];
+	const midiaQueries = ResocieObs.queries.youtubeQueries;
+
+	links.push(await getCommomLink(req, id));
+
+	for (query of midiaQueries) {								// eslint-disable-line
+		await links.push(await getQueryLink(req, id, query));	// eslint-disable-line
+	}
+
+	return links;
+};
+
+/**
+ * Acquisition of the link to the common query among all social media
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Youtbe account
+ */
+const getCommomLink = async (req, id) => {
+	const commom = ResocieObs.queries.commonQuery;
+
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${commom}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${commom}/${id}`,
+	};
+};
+
+/**
+ * Acquire the link to a given query for Youtube
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Youtube account
+ * @param {object} query - query requested
+ */
+const getQueryLink = async (req, id, query) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${query}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}/${query}`,
+	};
+};
+
+
+/*	Methods of abstraction upon response */
 /**
  * Standard Error Handling
  * @param {object} res - standard response object from the Express library
@@ -475,6 +532,7 @@ const stdErrorHand = async (res, errorMsg, error) => {
 	});
 };
 
+/*	Methods of abstraction */
 /**
  * Standard message for the analysis of the evolution of a characteristic
  * of a given account
@@ -482,7 +540,15 @@ const stdErrorHand = async (res, errorMsg, error) => {
  * @returns standard message generated
  */
 const evolutionMsg = (param) => {
-	return `Evolução de ${param}, no YouTube`;
+	return `Evolução de ${param}, no ${capitalize(SOCIAL_MIDIA)}`;
+};
+
+/**
+ * Capitalization of a given string
+ * @param {string} str - string for modification
+ */
+const capitalize = (str) => {
+	return str.replace(/\b\w/g, l => l.toUpperCase()); // eslint-disable-line
 };
 
 /**
@@ -491,7 +557,13 @@ const evolutionMsg = (param) => {
  * @returns true if it is not valid, false if it is valid
  */
 const isCellValid = (value) => {
-	if (!(value) || value === "-" || value === "s" || value === "s/" || value === "S" || value === "S/") {
+	if (!value) return false;
+
+	value = value.toUpperCase();
+
+	if (value === "-"
+		|| value === "S"
+		|| value === "S/") {
 		return false;
 	}
 
@@ -500,12 +572,15 @@ const isCellValid = (value) => {
 
 module.exports = {
 	listAccounts,
-	loadAccount,
+	importData,
 	getUser,
+	getLatest,
+	drawLineChart,
+	loadAccount,
 	setHistoryKey,
 	splitActors,
 	getDataset,
-	drawLineChart,
-	importData,
-	getLatest,
+	evolutionMsg,
+	capitalize,
+	isCellValid,
 };

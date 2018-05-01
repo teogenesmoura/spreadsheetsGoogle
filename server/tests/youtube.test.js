@@ -3,6 +3,7 @@ const httpStatus = require("http-status");
 const app = require("../../index");
 const youtubeAccount = require("../models/youtube.model");
 const youtubeStub = require("./youtube.stub.json").accounts;
+const youtubeCtrl = require("../controllers/youtube.controller");
 
 beforeAll(async () => {
 	await youtubeAccount.collection.insert(youtubeStub);
@@ -126,6 +127,45 @@ describe("Youtube endpoint", () => {
 		expect(accountId2).toBeDefined();
 
 		await request(app).get(`/youtube/compare/views?actors=${accountId1},${accountId2}`).expect(httpStatus.OK);
+
+		done();
+	});
+});
+
+describe("Youtbe methods", () => {
+	const param = "qualquer coisa";
+
+	it("Recovery of evolution message", async (done) => {
+		const result = "Evolução de qualquer coisa, no Youtube";
+		const delivery = youtubeCtrl.evolutionMsg(param);
+
+		expect(delivery).toEqual(result);
+
+		done();
+	});
+
+	it("Recovery of a string capitalized", async (done) => {
+		const result = "Qualquer Coisa";
+		const param1 = "qualquercoisa";
+		const result1 = "Qualquercoisa";
+		const delivery = youtubeCtrl.capitalize(param);
+		const delivery1 = youtubeCtrl.capitalize(param1);
+
+		expect(delivery).toEqual(result);
+		expect(delivery1).toEqual(result1);
+
+		done();
+	});
+
+	it("Recovery of a cell valid or invalid", async (done) => {
+		expect(youtubeCtrl.isCellValid(param)).toBe(true);
+		expect(youtubeCtrl.isCellValid(null)).toBe(false);
+		expect(youtubeCtrl.isCellValid(undefined)).toBe(false);
+		expect(youtubeCtrl.isCellValid("-")).toBe(false);
+		expect(youtubeCtrl.isCellValid("s")).toBe(false);
+		expect(youtubeCtrl.isCellValid("s/")).toBe(false);
+		expect(youtubeCtrl.isCellValid("S")).toBe(false);
+		expect(youtubeCtrl.isCellValid("S/")).toBe(false);
 
 		done();
 	});

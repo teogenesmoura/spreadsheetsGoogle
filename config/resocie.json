@@ -80,6 +80,11 @@
 				"following",
 				"likes",
 				"moments"
+			],
+			"youtubeQueries":[
+				"videos",
+				"views",
+				"subscribers"
 			]
 		},
 		"queriesPT": {
@@ -98,6 +103,11 @@
 				"following": "contas que segue",
 				"likes": "curtidas",
 				"moments": "momentos"
+			},
+			"youtubeQueriesPT": {
+				"videos": "vídeos",
+				"views": "visualizações",
+				"subscribers": "inscritos"
 			}
 		}		
 	}

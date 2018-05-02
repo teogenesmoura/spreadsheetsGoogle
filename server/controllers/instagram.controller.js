@@ -1,60 +1,40 @@
-const instagramAccount = require("../models/instagram.model");
-const httpStatus = require("http-status");
-const logger = require("../../config/logger");
+/*	Required modules */
 const ChartNode = require("chartjs-node");
+const httpStatus = require("http-status");
 const mongoose = require("mongoose");
+const Color = require("./color.controller");
+const instagramAccount = require("../models/instagram.model");
+const logger = require("../../config/logger");
+const ResocieObs = require("../../config/resocie.json").observatory;
 
-const followingType = "following";
-const followersType = "followers";
-const postType = "posts";
-const chartSize = 600;
+/*	Global constants */
+const CHART_SIZE = 700;
+const MAX_LEN_LABEL = 80;
+const SOCIAL_MIDIA = ResocieObs.socialMidia.instagramMidia;
 
+/*	Route final methods */
 /**
- * Procura os nomes no banco de dados e retorna os usuários do instagram
+ * Search for all registered Facebook accounts.
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @return {object} result - list with all registered accounts, displaying the link and the name
+ * @return {String} description - error warning
  */
-
 const listAccounts = async (req, res) => {
 	try {
 		const accounts = await instagramAccount.find({}, "name username");
-		const length = accounts.length;
-		const importLink = {
-			rel: "instagram.import",
-			href: `${req.protocol}://${req.get("host")}/instagram/import`,
-		};
-		for (let i = 0; i < length; i += 1) {
-			accounts[i] = accounts[i].toObject();
-			accounts[i].links = [];
-			if (accounts[i].username) {
-				const link = {
-					rel: "instagram.account",
-					href: `${req.protocol}://${req.get("host")}/instagram/${accounts[i].username}`,
-				};
-				accounts[i].links.push(link);
-			}
-		}
+
+		const importLink = await getInitialLink(req, accounts);
+
 		res.status(httpStatus.OK).json({
 			error: false,
 			import: importLink,
 			accounts,
 		});
-	} catch (e) {
-		const message = "Erro ao recuperar os dados de usuários do Instagram";
-		logger.error(message);
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: message,
-		});
-	}
-};
+	} catch (error) {
+		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
-const matchInstagramUsername = (profileUrl) => {
-	try {
-		if (!(profileUrl) || !(profileUrl.includes("instagram.com"))) return null;
-		const igRegex = /(https?:\/\/)?(www\.)?instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
-		const splitUsername = profileUrl.match(igRegex);
-		return splitUsername[3];
-	} catch (err) {
-		return null;
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
@@ -66,23 +46,23 @@ const matchInstagramUsername = (profileUrl) => {
  */
 const importData = async (req, res) => {
 	// <TODO>: Add error handling to avoid crashes and return 500 instead
-
 	// Different types of actors indicated in the spreadsheet
 	let cType = 1; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
-	mongoose.connection.collections.instagramAccount.drop();
-
 	const tabs = req.collectives;
 	const length = tabs.length;
 	const iRange = req.sheet.instagramRange;
+
+	mongoose.connection.collections.instagramAccount.drop();
+
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {
 			const row = cTab[j];
-			const name = row[iRange.nameRow];
+			const name = row[iRange.nameRow].replace(/\n/g, " ");
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
@@ -153,117 +133,130 @@ const importData = async (req, res) => {
 	return res.redirect("/instagram");
 };
 
-const loadAccount = async (req, res, next, username) => {
+/**
+ * Data recovery about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getUser = (req, res) => {
 	try {
-		const account = await instagramAccount.findOne({ username });
-		req.account = account;
-		return next();
-	} catch (e) {
-		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: `Não consegui recuperar informações do usuário ${username}`,
-		});
-	}
-};
+		const account = req.account[0].toObject();
+		account.links = getQueriesLink(req, account.username); // eslint-disable-line
 
-const getUser = async (req, res) => {
-	try {
-		const account = req.account.toObject();
-		account.links = [
-			{
-				rel: "instagram.account.latest",
-				href: `${req.protocol}://${req.get("host")}/instagram/latest/${account.username}`,
-			},
-			{
-				rel: "instagram.account.followers",
-				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/followers`,
-			},
-			{
-				rel: "instagram.account.following",
-				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/following`,
-			},
-			{
-				rel: "instagram.account.posts",
-				href: `${req.protocol}://${req.get("host")}/instagram/${account.username}/posts`,
-			},
-		];
 		res.status(httpStatus.OK).json({
 			error: false,
 			account,
 		});
 	} catch (error) {
-		const errorMsg = "Internal server error while responding with account";
+		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		logger.error(errorMsg);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
-const getLatest = async (req, res) => {
+/**
+ * Data recovery latest about a given user
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const getLatest = (req, res) => {
 	try {
-		const history = req.account.toObject().history;
+		const history = req.account[0].toObject().history;
 		const length = history.length - 1;
 		const latest = {};
+		const limit = ResocieObs.queriesRange.instagramQueries;
+		const queries = ResocieObs.queries.instagramQueries;
 		let count = 0;
 
-		for (let ind = length; ind >= 0 && count <= 3; ind -= 1) {
-			if (latest.following === undefined
-				&& history[ind].following !== undefined) {
-				latest.following = history[ind].following;
-				count += 1;
-			}
-			if (latest.followers === undefined
-				&& history[ind].followers !== undefined) {
-				latest.followers = history[ind].followers;
-				count += 1;
-			}
-			if (latest.num_of_posts === undefined
-				&& history[ind].num_of_posts !== undefined) {
-				latest.num_of_posts = history[ind].num_of_posts;
-				count += 1;
+		for (let ind = length; ind >= 0 && count <= limit; ind -= 1) {
+			for (query of queries) {						// eslint-disable-line
+				if (latest[query] === undefined				// eslint-disable-line
+					&& history[ind][query] !== undefined) {	// eslint-disable-line
+					latest[query] = history[ind][query];	// eslint-disable-line
+					count += 1;
+				}
 			}
 		}
 
-		req.account.history.latest = latest;
+		req.account[0].history.latest = latest;
 
 		res.status(httpStatus.OK).json({
 			error: false,
 			latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error while getting samples of Instagram user ${req.account.username}`;
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
 
-		logger.error(errorMsg);
-
-		res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-			error: true,
-			description: errorMsg,
-		});
+		stdErrorHand(res, errorMsg, error);
 	}
 };
 
-const setHistoryKey = async (req, res, next) => {
-	let historyKey = req.params.query;
-	const errorMsg = `Requisição inválida para o usuário ${req.account.username}`;
+/**
+ * Generating and plotting the generated chart on the page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ */
+const plotLineChart = async (req, res) => {
+	const chart = new ChartNode(CHART_SIZE, CHART_SIZE);
+
+	await chart.drawChart(req.chart.config);
+	const buffer = await chart.getImageBuffer("image/png");
+	res.writeHeader(httpStatus.OK, { "Content-type": "image/png" });
+	res.write(buffer);
+	res.end();
+};
+
+/*	Route middlewares */
+/**
+ * Look for a specific registered Instagram account, by username.
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data found
+ */
+const loadAccount = async (req, res, next) => {
+	try {
+		if (req.actors !== undefined) {
+			for (const cActor of req.actors) {	// eslint-disable-line
+				await findAccount(req, cActor);	// eslint-disable-line
+			} 									// eslint-disable-line
+		} else {
+			const username = req.params.username;
+			await findAccount(req, username);
+		}
+
+		return next();
+	} catch (error) {
+		let username;
+		if (req.actors !== undefined) {
+			username = req.actors;
+		} else {
+			username = req.params.username;
+		}
+		const errorMsg = `Error ao carregar usuário(s) [${username}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
+
+		return stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Layer to query requested identification
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the history key generated
+ */
+const setHistoryKey = (req, res, next) => {
+	const queriesPT = ResocieObs.queriesPT.instagramQueriesPT;
+	const historyKey = req.params.query;
+	const historyKeyPT = queriesPT[historyKey];
+	const errorMsg = `Não existe a caracteristica [${historyKey}] para o ${capitalize(SOCIAL_MIDIA)}`;
 
 	let chartTitle;
 
-	switch (historyKey) {
-	case followingType:
-		chartTitle = evolutionMsg("Seguindo");
-		break;
-	case followersType:
-		chartTitle = evolutionMsg("Seguidores");
-		break;
-	case postType:
-		historyKey = "num_of_posts";
-		chartTitle = evolutionMsg("Numero de postagens");
-		break;
-	default:
+	if (historyKeyPT !== undefined) {
+		chartTitle = evolutionMsg(historyKeyPT);
+	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
 		return res.status(httpStatus.NOT_FOUND).json({
 			error: true,
@@ -273,50 +266,106 @@ const setHistoryKey = async (req, res, next) => {
 
 	req.chart = {
 		historyKey: historyKey,
+		historyKeyPT: historyKeyPT,
 		chartTitle: chartTitle,
 	};
 
 	return next();
 };
 
-const getDataset = async (req, res, next) => {
-	const history = req.account.history;
+/**
+ * Split of actors to be compared
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ */
+const splitActors = (req, res, next) => {
+	try {
+		const actors = req.query.actors.split(",");
+
+		req.actors = actors;
+
+		next();
+	} catch (error) {
+		const errorMsg = "Erro ao criar o ambiente para a comparação";
+
+		stdErrorHand(res, errorMsg, error);
+	}
+};
+
+/**
+ * Recovery of the requested historical data set
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the data set generated
+ */
+const getDataset = (req, res, next) => {
 	const historyKey = req.chart.historyKey;
+	const accounts = req.account;
 
-	const dataUser = [];
-	// const labels = [];
-
-	const length = history.length;
-	for (let ind = 0; ind < length; ind += 1) {
-		if (history[ind][historyKey] !== undefined
-			&& history[ind][historyKey] !== null) {
-			const date = new Date(history[ind].date);
-
-			dataUser.push({
-				x: date,
-				y: history[ind][historyKey],
-			});
-			// labels.push(date);
-		}
+	if (req.chart.dataSets === undefined) {
+		req.chart.dataSets = [];
 	}
 
-	const dataSet = [{
-		data: dataUser,
-		backgroundColor: "#ffffff",
-		borderColor: "#4286f4",
-		fill: false,
-		label: `${req.account.name} (${req.account.username})`,
-	}];
+	/*
+	if (req.chart.data === undefined) {
+		req.chart.data = [];
+	}
+	// */
 
-	req.chart.dataSets = dataSet;
-	req.chart.data = dataUser;
+	accounts.forEach((account) => {
+		const dataUser = [];
+		const history = account.history;
+		const length = history.length;
+		// const labels = [];
+
+		for (let ind = 0; ind < length; ind += 1) {
+			if (history[ind][historyKey] !== undefined
+				&& history[ind][historyKey] !== null) {
+				const date = new Date(history[ind].date);
+
+				dataUser.push({
+					x: date,
+					y: history[ind][historyKey],
+				});
+				// labels.push(date);
+			}
+		}
+
+		let label;
+		if ((account.name.length + account.username.length) > MAX_LEN_LABEL) {
+			label = `${account.name}\n(${account.username})`;
+		} else {
+			label = `${account.name} (${account.username})`;
+		}
+
+		const color = Color.getColor();
+		const dataSet = {
+			data: dataUser,
+			backgroundColor: color,
+			borderColor: color,
+			fill: false,
+			label: label,
+		};
+
+		req.chart.dataSets.push(dataSet);
+		// req.chart.data.push(dataUser);
+	});
 
 	next();
 };
 
-const getConfigLineChart = async (req, res, next) => {
+/**
+ * Standard setting for generating a line chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the chart's configuration
+ */
+const getConfigLineChart = (req, res, next) => {
 	const labelXAxes = "Data";
-	const labelYAxes = "Valor";
+	const labelYAxes = `Nº de ${req.chart.historyKeyPT}`;
 
 	const config = {
 		type: "line",
@@ -325,6 +374,13 @@ const getConfigLineChart = async (req, res, next) => {
 			title: {
 				display: true,
 				text: req.chart.chartTitle,
+			},
+			legend: {
+				display: true,
+				position: "top",
+				labels: {
+					padding: 15,
+				},
 			},
 			scales: {
 				xAxes: [{
@@ -358,28 +414,167 @@ const getConfigLineChart = async (req, res, next) => {
 	next();
 };
 
-const plotLineChart = async (req, res) => {
-	const chart = new ChartNode(chartSize, chartSize);
+/*	Methods of abstraction upon request */
+/**
+ * Search for an account in the records and making it available
+ * @param {object} req - standard request object from the Express library
+ * @param {object} username - standard identifier of a Instagram account
+ */
+const findAccount = async (req, username) => {
+	const account = await instagramAccount.findOne({ username });
 
-	await chart.drawChart(req.chart.config);
-	const buffer = await chart.getImageBuffer("image/png");
-	res.writeHeader(httpStatus.OK, { "Content-type": "image/png" });
-	res.write(buffer);
-	res.end();
+	if (req.account === undefined) req.account = [];
+
+	req.account.push(account);
 };
 
+/**
+ * Acquiring the links to the home page
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Instagram
+ */
+const getInitialLink = (req, accounts) => {
+	getAccountLink(req, accounts);
+
+	return getImportLink(req, SOCIAL_MIDIA);
+};
+
+/**
+ * Acquire links to all registered Instagram accounts
+ * @param {object} req - standard request object from the Express library
+ * @param {object} accounts - Accounts registered for Instagram
+ */
+const getAccountLink = (req, accounts) => {
+	const length = accounts.length;
+
+	for (let i = 0; i < length; i += 1) {
+		accounts[i] = accounts[i].toObject();
+		accounts[i].links = [];
+
+		if (accounts[i].username) {
+			const link = {
+				rel: `${SOCIAL_MIDIA}.account`,
+				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${accounts[i].username}`,
+			};
+			accounts[i].links.push(link);
+		}
+	}
+};
+
+/**
+ * Acquiring link to import from Instagram accounts
+ * @param {object} req - standard request object from the Express library
+ */
+const getImportLink = (req) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.import`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/import`,
+	};
+};
+
+/**
+ * Acquiring the links to the possible queries for Instagram
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Instagram account
+ */
+const getQueriesLink = (req, id) => {
+	const links = [];
+	const midiaQueries = ResocieObs.queries.instagramQueries;
+
+	links.push(getCommomLink(req, id));
+
+	for (query of midiaQueries) {								// eslint-disable-line
+		links.push(getQueryLink(req, id, query));	// eslint-disable-line
+	}
+
+	return links;
+};
+
+/**
+ * Acquisition of the link to the common query among all social media
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Instagram account
+ */
+const getCommomLink = (req, id) => {
+	const commom = ResocieObs.queries.commonQuery;
+
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${commom}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${commom}/${id}`,
+	};
+};
+
+/**
+ * Acquire the link to a given query for Instagram
+ * @param {object} req - standard request object from the Express library
+ * @param {object} id - standard identifier of a Instagram account
+ * @param {object} query - query requested
+ */
+const getQueryLink = (req, id, query) => {
+	return {
+		rel: `${SOCIAL_MIDIA}.account.${query}`,
+		href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}/${query}`,
+	};
+};
+
+/*	Methods of abstraction upon response */
+/**
+ * Standard Error Handling
+ * @param {object} res - standard response object from the Express library
+ * @param {String} errorMsg - error message for the situation
+ * @param {object} error - error that actually happened
+ */
+const stdErrorHand = (res, errorMsg, error) => {
+	logger.error(`${errorMsg} - Detalhes: ${error}`);
+
+	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+		error: true,
+		description: errorMsg,
+	});
+};
+
+/*	Methods of abstraction */
+/**
+ * Standard message for the analysis of the evolution of a characteristic
+ * of a given account
+ * @param {String} param - characteristic under analysis
+ * @returns standard message generated
+ */
 const evolutionMsg = (param) => {
-	return `Evolução de ${param}`;
+	return `Evolução de ${param}, no ${capitalize(SOCIAL_MIDIA)}`;
+};
+
+/**
+ * Capitalization of a given string
+ * @param {string} str - string for modification
+ */
+const capitalize = (str) => {
+	return str.replace(/\b\w/g, l => l.toUpperCase()); // eslint-disable-line
+};
+
+const matchInstagramUsername = (profileUrl) => {
+	try {
+		if (!(profileUrl) || !(profileUrl.includes("instagram.com"))) return null;
+		const igRegex = /(https?:\/\/)?(www\.)?instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
+		const splitUsername = profileUrl.match(igRegex);
+		return splitUsername[3];
+	} catch (err) {
+		return null;
+	}
 };
 
 module.exports = {
 	listAccounts,
-	loadAccount,
 	importData,
 	getUser,
 	getLatest,
+	plotLineChart,
+	loadAccount,
 	setHistoryKey,
+	splitActors,
 	getDataset,
 	getConfigLineChart,
-	plotLineChart,
+	evolutionMsg,
+	capitalize,
+	matchInstagramUsername,
 };

@@ -4,9 +4,17 @@ const spreadsheetsCtrl = require("../controllers/spreadsheets.controller");
 
 const router = express.Router(); // eslint-disable-line new-cap
 
-
 router.route("/")
 	.get(instagramControl.listAccounts);
+
+router.route("/compare/:query")
+	.get(
+		instagramControl.splitActors,
+		instagramControl.loadAccount,
+		instagramControl.getDataset,
+		instagramControl.getConfigLineChart,
+		instagramControl.plotLineChart,
+	);
 
 router.route("/import")
 	.get(
@@ -24,12 +32,12 @@ router.route("/latest/:username")
 
 router.route("/:username/:query")
 	.get(
-		instagramControl.setHistoryKey,
 		instagramControl.getDataset,
 		instagramControl.getConfigLineChart,
 		instagramControl.plotLineChart,
 	);
 
 router.param("username", instagramControl.loadAccount);
+router.param("query", instagramControl.setHistoryKey);
 
 module.exports = router;

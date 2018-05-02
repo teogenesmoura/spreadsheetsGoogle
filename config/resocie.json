@@ -1,5 +1,5 @@
 {
-	"spreadsheets": [{
+	"spreadsheets": {
 		"id": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
 		"name": "Grupos",
 		"periods": [
@@ -14,15 +14,11 @@
 			"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
 			"PRÉ-CANDIDATURAS À PRESIDÊNCIA"
 		],
-		"types": [{
-			"likesType": "likes",
-			"followersType": "followers"
-		}],
 		"facebookRange": {
-			"linkCol": 3,
-			"likesCol": 4,
-			"followersCol": 5,
-			"dateCol": 6
+			"linkRow": 3,
+			"likesRow": 4,
+			"followersRow": 5,
+			"dateRow": 6
 		},
 		"twitterRange": {
 			"nameRow": 0,
@@ -51,11 +47,68 @@
 			"dateRow": 14
 		},
 		"range": {
-			"nameRow": 0,
-			"twitterMin": 7,
-			"twitterMax": 14,
-			"instagramMin": 15,
-			"instagramMax": 18
+			"nameRow": 0
 		}
-	}]
+	},
+	"observatory": {
+		"socialMidia": {
+			"facebookMidia": "facebook",
+			"instagramMidia": "instagram",
+			"twitterMidia": "twitter",
+			"youtubeMidia": "youtube"
+		},
+		"queriesRange": {
+			"facebookQueries": 2,
+			"instagramQueries": 3,
+			"twitterQueries": 5,
+			"youtubeTypes": 3
+		},
+		"queries": {
+			"commonQuery": "latest",
+			"facebookQueries": [
+				"likes",
+				"followers"
+			],
+			"instagramQueries": [
+				"followers",
+				"following",
+				"num_of_posts"
+			],
+			"twitterQueries": [
+				"tweets",
+				"followers",
+				"following",
+				"likes",
+				"moments"
+			],
+			"youtubeQueries":[
+				"videos",
+				"views",
+				"subscribers"
+			]
+		},
+		"queriesPT": {
+			"facebookQueriesPT": {
+				"likes": "curtidas",
+				"followers": "seguidores"
+			},
+			"instagramQueriesPT": {
+				"followers": "seguidores",
+				"following": "contas que segue",
+				"num_of_posts": "postagens"
+			},
+			"twitterQueriesPT": {
+				"tweets": "tweets",
+				"followers": "seguidores",
+				"following": "contas que segue",
+				"likes": "curtidas",
+				"moments": "momentos"
+			},
+			"youtubeQueriesPT": {
+				"videos": "vídeos",
+				"views": "visualizações",
+				"subscribers": "inscritos"
+			}
+		}		
+	}
 }

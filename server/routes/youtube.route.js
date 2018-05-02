@@ -8,6 +8,13 @@ const router = express.Router(); // eslint-disable-line new-cap
 router.route("/")
 	.get(youtubeCtrl.listAccounts);
 
+router.route("/compare/:query")
+	.get(
+		youtubeCtrl.splitActors,
+		youtubeCtrl.loadAccount,
+		youtubeCtrl.getDataset,
+		youtubeCtrl.drawLineChart,
+	);
 // Importa os dados da tabela para o banco de dados -> youtube/import
 router.route("/import")
 	.get(
@@ -29,7 +36,10 @@ router.route("/latest/:id")
 
 // Mostra o gráfico de um atributo especifico de um usuario Ex. /youtube/Joao/videos
 router.route("/:id/:query")
-	.get(youtubeCtrl.getDataset, youtubeCtrl.drawLineChart);
+	.get(
+		youtubeCtrl.getDataset,
+		youtubeCtrl.drawLineChart,
+	);
 
 router.param("id", youtubeCtrl.loadAccount);
 

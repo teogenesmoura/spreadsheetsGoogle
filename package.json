@@ -34,6 +34,7 @@
     "body-parser": "^1.18.2",
     "chart.js": "^2.7.2",
     "chartjs-node": "^1.6.1",
+    "color": "^3.0.0",
     "compression": "^1.7.2",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",

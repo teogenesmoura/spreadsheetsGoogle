@@ -364,8 +364,9 @@ const getDataset = (req, res, next) => {
 const getChartLimits = (req, res, next) => {
 	let minValue = Number.MAX_VALUE;
 	let maxValue = Number.MIN_VALUE;
-	let averageValue = 0;
-	let desvPadValue = 0;
+	const percent = 0.05;
+	// let averageValue = 0;
+	// let desvPadValue = 0;
 	let value = 0;
 
 	const historiesValid = req.chart.data;
@@ -379,10 +380,11 @@ const getChartLimits = (req, res, next) => {
 			if (value < minValue)		minValue = value;
 			if (value > maxValue)		maxValue = value;
 
-			averageValue += value;
+			// averageValue += value;
 		});
 	});
 
+	/*
 	averageValue /= length;
 
 	historiesValid.forEach((history) => {
@@ -394,9 +396,14 @@ const getChartLimits = (req, res, next) => {
 
 	desvPadValue /= length;
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
-	maxValue = Math.ceil(maxValue) + desvPadValue;
 
+	maxValue = Math.ceil(maxValue) + desvPadValue;
 	minValue = Math.floor(minValue) - desvPadValue;
+	*/
+
+	const margin = (maxValue - minValue) * percent;
+	maxValue = Math.ceil(maxValue + margin);
+	minValue = Math.floor(minValue - margin);
 	if (minValue <= 0) minValue = 0;
 
 	req.chart.yMin = minValue;

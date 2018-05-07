@@ -8,12 +8,14 @@ const instagramCtrl = require("../controllers/instagram.controller");
 /**
  * Tests if instagram endpoint can be reached
  */
-beforeAll(async () => {
-	await instagramAccountModel.collection.insert(instagramStub);
+beforeAll(async (done) => {
+	await instagramAccountModel.insertMany(instagramStub);
+	done();
 });
 
-afterAll(async () => {
-	await instagramAccountModel.collection.drop();
+afterAll(async (done) => {
+	await instagramAccountModel.deleteMany({});
+	done();
 });
 
 describe("GET /instagram", () => {
@@ -62,7 +64,7 @@ describe("GET /instagram", () => {
 		expect(res.body.account.history[1].following).toEqual(6);
 		expect(res.body.account.history[1].num_of_posts).toEqual(15);
 
-		expect(res.body.account.history[2].date).toEqual(null);
+		expect(res.body.account.history[2].date).toEqual("2018-04-05T12:30:00.510Z");
 		expect(res.body.account.history[2].followers).toEqual(12);
 		expect(res.body.account.history[2].following).toEqual(8);
 		expect(res.body.account.history[2].num_of_posts).toEqual(17);

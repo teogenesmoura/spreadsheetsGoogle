@@ -5,12 +5,14 @@ const youtubeAccount = require("../models/youtube.model");
 const youtubeStub = require("./youtube.stub.json").accounts;
 const youtubeCtrl = require("../controllers/youtube.controller");
 
-beforeAll(async () => {
-	await youtubeAccount.collection.insert(youtubeStub);
+beforeAll(async (done) => {
+	await youtubeAccount.insertMany(youtubeStub);
+	done();
 });
 
-afterAll(async () => {
-	await youtubeAccount.collection.drop();
+afterAll(async (done) => {
+	await youtubeAccount.deleteMany();
+	done();
 });
 
 /**

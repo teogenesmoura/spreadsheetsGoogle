@@ -5,12 +5,14 @@ const twitterAccount = require("../models/twitter.model");
 const twitterMockAccounts = require("./twitter-stub-accounts.json").accounts;
 const twitterCtrl = require("../controllers/twitter.controller");
 
-beforeAll(async () => {
-	await twitterAccount.collection.insert(twitterMockAccounts);
+beforeAll(async (done) => {
+	await twitterAccount.insertMany(twitterMockAccounts);
+	done();
 });
 
-afterAll(async () => {
-	await twitterAccount.collection.drop();
+afterAll(async (done) => {
+	await twitterAccount.deleteMany();
+	done();
 });
 
 /**

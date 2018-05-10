@@ -5,12 +5,14 @@ const facebookAccount = require("../models/facebook.model");
 const facebookStub = require("./facebook.stub.json").facebook;
 const facebookCtrl = require("../controllers/facebook.controller");
 
-beforeAll(async () => {
-	await facebookAccount.collection.insert(facebookStub);
+beforeAll(async (done) => {
+	await facebookAccount.insertMany(facebookStub);
+	done();
 });
 
-afterAll(async () => {
-	await facebookAccount.collection.drop();
+afterAll(async (done) => {
+	await facebookAccount.deleteMany({});
+	done();
 });
 
 /**

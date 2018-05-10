@@ -234,12 +234,9 @@ const drawLineChart = async (req, res) => {
 				xAxes: [{
 					type: "time",
 					time: {
-						tooltipFormat: "ll HH:mm",
-					},
-					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
+						tooltipFormat: "ll",
+						unit: "month",
+						displayFormats: { month: "MM/YYYY" },
 					},
 					scaleLabel: {
 						display: true,
@@ -431,9 +428,11 @@ const getChartLimits = (req, res, next) => {
 	let minValue = Number.MAX_VALUE;
 	let maxValue = Number.MIN_VALUE;
 	const percent = 0.05;
-	// let averageValue = 0;
-	// let desvPadValue = 0;
+	let roundStep = 10;
+	let averageValue = 0;
+	let desvPadValue = 0;
 	let value = 0;
+	let stpValue;
 
 	const historiesValid = req.chart.data;
 	let length = 0;
@@ -446,11 +445,10 @@ const getChartLimits = (req, res, next) => {
 			if (value < minValue)		minValue = value;
 			if (value > maxValue)		maxValue = value;
 
-			// averageValue += value;
+			averageValue += value;
 		});
 	});
 
-	/*
 	averageValue /= length;
 
 	historiesValid.forEach((history) => {
@@ -463,18 +461,28 @@ const getChartLimits = (req, res, next) => {
 	desvPadValue /= length;
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
 
-	maxValue = Math.ceil(maxValue) + desvPadValue;
-	minValue = Math.floor(minValue) - desvPadValue;
-	*/
-
 	const margin = (maxValue - minValue) * percent;
-	maxValue = Math.ceil(maxValue + margin);
-	minValue = Math.floor(minValue - margin);
+	const maxRaw = maxValue;
+	const minRaw = minValue;
+
+	maxValue += margin;
+	minValue -= margin;
+
+	stpValue = Math.round((maxValue - minValue) / ((length / historiesValid.length) * 2));
+
+	roundStep **= (Math.round(Math.log10(desvPadValue - stpValue)) - 1);
+
+	maxValue += roundStep - (maxValue % roundStep);
+	minValue -= (minValue % roundStep);
+	stpValue += roundStep - (stpValue % roundStep);
+
+	if (Math.abs(maxRaw - maxValue) > stpValue) maxValue = maxRaw;
+	if (Math.abs(minRaw - minRaw) < stpValue) minValue = minRaw - (minRaw % roundStep);
 	if (minValue <= 0) minValue = 0;
 
-	req.chart.yMin = minValue;
-	req.chart.yMax = maxValue;
-	req.chart.yStep = (maxValue - minValue) / (2 * length);
+	req.chart.yMin = Math.floor(minValue);
+	req.chart.yMax = Math.ceil(maxValue);
+	req.chart.yStep = stpValue;
 
 	next();
 };

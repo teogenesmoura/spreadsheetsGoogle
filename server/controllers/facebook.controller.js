@@ -427,8 +427,12 @@ const getChartLimits = (req, res, next) => {
 	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
 
 	const margin = (maxValue - minValue) * percent;
+	const maxRaw = maxValue;
+	const minRaw = minValue;
+
 	maxValue += margin;
 	minValue -= margin;
+
 	stpValue = Math.round((maxValue - minValue) / ((length / historiesValid.length) * 2));
 
 	roundStep **= (Math.round(Math.log10(desvPadValue - stpValue)) - 1);
@@ -436,6 +440,9 @@ const getChartLimits = (req, res, next) => {
 	maxValue += roundStep - (maxValue % roundStep);
 	minValue -= (minValue % roundStep);
 	stpValue += roundStep - (stpValue % roundStep);
+
+	if (Math.abs(maxRaw - maxValue) > stpValue) maxValue = maxRaw;
+	if (Math.abs(minRaw - minRaw) < stpValue) minValue = minRaw - (minRaw % roundStep);
 	if (minValue <= 0) minValue = 0;
 
 	req.chart.yMin = Math.floor(minValue);

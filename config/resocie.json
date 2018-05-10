@@ -110,5 +110,15 @@
 				"subscribers": "inscritos"
 			}
 		}		
+	},
+	"httpStatus": {
+		"OK": 200,
+		"FOUND": 302,
+		"ERROR_LIST_ACCOUNTS": 512,
+		"ERROR_GET_USER": 513,
+		"ERROR_LATEST": 514,
+		"ERROR_LOAD_ACCOUNT": 515,
+		"ERROR_QUERY_KEY": 400,
+		"ERROR_SPLIT_ACTORS": 517
 	}
 }

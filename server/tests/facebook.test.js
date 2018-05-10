@@ -1,9 +1,9 @@
 const request = require("supertest");
-const httpStatus = require("http-status");
 const app = require("../../index");
 const facebookAccount = require("../models/facebook.model");
 const facebookStub = require("./facebook.stub.json").facebook;
 const facebookCtrl = require("../controllers/facebook.controller");
+const httpStatus = require("../../config/resocie.json").httpStatus;
 
 beforeAll(async (done) => {
 	await facebookAccount.insertMany(facebookStub);
@@ -25,7 +25,6 @@ describe("Facebook endpoint", () => {
 	let accountId2;
 	let accountId3;
 
-	// When required, access should be granted
 	it("GET /facebook should return a JSON with all the users in the db", async (done) => {
 		const res = await request(app).get("/facebook").expect(httpStatus.OK);
 		const relFixed = "facebook.import";
@@ -43,14 +42,13 @@ describe("Facebook endpoint", () => {
 		expect(res.body.accounts).toBeInstanceOf(Array);
 		expect(res.body.accounts.length).toEqual(facebookStub.length);
 
-		accountId1 = res.body.accounts[0]._id; // eslint-disable-line
-		accountId2 = res.body.accounts[1]._id; // eslint-disable-line
-		accountId3 = res.body.accounts[2]._id; // eslint-disable-line
+		accountId1 = res.body.accounts[0].username;
+		accountId2 = res.body.accounts[1].username;
+		accountId3 = res.body.accounts[2].username;
 
 		done();
 	});
 
-	// When requires, access should be granted
 	it("GET /facebook/help should return the routes' guide", async (done) => {
 		const res = await request(app).get("/facebook/help").expect(httpStatus.OK);
 
@@ -63,7 +61,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When requires, access should be granted
 	it("GET /facebook/:name should return all data from a certain user", async (done) => {
 		const res = await request(app).get(`/facebook/${accountId1}`).expect(httpStatus.OK);
 
@@ -99,7 +96,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When requires, access should be granted
 	it("GET /facebook/latest/:username should return the latest data from a user", async (done) => {
 		expect(accountId1).toBeDefined();
 
@@ -117,7 +113,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When requires, access should be granted
 	it("GET /facebook/compare/likes?actors={:id} should return an image (the graph)", async (done) => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
@@ -129,7 +124,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When requires, access should be granted
 	it("GET /facebook/compare/followers?actors={:id} should return an image (the graph)", async (done) => {
 		expect(accountId1).toBeDefined();
 		expect(accountId2).toBeDefined();
@@ -141,17 +135,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When requires, access should be granted
-	it("GET /facebook/compare/views?actors={:id} should return an image (the graph)", async (done) => {
-		expect(accountId1).toBeDefined();
-		expect(accountId2).toBeDefined();
-
-		await request(app).get(`/facebook/compare/views?actors=${accountId1},${accountId2}`).expect(httpStatus.NOT_FOUND);
-
-		done();
-	});
-
-	// When required, access should be granted
 	it("GET /facebook/:username/likes should return an image (the graph)", async (done) => {
 		expect(accountId1).toBeDefined();
 
@@ -172,7 +155,6 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When required, access should be granted
 	it("GET /facebook/:username/followers should return an image (the graph)", async (done) => {
 		expect(accountId1).toBeDefined();
 
@@ -183,17 +165,8 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	// When required, access should be granted
-	it("GET /facebook/:username/qualquer should return an image (the graph)", async (done) => {
-		expect(accountId1).toBeDefined();
-
-		await request(app).get(`/facebook/${accountId1}/qualquer`).expect(httpStatus.NOT_FOUND);
-
-		done();
-	});
-
 	it("GET /facebook/error should return error on loadAccount", async (done) => {
-		const res = await request(app).get("/facebook/error").expect(httpStatus.INTERNAL_SERVER_ERROR);
+		const res = await request(app).get("/facebook/error").expect(httpStatus.ERROR_LOAD_ACCOUNT);
 		const msgError = "Error ao carregar usuário(s) [error] dos registros do Facebook";
 
 		expect(res.body).toHaveProperty("error");
@@ -205,11 +178,11 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	it(`GET /facebook/compare/likes?actors=:id,${accountIdFixed} shoul return error on loadAccount`, async (done) => {
+	it("GET /facebook/compare/likes?actors=:id,error shoul return error on loadAccount", async (done) => {
 		expect(accountId1).toBeDefined();
 
 		const res = await request(app).get(`/facebook/compare/likes?actors=${accountId1},error`)
-			.expect(httpStatus.INTERNAL_SERVER_ERROR);
+			.expect(httpStatus.ERROR_LOAD_ACCOUNT);
 		const msgError = `Error ao carregar usuário(s) [${accountId1},error] dos registros do Facebook`;
 
 		expect(res.body).toHaveProperty("error");
@@ -220,32 +193,18 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	it(`GET /facebook/${accountIdFixed} shoul return error on getUser`, async (done) => {
-		expect(accountIdFixed).toBeDefined();
+	it("GET /facebook/:username/qualquer should return error on setHistoryKey", async (done) => {
+		expect(accountId1).toBeDefined();
 
-		const res = await request(app).get(`/facebook/${accountIdFixed}`).expect(httpStatus.INTERNAL_SERVER_ERROR);
-		const msgError = "Erro enquanto configura-se o usuário";
-
-		expect(res.body).toHaveProperty("error");
-		expect(res.body.error).toBe(true);
-
-		expect(res.body).toHaveProperty("description");
-		expect(res.body.description).toEqual(msgError);
-
-		done();
-	});
-
-	it(`GET /facebook/latest/${accountIdFixed} shoul return error on getLatest`, async (done) => {
-		expect(accountIdFixed).toBeDefined();
-
-		const res = await request(app).get(`/facebook/latest/${accountIdFixed}`).expect(httpStatus.INTERNAL_SERVER_ERROR);
-		const msgError = "Error enquanto se recuperava os últimos dados válidos para o usuário undefined, no Facebook";
+		const res = await request(app).get(`/facebook/${accountId1}/qualquer`).expect(httpStatus.ERROR_QUERY_KEY);
+		const msgError = "Não existe a caracteristica [qualquer] para o Facebook";
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(true);
 
 		expect(res.body).toHaveProperty("description");
 		expect(res.body.description).toEqual(msgError);
+
 		done();
 	});
 
@@ -253,7 +212,7 @@ describe("Facebook endpoint", () => {
 		expect(accountId1).toBeDefined();
 
 		const res = await request(app).get(`/facebook/compare/likes?actors=${accountId1};error`)
-			.expect(httpStatus.INTERNAL_SERVER_ERROR);
+			.expect(httpStatus.ERROR_SPLIT_ACTORS);
 		const msgError = "Erro ao criar o ambiente para a comparação";
 
 		expect(res.body).toHaveProperty("error");

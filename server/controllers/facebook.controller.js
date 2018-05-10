@@ -1,11 +1,11 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
-const httpStatus = require("http-status");
 const mongoose = require("mongoose");
 const Color = require("./color.controller");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
 const ResocieObs = require("../../config/resocie.json").observatory;
+const httpStatus = require("../../config/resocie.json").httpStatus;
 
 /*	Global constants */
 const CHART_SIZE = 700;
@@ -22,7 +22,7 @@ const SOCIAL_MIDIA = ResocieObs.socialMidia.facebookMidia;
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name link");
+		const accounts = await Facebook.find({}, "name username");
 
 		const importLink = await getInitialLink(req, accounts);
 
@@ -34,7 +34,7 @@ const listAccounts = async (req, res) => {
 	} catch (error) {
 		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LIST_ACCOUNTS, errorMsg, error);
 	}
 };
 
@@ -168,7 +168,7 @@ const importAccounts = async (req, res) => {
 const getUser = (req, res) => {
 	try {
 		const account = req.account[0].toObject();
-		account.links = getQueriesLink(req, account._id); // eslint-disable-line
+		account.links = getQueriesLink(req, account.username);
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -177,7 +177,7 @@ const getUser = (req, res) => {
 	} catch (error) {
 		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_GET_USER, errorMsg, error);
 	}
 };
 
@@ -214,7 +214,7 @@ const getLatest = (req, res) => {
 	} catch (error) {
 		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LATEST, errorMsg, error);
 	}
 };
 
@@ -263,7 +263,7 @@ const loadAccount = async (req, res, next) => {
 
 		const errorMsg = `Error ao carregar usuário(s) [${id}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
 
-		return stdErrorHand(res, errorMsg, error);
+		return stdErrorHand(res, httpStatus.ERROR_LOAD_ACCOUNT, errorMsg, error);
 	}
 };
 
@@ -286,7 +286,7 @@ const setHistoryKey = (req, res, next) => {
 		chartTitle = evolutionMsg(historyKeyPT);
 	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
-		return res.status(httpStatus.NOT_FOUND).json({
+		return res.status(httpStatus.ERROR_QUERY_KEY).json({
 			error: true,
 			description: errorMsg,
 		});
@@ -310,7 +310,10 @@ const setHistoryKey = (req, res, next) => {
 const splitActors = (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
-		if (actors.length <= 1) throw new TypeError("Insufficient amount of actors for a comparison");
+
+		if (actors.length <= 1) {
+			throw new TypeError("Insufficient amount of actors for a comparison");
+		}
 
 		req.actors = actors;
 
@@ -318,7 +321,7 @@ const splitActors = (req, res, next) => {
 	} catch (error) {
 		const errorMsg = "Erro ao criar o ambiente para a comparação";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_SPLIT_ACTORS, errorMsg, error);
 	}
 };
 
@@ -506,7 +509,9 @@ const getConfigLineChart = (req, res, next) => {
  * @param {object} id - standard identifier of a Facebook account
  */
 const findAccount = async (req, id) => {
-	const account = await Facebook.findOne({ _id: id }, "-__v	");
+	const account = await Facebook.findOne({ username: id }, "-_id -__v");
+
+	if (!account) throw TypeError(`There is no user [${id}]`);
 
 	if (req.account === undefined) req.account = [];
 
@@ -534,9 +539,9 @@ const getAccountLink = (req, accounts) => {
 	for (let i = 0; i < length; i += 1) {
 		accounts[i] = accounts[i].toObject();
 		accounts[i].links = [];
-		const id = accounts[i]._id; // eslint-disable-line
+		const id = accounts[i].username;
 
-		if (accounts[i].link) {
+		if (id) {
 			const link = {
 				rel: `${SOCIAL_MIDIA}.account`,
 				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}`,
@@ -606,13 +611,14 @@ const getQueryLink = (req, id, query) => {
 /**
  * Standard Error Handling
  * @param {object} res - standard response object from the Express library
+ * @param {number} erroCode - error code for the situation
  * @param {String} errorMsg - error message for the situation
  * @param {object} error - error that actually happened
  */
-const stdErrorHand = (res, errorMsg, error) => {
+const stdErrorHand = (res, errorCode, errorMsg, error) => {
 	logger.error(`${errorMsg} - Detalhes: ${error}`);
 
-	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+	res.status(errorCode).json({
 		error: true,
 		description: errorMsg,
 	});

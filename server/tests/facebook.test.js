@@ -1,6 +1,5 @@
 const request = require("supertest");
 const httpStatus = require("http-status");
-const mongoose = require("mongoose");
 const app = require("../../index");
 const facebookAccount = require("../models/facebook.model");
 const facebookStub = require("./facebook.stub.json").facebook;

@@ -1,9 +1,9 @@
 .DS_Store
-/node_modules
-credentials.json
-server/controllers/*.png
-yarn-error.log
-logs/
 .env
-docs/
 coverage/
+docs/
+logs/
+node_modules/
+server/controllers/*.png
+credentials.json
+yarn-error.logs

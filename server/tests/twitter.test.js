@@ -108,6 +108,28 @@ describe("Twitter endpoint", () => {
 		done();
 	});
 
+	it("GET /twitter/import shoul found this endpoint", async (done) => {
+		const res = await request(app).get("/twitter/import").expect(httpStatus.FOUND);
+		let msg = "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline";
+		msg += "&prompt=consent&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets.readonly";
+		msg += "&response_type=code&client_id=irrelevant&redirect_uri=http%3A%2F%2F";
+
+		expect(res).toHaveProperty("redirect");
+		expect(res.redirect).toBe(true);
+
+		expect(res).toHaveProperty("request");
+		expect(res.request).toHaveProperty("host");
+		const host = res.request.host.replace(/:/g, "%3A");
+		msg += host;
+		msg += "%2Ftwitter%2Fimport";
+
+		expect(res).toHaveProperty("header");
+		expect(res.header).toHaveProperty("location");
+		expect(res.header.location).toEqual(msg);
+
+		done();
+	});
+
 	it("GET /twitter/:username/likes should return an image (the graph)", async (done) => {
 		expect(usernameTest3).toBeDefined();
 

@@ -266,7 +266,7 @@ describe("Facebook methods", () => {
 		done();
 	});
 
-	it("Recovery of a cell valid or invalid", async (done) => {
+	it("Recovery of a valide cell or invalid cell", async (done) => {
 		expect(facebookCtrl.isCellValid(param)).toBe(true);
 		expect(facebookCtrl.isCellValid(null)).toBe(false);
 		expect(facebookCtrl.isCellValid(undefined)).toBe(false);
@@ -275,6 +275,92 @@ describe("Facebook methods", () => {
 		expect(facebookCtrl.isCellValid("s/")).toBe(false);
 		expect(facebookCtrl.isCellValid("S")).toBe(false);
 		expect(facebookCtrl.isCellValid("S/")).toBe(false);
+
+		done();
+	});
+
+	it("Recovery of a valid Account Link", async (done) => {
+		const param1 = null;
+		const result1 = null;
+		const param2 = "s/";
+		const result2 = null;
+		const param3 = "https://www.facebook.com/agoramovimento/";
+		const result3 = "https://www.facebook.com/agoramovimento/";
+
+		const delivery1 = facebookCtrl.getImportAccountLink(param1);
+		const delivery2 = facebookCtrl.getImportAccountLink(param2);
+		const delivery3 = facebookCtrl.getImportAccountLink(param3);
+
+		expect(delivery1).toEqual(result1);
+		expect(delivery2).toEqual(result2);
+		expect(delivery3).toEqual(result3);
+
+		done();
+	});
+
+	it("Recovery of a Facebook Username", async (done) => {
+		const param1 = null;
+		const result1 = null;
+		const param2 = "http://www.frentebrasilpopular.org.br/";
+		const result2 = null;
+		const param3 = "https://www.facebook.com/agoramovimento/";
+		const result3 = "agoramovimento";
+		const param4 = "https://www.facebook.com/escolasempartidooficial?ref=hl";
+		const result4 = "escolasempartidooficial";
+		const param5 = "https://www.facebook.com/pg/escolasempartidooficial?ref=hl";
+		const result5 = "escolasempartidooficial";
+
+		const delivery1 = facebookCtrl.getImportUsername(param1);
+		const delivery2 = facebookCtrl.getImportUsername(param2);
+		const delivery3 = facebookCtrl.getImportUsername(param3);
+		const delivery4 = facebookCtrl.getImportUsername(param4);
+		const delivery5 = facebookCtrl.getImportUsername(param5);
+
+		expect(delivery1).toEqual(result1);
+		expect(delivery2).toEqual(result2);
+		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(result4);
+		expect(delivery5).toEqual(result5);
+
+		done();
+	});
+
+	it("Recovery of a valid number", async (done) => {
+		const param1 = "42";
+		const result1 = 42;
+		const param2 = "http://www.frentebrasilpopular.org.br/";
+		const result2 = null;
+		const param3 = "12.365";
+		const result3 = 12365;
+
+		const delivery1 = facebookCtrl.getImportNumber(param1);
+		const delivery2 = facebookCtrl.getImportNumber(param2);
+		const delivery3 = facebookCtrl.getImportNumber(param3);
+
+		expect(delivery1).toEqual(result1);
+		expect(delivery2).toEqual(result2);
+		expect(delivery3).toEqual(result3);
+
+		done();
+	});
+
+	it("Recovey of a valid date", async (done) => {
+		const lastDate = ["24", "12", "1942"];
+		const param1 = "42";
+		const param2 = "12/1942";
+		const param3 = "24/12/1999";
+		const result3 = ["24", "12", "1999"];
+		const param4 = null;
+
+		const delivery1 = facebookCtrl.getImportDate(param1, lastDate);
+		const delivery2 = facebookCtrl.getImportDate(param2, lastDate);
+		const delivery3 = facebookCtrl.getImportDate(param3, lastDate);
+		const delivery4 = facebookCtrl.getImportDate(param4, lastDate);
+
+		expect(delivery1).toEqual(lastDate);
+		expect(delivery2).toEqual(lastDate);
+		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(lastDate);
 
 		done();
 	});

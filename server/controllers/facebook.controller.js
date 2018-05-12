@@ -22,7 +22,7 @@ const SOCIAL_MIDIA = ResocieObs.socialMidia.facebookMidia;
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name username");
+		const accounts = await Facebook.find({}, "name username link");
 
 		const importLink = await getInitialLink(req, accounts);
 
@@ -89,7 +89,6 @@ const importAccounts = async (req, res) => {
 		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
 			const cRow = cSheet[posRow];
 
-			// se o nome for vazio ou o primeiro, pular
 			if (!cRow[nameRow] || posRow < 1) {
 				continue; // eslint-disable-line no-continue
 			}
@@ -101,13 +100,7 @@ const importAccounts = async (req, res) => {
 				continue; // eslint-disable-line no-continue
 			}
 
-			// se não existe link para conta do facebook
-			let accountLink;
-			if (isCellValid(cRow[linkRow])) {
-				accountLink = cRow[linkRow];
-			} else {
-				accountLink = null;
-			}
+			const accountLink = getImportAccountLink(cRow[linkRow]);
 
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = Facebook({
@@ -117,8 +110,7 @@ const importAccounts = async (req, res) => {
 				});
 
 				if (accountLink != null) {
-					const splitAccLink = accountLink.split("/");
-					newAccount.username = splitAccLink[splitAccLink.length - 2];
+					newAccount.username = getImportUsername(accountLink);
 				}
 
 				actors[cRow[nameRow]] = newAccount;
@@ -129,16 +121,11 @@ const importAccounts = async (req, res) => {
 					if (!isCellValid(cRow[posRow2])) {
 						cRow[posRow2] = null;
 					} else if (posRow2 === likesRow	|| posRow2 === followersRow) {
-						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
-
-						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
+						cRow[posRow2] = getImportNumber(cRow[posRow2]);
 					}
 				}
 
-				let newDate = cRow[dateRow];
-				if (newDate) newDate = newDate.split("/");
-
-				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				const newDate = getImportDate(cRow[dateRow], lastDate);
 				lastDate = newDate;
 
 				const newHistory = {
@@ -662,6 +649,61 @@ const isCellValid = (value) => {
 	return true;
 };
 
+/**
+ * Acquire the account link from the import base
+ * @param {string} accountLink - supposed account link
+ */
+const getImportAccountLink = (accountLink) => {
+	if (isCellValid(accountLink)) return accountLink;
+
+	return null;
+};
+
+/**
+ * Acquire the account username from the import base
+ * @param {string} usernameRaw - supposed account username
+ */
+const getImportUsername = (usernameRaw) => {
+	if (!(usernameRaw) || !(usernameRaw.includes("facebook.com"))) return null;
+
+	let username = usernameRaw.replace("https://www.facebook.com/", "");
+	username = username.split("/");
+
+	if (username[0] !== "pg")	username = username[0];
+	else username = username[1];
+
+	username = username.split("?");
+
+	return username[0];
+};
+
+/**
+ * Acquire a number from the import base
+ * @param {string} number - supposed valid number
+ */
+const getImportNumber = (number) => {
+	number = parseInt(number.replace(/\.|,/g, ""), 10);
+
+	if (Number.isNaN(number)) number = null;
+
+	return number;
+};
+
+/**
+ * Acquire a date from the import base
+ * @param {string} date - supposed valid date
+ * @param {array} lastDate - last valid date
+ */
+const getImportDate = (date, lastDate) => {
+	if (!date) return lastDate;
+
+	date = date.split("/");
+
+	if (!(date) || date.length !== 3) date = lastDate;
+
+	return date;
+};
+
 module.exports = {
 	listAccounts,
 	help,
@@ -678,4 +720,8 @@ module.exports = {
 	evolutionMsg,
 	capitalize,
 	isCellValid,
+	getImportAccountLink,
+	getImportUsername,
+	getImportNumber,
+	getImportDate,
 };

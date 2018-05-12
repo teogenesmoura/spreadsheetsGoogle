@@ -4,6 +4,7 @@
 			"name": "Mariana",
 			"category": "marianacategory",
 			"channelUrl": "youtube.com/user/marianachannel",
+			"channel": "marianachannel",
 			"history": [
 				{
 					"subscribers": 542,
@@ -29,6 +30,7 @@
 			"name": "Luiza",
 			"category": "luizacategory",
 			"channelUrl": "youtube.com/channel/UCmo_qwwtofscJjjND_Pm-UA",
+			"channel": "UCmo_qwwtofscJjjND_Pm-UA",
 			"history": [
 				{
 					"subscribers": 45,
@@ -52,7 +54,8 @@
 		},
 		{
 			"name": "Isabel Cristina Leopoldina Augusta Micaela Gabriela Rafaela Gonzaga",
-			"channelUrl": "youtube.com/channel/princesaIsabel"
+			"channelUrl": "youtube.com/channel/princesaIsabel",
+			"channel": "princesaIsabel"
 		}
 	]
 }

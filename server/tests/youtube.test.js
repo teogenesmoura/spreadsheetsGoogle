@@ -40,9 +40,9 @@ describe("Youtube endpoint", () => {
 		expect(res.body.accounts).toBeInstanceOf(Array);
 		expect(res.body.accounts.length).toEqual(youtubeStub.length);
 
-		accountId1 = res.body.accounts[0]._id; // eslint-disable-line
-		accountId2 = res.body.accounts[1]._id; // eslint-disable-line
-		accountId3 = res.body.accounts[2]._id; // eslint-disable-line
+		accountId1 = res.body.accounts[0].channel;
+		accountId2 = res.body.accounts[1].channel;
+		accountId3 = res.body.accounts[2].channel;
 
 		done();
 	});

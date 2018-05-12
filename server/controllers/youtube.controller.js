@@ -21,7 +21,7 @@ const SOCIAL_MIDIA = ResocieObs.socialMidia.youtubeMidia;
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await youtubeAccount.find({}, "name channelUrl");
+		const accounts = await youtubeAccount.find({}, "name channel -_id");
 
 		const importLink = await getInitialLink(req, accounts);
 
@@ -135,7 +135,7 @@ const getUser = async (req, res) => {
 	try {
 		const account = req.account[0].toObject();
 
-		account.links = await getQueriesLink(req, account._id); // eslint-disable-line
+		account.links = await getQueriesLink(req, account.channel); // eslint-disable-line
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -410,7 +410,7 @@ const getDataset = (req, res, next) => {
  * @param {object} id - standard identifier of a YouTune account
  */
 const findAccount = async (req, id) => {
-	const account = await youtubeAccount.findOne({ _id: id }, " -_v");
+	const account = await youtubeAccount.findOne({ channel: id }, "-_id -__v");
 
 	if (!account) throw TypeError(`There is no user [${id}]`);
 
@@ -440,9 +440,9 @@ const getAccountLink = (req, accounts) => {
 	for (let i = 0; i < length; i += 1) {
 		accounts[i] = accounts[i].toObject();
 		accounts[i].links = [];
-		const id = accounts[i]._id; // eslint-disable-line
+		const id = accounts[i].channel;
 
-		if (accounts[i].channelUrl) {
+		if (id) {
 			const link = {
 				rel: `${SOCIAL_MIDIA}.account`,
 				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}`,
@@ -582,9 +582,6 @@ const getImportUsername = (usernameRaw) => {
 
 	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
 	username = username.split("/");
-
-	console.log("Username");
-	console.log(username);
 
 	if (username[0] === "channel"
 		|| username[0] === "user") {

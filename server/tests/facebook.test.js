@@ -20,7 +20,6 @@ afterAll(async (done) => {
  * Tests behavior of sad path for now.
 */
 describe("Facebook endpoint", () => {
-	const accountIdFixed = "5aef06b6122aa025aaeef1cd";
 	let accountId1;
 	let accountId2;
 	let accountId3;
@@ -62,6 +61,8 @@ describe("Facebook endpoint", () => {
 	});
 
 	it("GET /facebook/:name should return all data from a certain user", async (done) => {
+		expect(accountId1).toBeDefined();
+
 		const res = await request(app).get(`/facebook/${accountId1}`).expect(httpStatus.OK);
 
 		expect(res.body).toHaveProperty("error");
@@ -91,7 +92,23 @@ describe("Facebook endpoint", () => {
 	});
 
 	it("GET /facebook/import shoul found this endpoint", async (done) => {
-		await request(app).get("/facebook/import").expect(httpStatus.FOUND);
+		const res = await request(app).get("/facebook/import").expect(httpStatus.FOUND);
+		let msg = "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline";
+		msg += "&prompt=consent&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets.readonly";
+		msg += "&response_type=code&client_id=irrelevant&redirect_uri=http%3A%2F%2F";
+
+		expect(res).toHaveProperty("redirect");
+		expect(res.redirect).toBe(true);
+
+		expect(res).toHaveProperty("request");
+		expect(res.request).toHaveProperty("host");
+		const host = res.request.host.replace(/:/g, "%3A");
+		msg += host;
+		msg += "%2Ffacebook%2Fimport";
+
+		expect(res).toHaveProperty("header");
+		expect(res.header).toHaveProperty("location");
+		expect(res.header.location).toEqual(msg);
 
 		done();
 	});
@@ -145,7 +162,7 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	it(`GET /facebook/${accountId3}/likes should return an image (the graph)`, async (done) => {
+	it("GET /facebook/:username/likes should return an image (the graph)", async (done) => {
 		expect(accountId3).toBeDefined();
 
 		const res = await request(app).get(`/facebook/${accountId3}/likes`).expect(httpStatus.OK);
@@ -208,7 +225,7 @@ describe("Facebook endpoint", () => {
 		done();
 	});
 
-	it(`GET /facebook/compare/likes?actors=:id;${accountIdFixed} shoul return error on splitActors`, async (done) => {
+	it("GET /facebook/compare/likes?actors=:id;:username shoul return error on splitActors", async (done) => {
 		expect(accountId1).toBeDefined();
 
 		const res = await request(app).get(`/facebook/compare/likes?actors=${accountId1};error`)

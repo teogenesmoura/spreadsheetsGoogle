@@ -48,7 +48,7 @@ const importData = async (req, res) => {
 	// <TODO>: Add error handling to avoid crashes and return 500 instead
 
 	// Different types of actors indicated in the spreadsheet
-	let cType = 0; // current type index
+	let cType; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
 	const tabs = req.collectives;
@@ -59,6 +59,7 @@ const importData = async (req, res) => {
 
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
+		cType = 0;
 
 		const rowsCount = cTab.length;
 		for (let j = 0; j < rowsCount; j += 1) {

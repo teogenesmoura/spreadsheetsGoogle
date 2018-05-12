@@ -80,39 +80,29 @@ const importData = async (req, res) => {
 				continue; // eslint-disable-line no-continue
 			}
 			// Se o canal é válido, cria um novo schema para o canal
-			let channel;
-			if (isCellValid(cRow[channelRow])) {
-				channel = cRow[channelRow];
-			} else {
-				channel = null;
-			}
+			const channelUrl = getImportChannelURL(cRow[channelRow]);
 
 			// Caso não exista o usuario atual, cria um novo schema para o usuario
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = youtubeAccount({
 					name: cRow[nameRow].replace(/\n/g, " "),
 					category: categories[cCategory],
-					channelUrl: channel,
+					channelUrl: channelUrl,
+					channel: getImportUsername(channelUrl),
 				});
 				actors[cRow[nameRow]] = newAccount;
 			}
 
 			// Se o canal não for null verifica se os inscritos,
 			// videos e vizualizações são válidos
-			if (channel) {
+			if (channelUrl) {
 				for (let k = subscribsRow; k <= viewsRow; k += 1) {
-					if (!isCellValid(cRow[k])) {
-						cRow[k] = null;
-					} else {
-						cRow[k] = parseInt(cRow[k].replace(/\.|,/g, ""), 10);
-						if (Number.isNaN(cRow[k])) cRow[k] = null;
-					}
+					if (!isCellValid(cRow[k])) cRow[k] = null;
+					else cRow[k] = getImportNumber(cRow[k]);
 				}
 
 				// Insere a data no schema e caso ocorra erros insera a ultima data
-				let newDate = cRow[dateRow];
-				if (newDate) newDate = newDate.split("/");
-				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				const newDate = getImportDate(cRow[dateRow], lastDate);
 				lastDate = newDate;
 
 				// Define os schemas e adicioana os dados dos atores
@@ -573,6 +563,64 @@ const isCellValid = (value) => {
 	return true;
 };
 
+/**
+ * Acquire the channel link from the import base
+ * @param {string} channelLink - supposed account link
+ */
+const getImportChannelURL = (channelLink) => {
+	if (isCellValid(channelLink)) return channelLink;
+
+	return null;
+};
+
+/**
+ * Acquire the account username from the import base
+ * @param {string} usernameRaw - supposed account username
+ */
+const getImportUsername = (usernameRaw) => {
+	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
+
+	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
+	username = username.split("/");
+
+	console.log("Username");
+	console.log(username);
+
+	if (username[0] === "channel"
+		|| username[0] === "user") {
+		username = username[1];
+	} else username = username[0];
+
+	return username;
+};
+
+/**
+ * Acquire a number from the import base
+ * @param {string} number - supposed valid number
+ */
+const getImportNumber = (number) => {
+	number = parseInt(number.replace(/\.|,/g, ""), 10);
+
+	if (Number.isNaN(number)) number = null;
+
+	return number;
+};
+
+/**
+ * Acquire a date from the import base
+ * @param {string} date - supposed valid date
+ * @param {array} lastDate - last valid date
+ */
+const getImportDate = (date, lastDate) => {
+	if (!date) return lastDate;
+
+	date = date.split("/");
+
+	if (!(date) || date.length !== 3) date = lastDate;
+
+	return date;
+};
+
 module.exports = {
 	listAccounts,
 	importData,
@@ -586,4 +634,8 @@ module.exports = {
 	evolutionMsg,
 	capitalize,
 	isCellValid,
+	getImportChannelURL,
+	getImportUsername,
+	getImportNumber,
+	getImportDate,
 };

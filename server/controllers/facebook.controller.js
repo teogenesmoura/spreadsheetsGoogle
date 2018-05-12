@@ -107,11 +107,8 @@ const importAccounts = async (req, res) => {
 					name: cRow[nameRow].replace(/\n/g, " "),
 					class: categories[cCategory],
 					link: accountLink,
+					username: accountLink,
 				});
-
-				if (accountLink != null) {
-					newAccount.username = getImportUsername(accountLink);
-				}
 
 				actors[cRow[nameRow]] = newAccount;
 			}

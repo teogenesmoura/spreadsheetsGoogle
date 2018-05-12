@@ -300,14 +300,71 @@ describe("Instagram methods", () => {
 		const result2 = null;
 		const param3 = "https://www.instagram.com/agoramovimento/";
 		const result3 = "agoramovimento";
+		const param4 = "https://www.instagram.com/pg/agoramovimento/";
+		const result4 = "agoramovimento";
 
-		const delivery1 = instagramCtrl.matchInstagramUsername(param1);
-		const delivery2 = instagramCtrl.matchInstagramUsername(param2);
-		const delivery3 = instagramCtrl.matchInstagramUsername(param3);
+		const delivery1 = instagramCtrl.getImportUsername(param1);
+		const delivery2 = instagramCtrl.getImportUsername(param2);
+		const delivery3 = instagramCtrl.getImportUsername(param3);
+		const delivery4 = instagramCtrl.getImportUsername(param4);
 
 		expect(delivery1).toEqual(result1);
 		expect(delivery2).toEqual(result2);
 		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(result4);
+
+		done();
+	});
+
+	it("Recovery of a valide cell or invalid cell", async (done) => {
+		expect(instagramCtrl.isCellValid(param)).toBe(true);
+		expect(instagramCtrl.isCellValid(null)).toBe(false);
+		expect(instagramCtrl.isCellValid(undefined)).toBe(false);
+		expect(instagramCtrl.isCellValid("-")).toBe(false);
+		expect(instagramCtrl.isCellValid("s")).toBe(false);
+		expect(instagramCtrl.isCellValid("s/")).toBe(false);
+		expect(instagramCtrl.isCellValid("S")).toBe(false);
+		expect(instagramCtrl.isCellValid("S/")).toBe(false);
+
+		done();
+	});
+
+	it("Recovery of a valid number", async (done) => {
+		const param1 = "42";
+		const result1 = 42;
+		const param2 = "http://www.frentebrasilpopular.org.br/";
+		const result2 = null;
+		const param3 = "12.365";
+		const result3 = 12365;
+
+		const delivery1 = instagramCtrl.getImportNumber(param1);
+		const delivery2 = instagramCtrl.getImportNumber(param2);
+		const delivery3 = instagramCtrl.getImportNumber(param3);
+
+		expect(delivery1).toEqual(result1);
+		expect(delivery2).toEqual(result2);
+		expect(delivery3).toEqual(result3);
+
+		done();
+	});
+
+	it("Recovey of a valid date", async (done) => {
+		const lastDate = ["24", "12", "1942"];
+		const param1 = "42";
+		const param2 = "12/1942";
+		const param3 = "24/12/1999";
+		const result3 = ["24", "12", "1999"];
+		const param4 = null;
+
+		const delivery1 = instagramCtrl.getImportDate(param1, lastDate);
+		const delivery2 = instagramCtrl.getImportDate(param2, lastDate);
+		const delivery3 = instagramCtrl.getImportDate(param3, lastDate);
+		const delivery4 = instagramCtrl.getImportDate(param4, lastDate);
+
+		expect(delivery1).toEqual(lastDate);
+		expect(delivery2).toEqual(lastDate);
+		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(lastDate);
 
 		done();
 	});

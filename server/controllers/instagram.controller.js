@@ -47,7 +47,7 @@ const listAccounts = async (req, res) => {
 const importData = async (req, res) => {
 	// <TODO>: Add error handling to avoid crashes and return 500 instead
 	// Different types of actors indicated in the spreadsheet
-	let cType = 1; // current type index
+	let cType = 0; // current type index
 	let lastDate; // date of last inserted sample
 	const actors = {}; // map of actor objects to avoid creating duplicates
 	const tabs = req.collectives;
@@ -66,7 +66,7 @@ const importData = async (req, res) => {
 
 			// Se estivermos na row que indicao o novo tipo, atualiza
 			// a string do tipo atual e continua para a próxima row
-			if (name === req.sheet.categories[cType] && cType < req.sheet.categories.length) {
+			if (name === req.sheet.categories[cType + 1]) {
 				cType += 1;
 				continue; // eslint-disable-line no-continue
 			}
@@ -79,14 +79,14 @@ const importData = async (req, res) => {
 
 			// validation of username field with regex to capture only the username
 			// and not the whole profile url
-			const username = matchInstagramUsername(row[iRange.profileRow]);
+			const username = getImportUsername(row[iRange.profileRow]);
 
 			// if current actor hasnt been defined yet, create a new schema
 			if (actors[name] === undefined) {
 				const newAccount = instagramAccount({
 					name: name,
 					username: username,
-					type: req.sheet.categories[cType - 1],
+					type: req.sheet.categories[cType],
 				});
 				actors[name] = newAccount;
 			}
@@ -106,17 +106,15 @@ const importData = async (req, res) => {
 			Object.entries(sample).forEach(([key, value]) => { // eslint-disable-line no-loop-func
 				if (key === "date") {
 					// Parses the date of the sample and use the last one if something wrong happens
-					let newDate = value;
-					if (newDate) newDate = newDate.split("/");
-					if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+					const newDate = getImportDate(value, lastDate);
 					lastDate = newDate;
 					sample[key] = new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`);
-				} else if (!(value) || value === "s/" || value === "s") {
+				} else if (!isCellValid(value)) {
 					sample[key] = null;
 				} else if (key !== "campaigns") {
 					// if string is not empty, remove all dots and commas to avoid
 					// real numbers
-					sample[key] = value.replace(/\.|,/g, "");
+					sample[key] = getImportNumber(value);
 				}
 			});
 
@@ -558,15 +556,68 @@ const capitalize = (str) => {
 	return str.replace(/\b\w/g, l => l.toUpperCase()); // eslint-disable-line
 };
 
-const matchInstagramUsername = (profileUrl) => {
-	try {
-		if (!(profileUrl) || !(profileUrl.includes("instagram.com"))) return null;
-		const igRegex = /(https?:\/\/)?(www\.)?instagram\.com\/([A-Za-z0-9_](?:(?:[A-Za-z0-9_]|(?:\.(?!\.))){0,28}(?:[A-Za-z0-9_]))?)/;
-		const splitUsername = profileUrl.match(igRegex);
-		return splitUsername[3];
-	} catch (err) {
-		return null;
+/**
+ * Acquire the account username from the import base
+ * @param {string} usernameRaw - supposed account username
+ */
+const getImportUsername = (usernameRaw) => {
+	if (!(usernameRaw) || !(usernameRaw.includes("instagram.com"))) return null;
+
+	let username = usernameRaw.replace("https://www.instagram.com/", "");
+	username = username.split("/");
+
+	if (username[0] !== "pg")	username = username[0];
+	else username = username[1];
+
+	username = username.split("?");
+
+	return username[0];
+};
+
+/**
+ * Data validation by recurrent criteria
+ * @param {String} value - data to be validated
+ * @returns true if it is not valid, false if it is valid
+ */
+const isCellValid = (value) => {
+	if (!value) return false;
+
+	value = value.toUpperCase();
+
+	if (value === "-"
+		|| value === "S"
+		|| value === "S/") {
+		return false;
 	}
+
+	return true;
+};
+
+/**
+ * Acquire a number from the import base
+ * @param {string} number - supposed valid number
+ */
+const getImportNumber = (number) => {
+	number = parseInt(number.replace(/\.|,/g, ""), 10);
+
+	if (Number.isNaN(number)) number = null;
+
+	return number;
+};
+
+/**
+ * Acquire a date from the import base
+ * @param {string} date - supposed valid date
+ * @param {array} lastDate - last valid date
+ */
+const getImportDate = (date, lastDate) => {
+	if (!date) return lastDate;
+
+	date = date.split("/");
+
+	if (!(date) || date.length !== 3) date = lastDate;
+
+	return date;
 };
 
 module.exports = {
@@ -582,5 +633,8 @@ module.exports = {
 	getConfigLineChart,
 	evolutionMsg,
 	capitalize,
-	matchInstagramUsername,
+	getImportUsername,
+	isCellValid,
+	getImportNumber,
+	getImportDate,
 };

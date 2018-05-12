@@ -561,9 +561,9 @@ const capitalize = (str) => {
  * @param {string} usernameRaw - supposed account username
  */
 const getImportUsername = (usernameRaw) => {
-	if (!(usernameRaw) || !(usernameRaw.includes("instagram.com"))) return null;
+	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
 
-	let username = usernameRaw.replace("https://www.instagram.com/", "");
+	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
 	username = username.split("/");
 
 	if (username[0] !== "pg")	username = username[0];

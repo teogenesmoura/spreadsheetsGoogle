@@ -336,14 +336,71 @@ describe("Twitter methods", () => {
 		const result2 = null;
 		const param3 = "https://www.twitter.com/agoramovimento/";
 		const result3 = "agoramovimento";
+		const param4 = "https://www.twitter.com/pg/agoramovimento/";
+		const result4 = "agoramovimento";
 
-		const delivery1 = twitterCtrl.matchTwitterUsername(param1);
-		const delivery2 = twitterCtrl.matchTwitterUsername(param2);
-		const delivery3 = twitterCtrl.matchTwitterUsername(param3);
+		const delivery1 = twitterCtrl.getImportUsername(param1);
+		const delivery2 = twitterCtrl.getImportUsername(param2);
+		const delivery3 = twitterCtrl.getImportUsername(param3);
+		const delivery4 = twitterCtrl.getImportUsername(param4);
 
 		expect(delivery1).toEqual(result1);
 		expect(delivery2).toEqual(result2);
 		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(result4);
+
+		done();
+	});
+
+	it("Recovery of a valide cell or invalid cell", async (done) => {
+		expect(twitterCtrl.isCellValid(param)).toBe(true);
+		expect(twitterCtrl.isCellValid(null)).toBe(false);
+		expect(twitterCtrl.isCellValid(undefined)).toBe(false);
+		expect(twitterCtrl.isCellValid("-")).toBe(false);
+		expect(twitterCtrl.isCellValid("s")).toBe(false);
+		expect(twitterCtrl.isCellValid("s/")).toBe(false);
+		expect(twitterCtrl.isCellValid("S")).toBe(false);
+		expect(twitterCtrl.isCellValid("S/")).toBe(false);
+
+		done();
+	});
+
+	it("Recovery of a valid number", async (done) => {
+		const param1 = "42";
+		const result1 = 42;
+		const param2 = "http://www.frentebrasilpopular.org.br/";
+		const result2 = null;
+		const param3 = "12.365";
+		const result3 = 12365;
+
+		const delivery1 = twitterCtrl.getImportNumber(param1);
+		const delivery2 = twitterCtrl.getImportNumber(param2);
+		const delivery3 = twitterCtrl.getImportNumber(param3);
+
+		expect(delivery1).toEqual(result1);
+		expect(delivery2).toEqual(result2);
+		expect(delivery3).toEqual(result3);
+
+		done();
+	});
+
+	it("Recovey of a valid date", async (done) => {
+		const lastDate = ["24", "12", "1942"];
+		const param1 = "42";
+		const param2 = "12/1942";
+		const param3 = "24/12/1999";
+		const result3 = ["24", "12", "1999"];
+		const param4 = null;
+
+		const delivery1 = twitterCtrl.getImportDate(param1, lastDate);
+		const delivery2 = twitterCtrl.getImportDate(param2, lastDate);
+		const delivery3 = twitterCtrl.getImportDate(param3, lastDate);
+		const delivery4 = twitterCtrl.getImportDate(param4, lastDate);
+
+		expect(delivery1).toEqual(lastDate);
+		expect(delivery2).toEqual(lastDate);
+		expect(delivery3).toEqual(result3);
+		expect(delivery4).toEqual(lastDate);
 
 		done();
 	});

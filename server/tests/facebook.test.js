@@ -26,14 +26,14 @@ describe("Facebook endpoint", () => {
 
 	it("GET /facebook should return a JSON with all the users in the db", async (done) => {
 		const res = await request(app).get("/facebook").expect(httpStatus.OK);
-		const relFixed = "facebook.import";
+		const importRel = "facebook.import";
 
 		expect(res.body).toHaveProperty("error");
 		expect(res.body.error).toBe(false);
 
 		expect(res.body).toHaveProperty("import");
 		expect(res.body.import).toHaveProperty("rel");
-		expect(res.body.import.rel).toEqual(relFixed);
+		expect(res.body.import.rel).toEqual(importRel);
 		expect(res.body.import).toHaveProperty("href");
 		expect(typeof res.body.import.href).toEqual("string");
 

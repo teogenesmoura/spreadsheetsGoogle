@@ -1,11 +1,11 @@
 /*	Required modules */
-const httpStatus = require("http-status");
 const Chart = require("chartjs-node");
 const mongoose = require("mongoose");
 const Color = require("./color.controller");
 const twitterAccount = require("../models/twitter.model");
 const logger = require("../../config/logger");
 const ResocieObs = require("../../config/resocie.json").observatory;
+const httpStatus = require("../../config/resocie.json").httpStatus;
 
 /*	Global constants */
 const CHART_SIZE = 700;
@@ -34,7 +34,7 @@ const listAccounts = async (req, res) => {
 	} catch (error) {
 		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LIST_ACCOUNTS, errorMsg, error);
 	}
 };
 
@@ -155,7 +155,7 @@ const getUser = (req, res) => {
 	} catch (error) {
 		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_GET_USER, errorMsg, error);
 	}
 };
 
@@ -194,9 +194,9 @@ const userLastSample = (req, res) => {
 			latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário [${req.account.name}], no ${capitalize(SOCIAL_MIDIA)}`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LATEST, errorMsg, error);
 	}
 };
 
@@ -291,7 +291,7 @@ const loadAccount = async (req, res, next) => {
 		}
 		const errorMsg = `Error ao carregar usuário(s) [${username}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
 
-		return stdErrorHand(res, errorMsg, error);
+		return stdErrorHand(res, httpStatus.ERROR_LOAD_ACCOUNT, errorMsg, error);
 	}
 };
 
@@ -319,7 +319,7 @@ const setSampleKey = (req, res, next) => {
 		mainLabel = evolutionMsg(sampleKeyPT);
 	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
-		return res.status(httpStatus.NOT_FOUND).json({
+		return res.status(httpStatus.ERROR_QUERY_KEY).json({
 			error: true,
 			description: errorMsg,
 		});
@@ -343,13 +343,17 @@ const splitActors = (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
 
+		if (actors.length <= 1) {
+			throw new TypeError("Insufficient amount of actors for a comparison");
+		}
+
 		req.actors = actors;
 
 		next();
 	} catch (error) {
 		const errorMsg = "Erro ao criar o ambiente para a comparação";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_SPLIT_ACTORS, errorMsg, error);
 	}
 };
 
@@ -423,8 +427,10 @@ const createDataset = (req, res, next) => {
  * @param {object} req - standard request object from the Express library
  * @param {object} username - standard identifier of a Twitter account
  */
-const findAccount = async (req, username) => {
-	const account = await twitterAccount.findOne({ username });
+const findAccount = async (req, id) => {
+	const account = await twitterAccount.findOne({ username: id }, "-_id -__v");
+
+	if (!account) throw TypeError(`There is no user [${id}]`);
 
 	if (req.account === undefined) req.account = [];
 
@@ -526,10 +532,10 @@ const getQueryLink = (req, id, query) => {
  * @param {String} errorMsg - error message for the situation
  * @param {object} error - error that actually happened
  */
-const stdErrorHand = (res, errorMsg, error) => {
+const stdErrorHand = (res, errorCode, errorMsg, error) => {
 	logger.error(`${errorMsg} - Detalhes: ${error}`);
 
-	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+	res.status(errorCode).json({
 		error: true,
 		description: errorMsg,
 	});

@@ -6,5 +6,4 @@ logs/
 node_modules/
 server/controllers/*.png
 credentials.json
-yarn-error.log
-
+yarn-error.logs

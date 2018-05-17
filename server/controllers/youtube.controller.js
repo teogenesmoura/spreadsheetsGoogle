@@ -1,7 +1,6 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
 const httpStatus = require("http-status");
-const mongoose = require("mongoose");
 const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
@@ -45,6 +44,7 @@ const listAccounts = async (req, res) => {
  */
 
 const importData = async (req, res) => {
+	const actorsArray = await youtubeAccount.find({});
 	const actors = {};
 	const tabs = req.collectives;
 	const length = tabs.length;
@@ -59,7 +59,11 @@ const importData = async (req, res) => {
 	let cCategory;
 	let lastDate;
 
-	mongoose.connection.collections.youtubeAccount.drop();
+	const lengthActors = actorsArray.length;
+	for (let i = 0; i < lengthActors; i += 1) {
+		actors[actorsArray[i].name] = actorsArray[i];
+	}
+
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 		const rowsCount = cTab.length;
@@ -122,7 +126,17 @@ const importData = async (req, res) => {
 					views: cRow[viewsRow],
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
 				};
-				actors[cRow[nameRow]].history.push(newHistory);
+				let histFound = false;
+				for (let k = 0; k < actors[cRow[nameRow]].history.length; k += 1) {
+					const sample = actors[cRow[nameRow]].history[k];
+					if (sample.date.getTime() === newHistory.date.getTime()) {
+						histFound = true;
+						break;
+					}
+				}
+				if (histFound === false) {
+					actors[cRow[nameRow]].history.push(newHistory);
+				}
 			}
 		}
 	}
@@ -132,6 +146,18 @@ const importData = async (req, res) => {
 		savePromises.push(actors[cActor].save());
 	});
 	await Promise.all(savePromises);
+
+	return res.redirect("/youtube");
+};
+
+const updateData = async (req, res) => {
+	const actorsArray = await youtubeAccount.find({});
+	const actors = {};
+
+	const lengthActors = actorsArray.length;
+	for (let i = 0; i < lengthActors; i += 1) {
+		actors[actorsArray[i].name] = actorsArray[i];
+	}
 
 	return res.redirect("/youtube");
 };
@@ -653,4 +679,5 @@ module.exports = {
 	evolutionMsg,
 	capitalize,
 	isCellValid,
+	updateData,
 };

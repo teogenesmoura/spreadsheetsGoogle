@@ -5,6 +5,7 @@ const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
 const ResocieObs = require("../../config/resocie.json").observatory;
+const https = require("https");
 
 /*	Global constants */
 const CHART_SIZE = 700;
@@ -153,13 +154,93 @@ const importData = async (req, res) => {
 const updateData = async (req, res) => {
 	const actorsArray = await youtubeAccount.find({});
 	const actors = {};
+	let newActors = {};
+
+	https.get("https://youtube-data-monitor.herokuapp.com/actors", (resp) => {
+		let data = "";
+		// A chunk of data has been recieved.
+		resp.on("data", (chunk) => {
+			data += chunk;
+		});
+		// The whole response has been received. Print out the result.
+		resp.on("end", () => {
+			newActors = JSON.parse(data).actors;
+		});
+	}).on("error", (err) => {
+		console.log(err.message);
+	});
+
+	console.log(newActors);
 
 	const lengthActors = actorsArray.length;
 	for (let i = 0; i < lengthActors; i += 1) {
 		actors[actorsArray[i].name] = actorsArray[i];
 	}
 
+	const lenActorsNew = newActors.length;
+	let dates = {};
+	https.get("https://youtube-data-monitor.herokuapp.com/dates", (resp) => {
+		let data = "";
+		// A chunk of data has been recieved.
+		resp.on("data", (chunk) => {
+			data += chunk;
+		});
+		// The whole response has been received. Print out the result.
+		resp.on("end", () => {
+			dates = JSON.parse(data).dates;
+		});
+	}).on("error", (err) => {
+		console.log(err.message);
+	});
+	console.log("oi");
+	console.log(lenActorsNew);
+	for (let i = 0; i < lenActorsNew; i += 1) {
+		console.log(i);
+		if (actors[newActors[i]] === undefined) {
+			const newActor = {};
+			newActor.name = newActors[i];
+			newActor.history = [];
+			actors[newActors[i]] = newActor;
+		}
+		console.log(i);
+		const lenDates = dates.length;
+		for (let j = 0; j < lenDates; j += 1) {
+			const newHistory = {};
+			let rawHistory = {};
+			const date = dates[j].substring(0, 9);
+			const name = actors[newActors[i]].name;
+			const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${name}`;
+			rawHistory = getHistory(adr);
+			newHistory.date = Date(date);
+			newHistory.subscribers = rawHistory.subscribers;
+			newHistory.videos = rawHistory.video_count;
+			newHistory.views = rawHistory.view_count;
+			console.log(name);
+			console.log(date);
+			console.log(newHistory);
+			// actors[newActors[i]].history.push(newHistory);
+		}
+	}
+
 	return res.redirect("/youtube");
+};
+
+const getHistory = (adr) => {
+	let history = {};
+	https.get(adr, (resp) => {
+		let data = "";
+		// A chunk of data has been recieved.
+		resp.on("data", (chunk) => {
+			data += chunk;
+		});
+		// The whole response has been received. Print out the result.
+		resp.on("end", () => {
+			history = JSON.parse(data);
+		});
+	}).on("error", (err) => {
+		console.log(err.message);
+	});
+	return history;
 };
 
 /**

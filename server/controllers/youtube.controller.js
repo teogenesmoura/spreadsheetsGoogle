@@ -1,11 +1,11 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
 const httpStatus = require("http-status");
+const request = require("request-promise");
 const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
 const ResocieObs = require("../../config/resocie.json").observatory;
-const https = require("https");
 
 /*	Global constants */
 const CHART_SIZE = 700;
@@ -154,23 +154,18 @@ const importData = async (req, res) => {
 const updateData = async (req, res) => {
 	const actorsArray = await youtubeAccount.find({});
 	const actors = {};
-	let newActors = {};
+	let newActors;
+	let dates;
 
-	https.get("https://youtube-data-monitor.herokuapp.com/actors", (resp) => {
-		let data = "";
-		// A chunk of data has been recieved.
-		resp.on("data", (chunk) => {
-			data += chunk;
+	try {
+		let response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/actors", json: true });
+		newActors = response.actors;
+	} catch (e) {
+		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: `Houve um erro ao fazer o pedido de atores no servidor do Monitor de Dados do Youtube: ${e}`,
 		});
-		// The whole response has been received. Print out the result.
-		resp.on("end", () => {
-			newActors = JSON.parse(data).actors;
-		});
-	}).on("error", (err) => {
-		console.log(err.message);
-	});
-
-	console.log(newActors);
+	}
 
 	const lengthActors = actorsArray.length;
 	for (let i = 0; i < lengthActors; i += 1) {
@@ -178,68 +173,63 @@ const updateData = async (req, res) => {
 	}
 
 	const lenActorsNew = newActors.length;
-	let dates = {};
-	https.get("https://youtube-data-monitor.herokuapp.com/dates", (resp) => {
-		let data = "";
-		// A chunk of data has been recieved.
-		resp.on("data", (chunk) => {
-			data += chunk;
+
+	try {
+		let response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/dates", json: true });
+		dates = response.dates;
+		dates.sort();
+	} catch (e) {
+		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: `Houve um erro ao fazer o pedido de datas no servidor do Monitor de Dados do Youtube: ${e}`,
 		});
-		// The whole response has been received. Print out the result.
-		resp.on("end", () => {
-			dates = JSON.parse(data).dates;
-		});
-	}).on("error", (err) => {
-		console.log(err.message);
-	});
-	console.log("oi");
-	console.log(lenActorsNew);
+	}
+
+	let ans = '';
+
 	for (let i = 0; i < lenActorsNew; i += 1) {
-		console.log(i);
 		if (actors[newActors[i]] === undefined) {
 			const newActor = {};
 			newActor.name = newActors[i];
 			newActor.history = [];
 			actors[newActors[i]] = newActor;
 		}
-		console.log(i);
 		const lenDates = dates.length;
 		for (let j = 0; j < lenDates; j += 1) {
 			const newHistory = {};
 			let rawHistory = {};
-			const date = dates[j].substring(0, 9);
+			let date = dates[j].substring(0,10);
+			let dateArray = date.split('-');
 			const name = actors[newActors[i]].name;
 			const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${name}`;
-			rawHistory = getHistory(adr);
-			newHistory.date = Date(date);
-			newHistory.subscribers = rawHistory.subscribers;
-			newHistory.videos = rawHistory.video_count;
-			newHistory.views = rawHistory.view_count;
-			console.log(name);
-			console.log(date);
-			console.log(newHistory);
+			try {
+				rawHistory = await getHistory(adr);
+				date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`
+				newHistory.date = new Date(date);
+				newHistory.subscribers = rawHistory.subscribers;
+				newHistory.videos = rawHistory.video_count;
+				newHistory.views = rawHistory.view_count;
+				console.log(name);
+				console.log(date);
+				console.log(newHistory);
+			} catch (e) {
+				ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
+			}
 			// actors[newActors[i]].history.push(newHistory);
 		}
 	}
 
+	if (ans) {
+		return res.status(400).json({
+			error: true,
+			description: ans
+		});
+	}
 	return res.redirect("/youtube");
 };
 
-const getHistory = (adr) => {
-	let history = {};
-	https.get(adr, (resp) => {
-		let data = "";
-		// A chunk of data has been recieved.
-		resp.on("data", (chunk) => {
-			data += chunk;
-		});
-		// The whole response has been received. Print out the result.
-		resp.on("end", () => {
-			history = JSON.parse(data);
-		});
-	}).on("error", (err) => {
-		console.log(err.message);
-	});
+const getHistory = async (adr) => {
+	const history = await request({	uri: adr, json: true });
 	return history;
 };
 

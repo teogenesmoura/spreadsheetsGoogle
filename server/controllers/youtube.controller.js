@@ -158,7 +158,7 @@ const updateData = async (req, res) => {
 	let dates;
 
 	try {
-		let response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/actors", json: true });
+		const response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/actors", json: true });
 		newActors = response.actors;
 	} catch (e) {
 		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
@@ -175,7 +175,7 @@ const updateData = async (req, res) => {
 	const lenActorsNew = newActors.length;
 
 	try {
-		let response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/dates", json: true });
+		const response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/dates", json: true });
 		dates = response.dates;
 		dates.sort();
 	} catch (e) {
@@ -185,7 +185,7 @@ const updateData = async (req, res) => {
 		});
 	}
 
-	let ans = '';
+	let ans = "";
 
 	for (let i = 0; i < lenActorsNew; i += 1) {
 		if (actors[newActors[i]] === undefined) {
@@ -198,13 +198,14 @@ const updateData = async (req, res) => {
 		for (let j = 0; j < lenDates; j += 1) {
 			const newHistory = {};
 			let rawHistory = {};
-			let date = dates[j].substring(0,10);
-			let dateArray = date.split('-');
+			let date = dates[j].substring(0, 10);
+			const dateArray = date.split("-");
 			const name = actors[newActors[i]].name;
 			const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${name}`;
 			try {
-				rawHistory = await getHistory(adr);
-				date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`
+				// melhorar esse await depois para agilizar o processo
+				rawHistory = await getHistory(adr); // eslint-disable-line
+				date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`;
 				newHistory.date = new Date(date);
 				newHistory.subscribers = rawHistory.subscribers;
 				newHistory.videos = rawHistory.video_count;
@@ -222,7 +223,7 @@ const updateData = async (req, res) => {
 	if (ans) {
 		return res.status(400).json({
 			error: true,
-			description: ans
+			description: ans,
 		});
 	}
 	return res.redirect("/youtube");

@@ -189,64 +189,67 @@ const updateData = async (req, res) => {
 
 	for (let i = 0; i < lenActorsNew; i += 1) {
 		if (actors[newActors[i]] === undefined) {
-			const newActor = {};
-			newActor.name = newActors[i];
-			newActor.channelUrl = "https://youtube.com/";
-			newActor.history = [];
+			const newActor = youtubeAccount({
+				name: newActors[i],
+				channelUrl: `https://youtube.com/channel/${newActors[i]}`,
+				history: [],
+			});
 			actors[newActors[i]] = newActor;
 			console.log("ops");
 		}
 		const name = actors[newActors[i]].name;
 		if (actors[name].channelUrl !== null) {
-			const lenHist = actors[name].history.length;
-			if (lenHist > 0) {
-				const lastDateActor = actors[name].history[actors[name].history.length - 1].date.getTime();
-				const lastDateUpdate = dates[dates.length - 1].getTime();
-				if (lastDateActor !== lastDateUpdate) {
-					const lenDates = dates.length;
-					for (let j = 0; j < lenDates; j += 1) {
-						const newHistory = {};
-						let rawHistory = {};
-						let date = dates[j].substring(0, 10);
-						const dateArray = date.split("-");
-						const linkName = name.replace(/ /g, "_");
-						const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${linkName}`;
-						console.log(i);
-						console.log(j);
-						try {
-							// melhorar esse await depois para agilizar o processo
-							rawHistory = await getHistory(adr); // eslint-disable-line
-							date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`;
-							newHistory.date = new Date(date);
-							newHistory.subscribers = rawHistory.subscribers;
-							newHistory.videos = rawHistory.video_count;
-							newHistory.views = rawHistory.view_count;
-							console.log(name);
-							console.log(date);
-							console.log(newHistory);
-							actors[newActors[i]].history.push(newHistory);
-						} catch (e) {
-							ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
-						}
-					}
+			const dateMap = {};
+			const history = actors[name].history;
+			if (history !== undefined) {
+				const length = history.length;
+				for (let j = 0; j < length; j += 1) {
+					dateMap[history[j].date] = 1;
+				}
+			}
+			const lenDates = dates.length;
+			for (let j = 0; j < lenDates; j += 1) {
+				const newHistory = {};
+				let rawHistory = {};
+				const date = dates[j].substring(0, 10);
+				const dateArray = date.split("-");
+				const dateDate = new Date(`${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`);
+				if (dateMap[dateDate] === 1) continue; // eslint-disable-line
+
+				const linkName = name.replace(/ /g, "_");
+				const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${linkName}`;
+
+				try {
+					// melhorar esse await depois para agilizar o processo
+					rawHistory = await getHistory(adr); // eslint-disable-line
+					newHistory.date = dateDate;
+					newHistory.subscribers = rawHistory.subscribers;
+					newHistory.videos = rawHistory.video_count;
+					newHistory.views = rawHistory.view_count;
+					console.log(name);
+					console.log(date);
+					console.log(newHistory);
+					actors[newActors[i]].history.push(newHistory);
+				} catch (e) {
+					ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
 				}
 			}
 		}
 	}
 
 	console.log("terminou");
-	if (ans) {
-		return res.status(400).json({
-			error: true,
-			description: ans,
-		});
-	}
 
 	const savePromises = [];
 	Object.entries(actors).forEach(([cActor]) => {
 		savePromises.push(actors[cActor].save());
 	});
 	await Promise.all(savePromises);
+	if (ans) {
+		return res.status(400).json({
+			error: true,
+			description: ans,
+		});
+	}
 	return res.redirect("/youtube");
 };
 

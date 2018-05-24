@@ -191,41 +191,62 @@ const updateData = async (req, res) => {
 		if (actors[newActors[i]] === undefined) {
 			const newActor = {};
 			newActor.name = newActors[i];
+			newActor.channelUrl = "https://youtube.com/";
 			newActor.history = [];
 			actors[newActors[i]] = newActor;
+			console.log("ops");
 		}
-		const lenDates = dates.length;
-		for (let j = 0; j < lenDates; j += 1) {
-			const newHistory = {};
-			let rawHistory = {};
-			let date = dates[j].substring(0, 10);
-			const dateArray = date.split("-");
-			const name = actors[newActors[i]].name;
-			const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${name}`;
-			try {
-				// melhorar esse await depois para agilizar o processo
-				rawHistory = await getHistory(adr); // eslint-disable-line
-				date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`;
-				newHistory.date = new Date(date);
-				newHistory.subscribers = rawHistory.subscribers;
-				newHistory.videos = rawHistory.video_count;
-				newHistory.views = rawHistory.view_count;
-				console.log(name);
-				console.log(date);
-				console.log(newHistory);
-			} catch (e) {
-				ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
+		const name = actors[newActors[i]].name;
+		if (actors[name].channelUrl !== null) {
+			const lenHist = actors[name].history.length;
+			if (lenHist > 0) {
+				const lastDateActor = actors[name].history[actors[name].history.length - 1].date.getTime();
+				const lastDateUpdate = dates[dates.length - 1].getTime();
+				if (lastDateActor !== lastDateUpdate) {
+					const lenDates = dates.length;
+					for (let j = 0; j < lenDates; j += 1) {
+						const newHistory = {};
+						let rawHistory = {};
+						let date = dates[j].substring(0, 10);
+						const dateArray = date.split("-");
+						const linkName = name.replace(/ /g, "_");
+						const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${linkName}`;
+						console.log(i);
+						console.log(j);
+						try {
+							// melhorar esse await depois para agilizar o processo
+							rawHistory = await getHistory(adr); // eslint-disable-line
+							date = `${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`;
+							newHistory.date = new Date(date);
+							newHistory.subscribers = rawHistory.subscribers;
+							newHistory.videos = rawHistory.video_count;
+							newHistory.views = rawHistory.view_count;
+							console.log(name);
+							console.log(date);
+							console.log(newHistory);
+							actors[newActors[i]].history.push(newHistory);
+						} catch (e) {
+							ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
+						}
+					}
+				}
 			}
-			// actors[newActors[i]].history.push(newHistory);
 		}
 	}
 
+	console.log("terminou");
 	if (ans) {
 		return res.status(400).json({
 			error: true,
 			description: ans,
 		});
 	}
+
+	const savePromises = [];
+	Object.entries(actors).forEach(([cActor]) => {
+		savePromises.push(actors[cActor].save());
+	});
+	await Promise.all(savePromises);
 	return res.redirect("/youtube");
 };
 

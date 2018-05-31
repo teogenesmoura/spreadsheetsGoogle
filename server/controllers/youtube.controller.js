@@ -59,7 +59,8 @@ const importData = async (req, res) => {
 	let cCategory;
 	let lastDate;
 
-	mongoose.connection.collections.youtubeAccount.drop();
+	mongoose.connection.collections.youtubeAccount.deleteMany();
+
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
 		const rowsCount = cTab.length;
@@ -81,16 +82,25 @@ const importData = async (req, res) => {
 			}
 			// Se o canal é válido, cria um novo schema para o canal
 			const channelUrl = getImportChannelURL(cRow[channelRow]);
+			const channel = getImportUsername(channelUrl);
+			const name = cRow[nameRow].replace(/\n/g, " ");
+
+			console.log(`Name = ${cRow[nameRow].replace(/\n/g, " ")}`);
+			console.log(`ChannelURL = ${channelUrl}`);
+			console.log(`Channel = ${channel}`);
 
 			// Caso não exista o usuario atual, cria um novo schema para o usuario
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = youtubeAccount({
-					name: cRow[nameRow].replace(/\n/g, " "),
+					name: name,
 					category: categories[cCategory],
 					channelUrl: channelUrl,
 					channel: getImportUsername(channelUrl),
 				});
 				actors[cRow[nameRow]] = newAccount;
+			} else if (!actors[cRow[nameRow]].channelUrl) {
+				actors[cRow[nameRow]].channelUrl = channelUrl;
+				actors[cRow[nameRow]].channel = channel;
 			}
 
 			// Se o canal não for null verifica se os inscritos,

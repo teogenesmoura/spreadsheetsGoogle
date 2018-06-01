@@ -1,0 +1,130 @@
+.clear{
+    clear: both;
+}
+
+.areaUtil{
+    width: 80%;
+    margin: 0 auto;
+}
+
+.logo{
+    float: left;
+    margin: 10px;
+    min-width: 195.6225px;
+    min-height: 64.8px;
+    max-width: 80%;
+    max-height: 15%;
+    width: 195.6225px;
+    height: 64.8px;
+}
+
+.vazioCabecalho{
+    width: 100%;
+    height: 100px;
+    /*background-color: red;*/
+}
+
+.vazio{
+    width: 100%;
+    height: 37px;
+}
+
+.descricao{
+    width: 100%;
+    height: 189px;
+    background-color: #275c63c8;
+    padding: 27px;
+    text-align: center;
+}
+
+.descricao h1{
+    font-size: 54pt;
+    margin-bottom: 27px;
+}
+
+.descricao p{
+    font-size: 14pt;
+}
+
+.botao{
+	width: 220px;
+	height: 54px;
+	background-color: #b93719;
+    border: none;
+    
+    font-size: 16pt;
+    font-weight: 700;
+
+    display: inline-block;
+    position: relative;
+    left: 40%;
+
+	transition: all 0.5s;
+	cursor: pointer;
+}
+
+.botao span{
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: 0.5s;
+}
+
+.botao span:after {
+    content: '\00bb'; /* '>>' */
+    position: absolute;
+    opacity: 0;
+    top: 0;
+    right: -20px;
+    transition: 0.5s;
+}
+
+.botao:hover{
+    background-color: #c64b2e;
+}
+  
+.botao:hover span {
+    padding-right: 25px;
+}
+
+.botao:hover span:after {
+    opacity: 1;
+    right: 0;
+}
+
+.vitrine{
+    width: 100%;
+    height: 180px;
+    background-color: #e5fcfd;
+
+    text-align: center;
+}
+
+.vitrine-unico{
+    float: left;
+	width: 33.3333%;
+	padding: 30px;
+}
+
+.vitrine-unico img{
+    max-width: 81px;
+    max-height: 54px;
+}
+
+.vitrine-unico p{
+	display: inline-block;
+    padding: 10px 25px;
+    font-size: 12pt;
+}
+
+.rodape{
+    width: 100%;
+    height: 54px;
+    padding: 8px;
+
+    background-color: #275c63;
+
+    text-align: center;
+    font-size: 8pt;
+    color: #c6f6fd;
+}

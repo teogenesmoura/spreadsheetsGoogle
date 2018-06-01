@@ -38,6 +38,6 @@ app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
 
 // Set Public Folder
-app.use(express.static(path.join(__dirname, "../public/")));
+app.use(express.static(path.join(__dirname, "../public")));
 
 module.exports = app;

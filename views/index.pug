@@ -1,0 +1,8 @@
+extends layout
+
+block content
+	h1 Teste!
+	ul.list-group
+	each link, i in linkMap.links
+		li.list-group-item 
+			a(href= link.href)= link.rel

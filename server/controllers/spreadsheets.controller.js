@@ -169,7 +169,7 @@ const generateCharts = async (req, res) => {
 };
 
 const showLinkMap = async (req, res) => {
-	res.status(httpStatus.OK).json({
+	const linkMap = {
 		error: false,
 		links: [
 			{
@@ -189,6 +189,10 @@ const showLinkMap = async (req, res) => {
 				href: `${req.protocol}://${req.get("host")}/youtube/`,
 			},
 		],
+	};
+	// res.status(httpStatus.OK).json();
+	res.render("index", {
+		linkMap: linkMap,
 	});
 };
 

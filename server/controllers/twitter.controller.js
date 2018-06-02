@@ -235,12 +235,9 @@ const drawLineChart = async (req, res) => {
 				xAxes: [{
 					type: "time",
 					time: {
-						tooltipFormat: "ll HH:mm",
-					},
-					ticks: {
-						major: {
-							fontStyle: "bold",
-						},
+						tooltipFormat: "ll",
+						unit: "month",
+						displayFormats: { month: "MM/YYYY" },
 					},
 					scaleLabel: {
 						display: true,
@@ -251,6 +248,11 @@ const drawLineChart = async (req, res) => {
 					scaleLabel: {
 						display: true,
 						labelString: labelYAxes,
+					},
+					ticks: {
+						min: req.chart.yMin,
+						max: req.chart.yMax,
+						stepSize: req.chart.yStep,
 					},
 				}],
 			},
@@ -374,11 +376,9 @@ const createDataset = (req, res, next) => {
 		req.chart.dataSets = [];
 	}
 
-	/*
 	if (req.chart.data === undefined) {
 		req.chart.data = [];
 	}
-	// */
 
 	accounts.forEach((account) => {
 		const dataUser = [];
@@ -416,8 +416,78 @@ const createDataset = (req, res, next) => {
 		};
 
 		req.chart.dataSets.push(dataSet);
-		// req.chart.data.push(dataUser);
+		req.chart.data.push(dataUser);
 	});
+
+	next();
+};
+
+/**
+ * Definition of the mathematical configurations for the Y-axis of the chart
+ * @param {object} req - standard request object from the Express library
+ * @param {object} res - standard response object from the Express library
+ * @param {object} next - standard next function
+ * @returns Execution of the next feature, over the Y-axis limits of the chart
+ */
+const getChartLimits = (req, res, next) => {
+	let minValue = Number.MAX_VALUE;
+	let maxValue = Number.MIN_VALUE;
+	const percent = 0.05;
+	let roundStep = 10;
+	let averageValue = 0;
+	let desvPadValue = 0;
+	let value = 0;
+	let stpValue;
+
+	const historiesValid = req.chart.data;
+	let length = 0;
+
+	historiesValid.forEach((history) => {
+		history.forEach((point) => {
+			length += 1;
+			value = point.y;
+
+			if (value < minValue)		minValue = value;
+			if (value > maxValue)		maxValue = value;
+
+			averageValue += value;
+		});
+	});
+
+	averageValue /= length;
+
+	historiesValid.forEach((history) => {
+		history.forEach((point) => {
+			value = point.y;
+			desvPadValue += (value - averageValue) ** 2;
+		});
+	});
+
+	desvPadValue /= length;
+	desvPadValue = Math.ceil(Math.sqrt(desvPadValue));
+
+	const margin = (maxValue - minValue) * percent;
+	const maxRaw = maxValue;
+	const minRaw = minValue;
+
+	maxValue += margin;
+	minValue -= margin;
+
+	stpValue = Math.round((maxValue - minValue) / ((length / historiesValid.length) * 2));
+
+	roundStep **= (Math.round(Math.log10(desvPadValue - stpValue)) - 1);
+
+	maxValue += roundStep - (maxValue % roundStep);
+	minValue -= (minValue % roundStep);
+	stpValue += roundStep - (stpValue % roundStep);
+
+	if (Math.abs(maxRaw - maxValue) > stpValue) maxValue = maxRaw;
+	if (Math.abs(minRaw - minRaw) < stpValue) minValue = minRaw - (minRaw % roundStep);
+	if (minValue <= 0) minValue = 0;
+
+	req.chart.yMin = Math.floor(minValue);
+	req.chart.yMax = Math.ceil(maxValue);
+	req.chart.yStep = stpValue;
 
 	next();
 };
@@ -636,6 +706,7 @@ module.exports = {
 	setSampleKey,
 	splitActors,
 	createDataset,
+	getChartLimits,
 	evolutionMsg,
 	capitalize,
 	getImportUsername,

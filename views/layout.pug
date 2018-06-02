@@ -20,8 +20,8 @@ html(lang='pt-br')
 		nav.navbar.sticky-top.navbar-expand-lg.navbar-light.bg-green
 			.container
 				a.navbar-brand(href="/")
-						img(src="/imagens/Logo.png", width="220")
-				button.navbar-toggler(type="button", data-toggle="collapse", data-target="#navbarNav", aria-controls="navbarNav", aria-expanded="false", aria-label="Toggle navigation")
+						img(src="/imagens/Logo.png", alt="Logotipo do Observatório", width="220")
+				button.navbar-toggler(type="button", data-toggle="collapse", data-target="#navbarNav", aria-controls="navbarNav", aria-expanded="false", aria-label="Toggle navigation", min-width="50")
 					span.navbar-toggler-icon
 				#navbarNav.collapse.navbar-collapse.justify-content-center
 					ul.navbar-nav
@@ -29,9 +29,9 @@ html(lang='pt-br')
 							a.nav-link(href="/") Quem Somos 
 							span.sr-only (current)
 						li.nav-item
-							a.nav-link(href="/") Flexibilidades    
+							a.nav-link(href="/qualquer") Flexibilidades    
 						li.nav-item
-							a.nav-link(href="/qualquer") Qualquer
+							a.nav-link(href="/qualquer") Exploratório
 
 		.container
 			block content

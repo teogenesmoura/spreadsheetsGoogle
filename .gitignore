@@ -5,5 +5,5 @@ docs/
 logs/
 node_modules/
 server/controllers/*.png
-credentials.json
+config/credentials.json
 yarn-error.logs

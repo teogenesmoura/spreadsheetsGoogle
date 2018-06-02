@@ -90,6 +90,8 @@ const importData = async (req, res) => {
 					type: req.sheet.categories[cType],
 				});
 				actors[name] = newAccount;
+			} else if (!actors[row[iRange.nameRow]].username) {
+				actors[row[iRange.nameRow]].username = username;
 			}
 
 			// if current actor does not have a instagram username, continue

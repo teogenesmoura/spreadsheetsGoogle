@@ -91,6 +91,8 @@ const importData = async (req, res) => {
 					type: req.sheet.categories[cType],
 				});
 				actors[name] = newAccount;
+			} else if (!actors[row[tRange.nameRow]].username) {
+				actors[row[tRange.nameRow]].username = username;
 			}
 
 			// if current actor does not have a twitter username, continue

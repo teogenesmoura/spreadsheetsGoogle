@@ -5,6 +5,9 @@ html(lang='pt-br')
 			title #{title} - Observatório das Eleições - Resocie/UNB
 		else
 			title Observatório das Eleições - Resocie/UNB
+
+		link(rel="icon", href="/imagens/Icon.png")
+
 		link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Comfortaa:400,700")
 		link(rel="stylesheet", href="/bower_components/bootstrap/dist/css/bootstrap.css")
 		link(rel="stylesheet", href="/bower_components/custom/css/custom.css")
@@ -13,33 +16,30 @@ html(lang='pt-br')
 		script(src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js", integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49", crossorigin="anonymous")
 		script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js", integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T", crossorigin="anonymous")
 
-
 	body
-		nav.navbar.navbar-expand-lg.navbar-light.bg-light
-			a.navbar-brand(href="/")
-				img(src="/imagens/Logo.png", width="220")
-			button.navbar-toggler(type="button", data-toggle="collapse", data-target="#navbarNav", aria-controls="navbarNav", aria-expanded="false", aria-label="Toggle navigation")
-				span.navbar-toggler-icon
-			#navbarNav.collapse.navbar-collapse.justify-content-center
-				ul.navbar-nav
-				li.nav-item
-					a.nav-link(href="/") Quem Somos 
-					span.sr-only (current)
-				li.nav-item
-					a.nav-link(href="/") Flexibilidades    
-				li.nav-item
-					a.nav-link(href="/qualquer") Qualquer
-
-
-
+		nav.navbar.sticky-top.navbar-expand-lg.navbar-light.bg-green
+			.container
+				a.navbar-brand(href="/")
+						img(src="/imagens/Logo.png", width="220")
+				button.navbar-toggler(type="button", data-toggle="collapse", data-target="#navbarNav", aria-controls="navbarNav", aria-expanded="false", aria-label="Toggle navigation")
+					span.navbar-toggler-icon
+				#navbarNav.collapse.navbar-collapse.justify-content-center
+					ul.navbar-nav
+						li.nav-item
+							a.nav-link(href="/") Quem Somos 
+							span.sr-only (current)
+						li.nav-item
+							a.nav-link(href="/") Flexibilidades    
+						li.nav-item
+							a.nav-link(href="/qualquer") Qualquer
 
 		.container
 			block content
 			br
-			footer
-				//p Observatório das Eleições é um projeto do #[a(href: "https://resocie.org") Resocie]
-				p Observatório das Eleições é um projeto do Resocie
-				p © 2018 - Todos os direitos reservados
-				p Design pelo grupo Data-Viz
 
-		
+		footer.justify-content-center
+			//p Observatório das Eleições é um projeto do #[a(href: "https://resocie.org") Resocie]
+			p Observatório das Eleições é um projeto do 
+				a(href="https://resocie.org") Resocie
+			p © 2018 - Todos os direitos reservados
+			p Design pelo grupo Data-Viz

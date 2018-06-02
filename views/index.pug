@@ -1,6 +1,36 @@
 extends layout
 
 block content
+	.jumbotron
+		.container
+			h1.display-3 Observatório das Eleições
+			p Portal de pesquisa exploratória sobre as eleições presidenciais, possibilitando a análise da influência ou não nas mídias digitais referentes às eleições
+			p
+				a.btn.btn-primary.btn-lg(href='/', role='button') Iniciar pesquisa »
+
+	.row
+		.col-md-4
+			h2 Heading
+			p
+				| Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+			p
+				a.btn.btn-secondary(href='#', role='button') View details »
+		.col-md-4
+			h2 Heading
+			p
+				| Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+			p
+				a.btn.btn-secondary(href='#', role='button') View details »
+		.col-md-4
+			h2 Heading
+			p
+				| Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.
+			p
+				a.btn.btn-secondary(href='#', role='button') View details »
+	
+	//p= vitrine.midia.description
+	//img(src=vitrine.midia.img, width="220")
+
 	ul.list-group
 	each link, i in linkMap.links
 		li.list-group-item 

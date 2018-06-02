@@ -190,9 +190,25 @@ const showLinkMap = async (req, res) => {
 			},
 		],
 	};
+
+	const vitrine = {
+		midia: {
+			img: "/imagens/vitrine_0_midia.svg",
+			description: "Pode-se selecionar uma ou mais das nossas mídias disponíveis",
+		},
+		atores: {
+			img: "/imagens/vitrine_1_atores.svg",
+			description: "Pode-se selecionar um ou mais das nossos atores disponíveis",
+		},
+		queries: {
+			img: "/imagens/vitrine_2_caracteristica.svg",
+			description: "Pode-se selecionar uma ou mais das características numa mídia digital",
+		},
+	};
 	// res.status(httpStatus.OK).json();
 	res.render("index", {
 		linkMap: linkMap,
+		vitrine: vitrine,
 	});
 };
 

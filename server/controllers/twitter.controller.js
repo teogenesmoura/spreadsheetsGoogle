@@ -55,7 +55,7 @@ const importData = async (req, res) => {
 	const length = tabs.length;
 	const tRange = req.sheet.twitterRange;
 
-	mongoose.connection.collections.twitterAccount.drop();
+	mongoose.connection.collections.twitterAccount.deleteMany();
 
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
@@ -91,8 +91,8 @@ const importData = async (req, res) => {
 					type: req.sheet.categories[cType],
 				});
 				actors[name] = newAccount;
-			} else if (!actors[row[tRange.nameRow]].username) {
-				actors[row[tRange.nameRow]].username = username;
+			} else if (!actors[name].username) {
+				actors[name].username = username;
 			}
 
 			// if current actor does not have a twitter username, continue
@@ -569,6 +569,7 @@ const getImportUsername = (usernameRaw) => {
 	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
 
 	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
+	username = username.replace(`https://${SOCIAL_MIDIA}.com/`, "");
 	username = username.split("/");
 
 	if (username[0] !== "pg")	username = username[0];

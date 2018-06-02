@@ -79,7 +79,7 @@ const importAccounts = async (req, res) => {
 	let cCategory = 0;
 	let lastDate;
 
-	mongoose.connection.collections.facebook.drop();
+	mongoose.connection.collections.facebook.deleteMany();
 
 	for (let posSheet = 0; posSheet < length; posSheet += 1) {
 		const cSheet = tabs[posSheet];
@@ -667,6 +667,7 @@ const getImportUsername = (usernameRaw) => {
 	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
 
 	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
+	username = username.replace(`https://${SOCIAL_MIDIA}.com/`, "");
 	username = username.split("/");
 
 	if (username[0] !== "pg")	username = username[0];

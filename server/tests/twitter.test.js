@@ -338,16 +338,20 @@ describe("Twitter methods", () => {
 		const result3 = "agoramovimento";
 		const param4 = "https://www.twitter.com/pg/agoramovimento/";
 		const result4 = "agoramovimento";
+		const param5 = "https://twitter.com/frentebrasilpop";
+		const result5 = "frentebrasilpop";
 
 		const delivery1 = twitterCtrl.getImportUsername(param1);
 		const delivery2 = twitterCtrl.getImportUsername(param2);
 		const delivery3 = twitterCtrl.getImportUsername(param3);
 		const delivery4 = twitterCtrl.getImportUsername(param4);
+		const delivery5 = twitterCtrl.getImportUsername(param5);
 
 		expect(delivery1).toEqual(result1);
 		expect(delivery2).toEqual(result2);
 		expect(delivery3).toEqual(result3);
 		expect(delivery4).toEqual(result4);
+		expect(delivery5).toEqual(result5);
 
 		done();
 	});

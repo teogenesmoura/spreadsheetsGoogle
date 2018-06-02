@@ -54,7 +54,7 @@ const importData = async (req, res) => {
 	const length = tabs.length;
 	const iRange = req.sheet.instagramRange;
 
-	mongoose.connection.collections.instagramAccount.drop();
+	mongoose.connection.collections.instagramAccount.deleteMany();
 
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
@@ -90,8 +90,8 @@ const importData = async (req, res) => {
 					type: req.sheet.categories[cType],
 				});
 				actors[name] = newAccount;
-			} else if (!actors[row[iRange.nameRow]].username) {
-				actors[row[iRange.nameRow]].username = username;
+			} else if (!actors[name].username) {
+				actors[name].username = username;
 			}
 
 			// if current actor does not have a instagram username, continue
@@ -567,6 +567,7 @@ const getImportUsername = (usernameRaw) => {
 	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
 
 	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
+	username = username.replace(`https://${SOCIAL_MIDIA}.com/`, "");
 	username = username.split("/");
 
 	if (username[0] !== "pg")	username = username[0];

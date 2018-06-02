@@ -85,10 +85,6 @@ const importData = async (req, res) => {
 			const channel = getImportUsername(channelUrl);
 			const name = cRow[nameRow].replace(/\n/g, " ");
 
-			console.log(`Name = ${cRow[nameRow].replace(/\n/g, " ")}`);
-			console.log(`ChannelURL = ${channelUrl}`);
-			console.log(`Channel = ${channel}`);
-
 			// Caso não exista o usuario atual, cria um novo schema para o usuario
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = youtubeAccount({

@@ -7,6 +7,10 @@
 	background-color: #00afc8;
 }
 
+.h4{
+	font-weight: 700;
+}
+
 /*	Cabeçalho */
 .nav-item{
 	list-style: none;
@@ -87,6 +91,11 @@ footer p{
 	background-color: #c64b2e;
 	/*border-color: inherit;*/
 	border-color: black;
+}
+
+form .mb-4 {
+	max-height: 2%;
+    overflow: scroll;
 }
 
 

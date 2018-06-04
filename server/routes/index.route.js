@@ -9,6 +9,10 @@ const router = express.Router();
 
 router.use("/", spreadsheetsRoute);
 
+router.get("/espacoExploratorio", (req, res) => {
+	res.render("plot");
+});
+
 // mount facebook routes at /facebook
 router.use("/facebook", facebookRoute);
 

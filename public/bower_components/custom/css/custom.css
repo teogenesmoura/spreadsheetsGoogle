@@ -42,7 +42,7 @@
 }
 
 .navbar-light .navbar-toggler-icon{
-	background-image: url("/imagens/toogle-icon.png");
+	background-image: url("/imagens/toogle-icon.svg");
 }
 
 .navbar-toggler{
@@ -93,11 +93,24 @@ footer p{
 	border-color: black;
 }
 
-form .mb-4 {
-	max-height: 2%;
-    overflow: scroll;
+.btn-secondary{
+	background-color: white;
+	color: #275c63c8;
+	border-color: black;
+	transition: all 0.5s;
 }
 
+.btn-secondary:hover {
+	background-color: #275c63c8;
+	color: white;
+	/*border-color: inherit;*/
+	border-color: black;
+}
+
+form .mb-4 {
+	max-height: 2%;
+	overflow: scroll;
+}
 
 /*
  * Header

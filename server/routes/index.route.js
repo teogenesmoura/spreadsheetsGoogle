@@ -60,6 +60,10 @@ router.get("/espacoExploratorio", (req, res) => {
 	res.render("plot");
 });
 
+router.get("/espacoExploratorio2", (req, res) => {
+	res.render("plot2");
+});
+
 // mount facebook routes at /facebook
 router.use("/facebook", facebookRoute);
 

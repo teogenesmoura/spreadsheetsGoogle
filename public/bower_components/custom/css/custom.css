@@ -107,9 +107,11 @@ footer p{
 	border-color: black;
 }
 
+/*	Formulário */
+
 form .mb-4 {
-	max-height: 2%;
-	overflow: scroll;
+	max-height: 80px;
+	overflow: auto;
 }
 
 /*

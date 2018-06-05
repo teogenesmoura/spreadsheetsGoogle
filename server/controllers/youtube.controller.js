@@ -1,6 +1,5 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
-const httpStatus = require("http-status");
 const request = require("request-promise");
 const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");

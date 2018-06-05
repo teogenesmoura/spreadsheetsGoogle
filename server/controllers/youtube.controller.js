@@ -1,6 +1,6 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
-const mongoose = require("mongoose");
+const request = require("request-promise");
 const Color = require("./color.controller");
 const youtubeAccount = require("../models/youtube.model");
 const logger = require("../../config/logger");
@@ -45,6 +45,7 @@ const listAccounts = async (req, res) => {
  */
 
 const importData = async (req, res) => {
+	const actorsArray = await youtubeAccount.find({});
 	const actors = {};
 	const tabs = req.collectives;
 	const length = tabs.length;
@@ -59,7 +60,10 @@ const importData = async (req, res) => {
 	let cCategory;
 	let lastDate;
 
-	mongoose.connection.collections.youtubeAccount.deleteMany();
+	const lengthActors = actorsArray.length;
+	for (let i = 0; i < lengthActors; i += 1) {
+		actors[actorsArray[i].name] = actorsArray[i];
+	}
 
 	for (let i = 0; i < length; i += 1) {
 		const cTab = tabs[i];
@@ -118,7 +122,17 @@ const importData = async (req, res) => {
 					views: cRow[viewsRow],
 					date: new Date(`${newDate[1]}/${newDate[0]}/${newDate[2]}`),
 				};
-				actors[cRow[nameRow]].history.push(newHistory);
+				let histFound = false;
+				for (let k = 0; k < actors[cRow[nameRow]].history.length; k += 1) {
+					const sample = actors[cRow[nameRow]].history[k];
+					if (sample.date.getTime() === newHistory.date.getTime()) {
+						histFound = true;
+						break;
+					}
+				}
+				if (histFound === false) {
+					actors[cRow[nameRow]].history.push(newHistory);
+				}
 			}
 		}
 	}
@@ -130,6 +144,113 @@ const importData = async (req, res) => {
 	await Promise.all(savePromises);
 
 	return res.redirect("/youtube");
+};
+
+const updateData = async (req, res) => {
+	const actorsArray = await youtubeAccount.find({});
+	const actors = {};
+	let newActors;
+	let dates;
+
+	try {
+		const response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/actors", json: true });
+		newActors = response.actors;
+	} catch (e) {
+		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: `Houve um erro ao fazer o pedido de atores no servidor do Monitor de Dados do Youtube: ${e}`,
+		});
+	}
+
+	const lengthActors = actorsArray.length;
+	for (let i = 0; i < lengthActors; i += 1) {
+		actors[actorsArray[i].name] = actorsArray[i];
+	}
+
+	const lenActorsNew = newActors.length;
+
+	try {
+		const response = await request({	uri: "https://youtube-data-monitor.herokuapp.com/dates", json: true });
+		dates = response.dates;
+		dates.sort();
+	} catch (e) {
+		return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+			error: true,
+			description: `Houve um erro ao fazer o pedido de datas no servidor do Monitor de Dados do Youtube: ${e}`,
+		});
+	}
+
+	let ans = "";
+
+	for (let i = 0; i < lenActorsNew; i += 1) {
+		if (actors[newActors[i]] === undefined) {
+			const newActor = youtubeAccount({
+				name: newActors[i],
+				channelUrl: `https://youtube.com/channel/${newActors[i]}`,
+				history: [],
+			});
+			actors[newActors[i]] = newActor;
+			console.log("ops");
+		}
+		const name = actors[newActors[i]].name;
+		if (actors[name].channelUrl !== null) {
+			const dateMap = {};
+			const history = actors[name].history;
+			if (history !== undefined) {
+				const length = history.length;
+				for (let j = 0; j < length; j += 1) {
+					dateMap[history[j].date] = 1;
+				}
+			}
+			const lenDates = dates.length;
+			for (let j = 0; j < lenDates; j += 1) {
+				const newHistory = {};
+				let rawHistory = {};
+				const date = dates[j].substring(0, 10);
+				const dateArray = date.split("-");
+				const dateDate = new Date(`${dateArray[2]}-${dateArray[1]}-${dateArray[0]}`);
+				if (dateMap[dateDate] === 1) continue; // eslint-disable-line
+
+				const linkName = name.replace(/ /g, "_");
+				const adr = `https://youtube-data-monitor.herokuapp.com/${date}/canal/${linkName}`;
+
+				try {
+					// melhorar esse await depois para agilizar o processo
+					rawHistory = await getHistory(adr); // eslint-disable-line
+					newHistory.date = dateDate;
+					newHistory.subscribers = rawHistory.subscribers;
+					newHistory.videos = rawHistory.video_count;
+					newHistory.views = rawHistory.view_count;
+					console.log(name);
+					console.log(date);
+					console.log(newHistory);
+					actors[newActors[i]].history.push(newHistory);
+				} catch (e) {
+					ans += `Houve um erro ao fazer o pedido de dados no link ${adr} no Monitor de Dados do Youtube: ${e}\n\n`;
+				}
+			}
+		}
+	}
+
+	console.log("terminou");
+
+	const savePromises = [];
+	Object.entries(actors).forEach(([cActor]) => {
+		savePromises.push(actors[cActor].save());
+	});
+	await Promise.all(savePromises);
+	if (ans) {
+		return res.status(400).json({
+			error: true,
+			description: ans,
+		});
+	}
+	return res.redirect("/youtube");
+};
+
+const getHistory = async (adr) => {
+	const history = await request({	uri: adr, json: true });
+	return history;
 };
 
 /**
@@ -709,6 +830,7 @@ module.exports = {
 	evolutionMsg,
 	capitalize,
 	isCellValid,
+	updateData,
 	getImportChannelURL,
 	getImportUsername,
 	getImportNumber,

@@ -1,11 +1,11 @@
 /*	Required modules */
 const ChartNode = require("chartjs-node");
-const httpStatus = require("http-status");
 const mongoose = require("mongoose");
 const Color = require("./color.controller");
 const Facebook = require("../models/facebook.model");
 const logger = require("../../config/logger");
 const ResocieObs = require("../../config/resocie.json").observatory;
+const httpStatus = require("../../config/resocie.json").httpStatus;
 
 /*	Global constants */
 const CHART_SIZE = 700;
@@ -22,7 +22,7 @@ const SOCIAL_MIDIA = ResocieObs.socialMidia.facebookMidia;
  */
 const listAccounts = async (req, res) => {
 	try {
-		const accounts = await Facebook.find({}, "name link");
+		const accounts = await Facebook.find({}, "name username link");
 
 		const importLink = await getInitialLink(req, accounts);
 
@@ -34,7 +34,7 @@ const listAccounts = async (req, res) => {
 	} catch (error) {
 		const errorMsg = `Erro ao carregar usuários do ${capitalize(SOCIAL_MIDIA)} nos registros`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LIST_ACCOUNTS, errorMsg, error);
 	}
 };
 
@@ -79,7 +79,7 @@ const importAccounts = async (req, res) => {
 	let cCategory = 0;
 	let lastDate;
 
-	mongoose.connection.collections.facebook.drop();
+	mongoose.connection.collections.facebook.deleteMany();
 
 	for (let posSheet = 0; posSheet < length; posSheet += 1) {
 		const cSheet = tabs[posSheet];
@@ -89,7 +89,6 @@ const importAccounts = async (req, res) => {
 		for (let posRow = 0; posRow < rowsCount; posRow += 1) {
 			const cRow = cSheet[posRow];
 
-			// se o nome for vazio ou o primeiro, pular
 			if (!cRow[nameRow] || posRow < 1) {
 				continue; // eslint-disable-line no-continue
 			}
@@ -101,27 +100,20 @@ const importAccounts = async (req, res) => {
 				continue; // eslint-disable-line no-continue
 			}
 
-			// se não existe link para conta do facebook
-			let accountLink;
-			if (isCellValid(cRow[linkRow])) {
-				accountLink = cRow[linkRow];
-			} else {
-				accountLink = null;
-			}
+			const accountLink = getImportAccountLink(cRow[linkRow]);
 
 			if (actors[cRow[nameRow]] === undefined) {
 				const newAccount = Facebook({
 					name: cRow[nameRow].replace(/\n/g, " "),
 					class: categories[cCategory],
 					link: accountLink,
+					username: getImportUsername(accountLink),
 				});
 
-				if (accountLink != null) {
-					const splitAccLink = accountLink.split("/");
-					newAccount.username = splitAccLink[splitAccLink.length - 2];
-				}
-
 				actors[cRow[nameRow]] = newAccount;
+			} else if (!actors[cRow[nameRow]].username) {
+				actors[cRow[nameRow]].link = accountLink;
+				actors[cRow[nameRow]].username = accountLink;
 			}
 
 			if (accountLink) {
@@ -129,16 +121,11 @@ const importAccounts = async (req, res) => {
 					if (!isCellValid(cRow[posRow2])) {
 						cRow[posRow2] = null;
 					} else if (posRow2 === likesRow	|| posRow2 === followersRow) {
-						cRow[posRow2] = parseInt(cRow[posRow2].replace(/\.|,/g, ""), 10);
-
-						if (Number.isNaN(cRow[posRow2])) cRow[posRow2] = null;
+						cRow[posRow2] = getImportNumber(cRow[posRow2]);
 					}
 				}
 
-				let newDate = cRow[dateRow];
-				if (newDate) newDate = newDate.split("/");
-
-				if (!(newDate) || newDate.length !== 3) newDate = lastDate;
+				const newDate = getImportDate(cRow[dateRow], lastDate);
 				lastDate = newDate;
 
 				const newHistory = {
@@ -168,7 +155,7 @@ const importAccounts = async (req, res) => {
 const getUser = (req, res) => {
 	try {
 		const account = req.account[0].toObject();
-		account.links = getQueriesLink(req, account._id); // eslint-disable-line
+		account.links = getQueriesLink(req, account.username);
 
 		res.status(httpStatus.OK).json({
 			error: false,
@@ -177,7 +164,7 @@ const getUser = (req, res) => {
 	} catch (error) {
 		const errorMsg = "Erro enquanto configura-se o usuário";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_GET_USER, errorMsg, error);
 	}
 };
 
@@ -212,9 +199,9 @@ const getLatest = (req, res) => {
 			latest,
 		});
 	} catch (error) {
-		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário ${req.account.name}, no ${capitalize(SOCIAL_MIDIA)}`;
+		const errorMsg = `Error enquanto se recuperava os últimos dados válidos para o usuário [${req.account.name}], no ${capitalize(SOCIAL_MIDIA)}`;
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_LATEST, errorMsg, error);
 	}
 };
 
@@ -263,7 +250,7 @@ const loadAccount = async (req, res, next) => {
 
 		const errorMsg = `Error ao carregar usuário(s) [${id}] dos registros do ${capitalize(SOCIAL_MIDIA)}`;
 
-		return stdErrorHand(res, errorMsg, error);
+		return stdErrorHand(res, httpStatus.ERROR_LOAD_ACCOUNT, errorMsg, error);
 	}
 };
 
@@ -286,7 +273,7 @@ const setHistoryKey = (req, res, next) => {
 		chartTitle = evolutionMsg(historyKeyPT);
 	} else {
 		logger.error(`${errorMsg} - Tried to access ${req.originalUrl}`);
-		return res.status(httpStatus.NOT_FOUND).json({
+		return res.status(httpStatus.ERROR_QUERY_KEY).json({
 			error: true,
 			description: errorMsg,
 		});
@@ -311,13 +298,17 @@ const splitActors = (req, res, next) => {
 	try {
 		const actors = req.query.actors.split(",");
 
+		if (actors.length <= 1) {
+			throw new TypeError("Insufficient amount of actors for a comparison");
+		}
+
 		req.actors = actors;
 
 		next();
 	} catch (error) {
 		const errorMsg = "Erro ao criar o ambiente para a comparação";
 
-		stdErrorHand(res, errorMsg, error);
+		stdErrorHand(res, httpStatus.ERROR_SPLIT_ACTORS, errorMsg, error);
 	}
 };
 
@@ -520,7 +511,9 @@ const getConfigLineChart = (req, res, next) => {
  * @param {object} id - standard identifier of a Facebook account
  */
 const findAccount = async (req, id) => {
-	const account = await Facebook.findOne({ _id: id }, "-__v	");
+	const account = await Facebook.findOne({ username: id }, "-_id -__v");
+
+	if (!account) throw TypeError(`There is no user [${id}]`);
 
 	if (req.account === undefined) req.account = [];
 
@@ -548,9 +541,9 @@ const getAccountLink = (req, accounts) => {
 	for (let i = 0; i < length; i += 1) {
 		accounts[i] = accounts[i].toObject();
 		accounts[i].links = [];
-		const id = accounts[i]._id; // eslint-disable-line
+		const id = accounts[i].username;
 
-		if (accounts[i].link) {
+		if (id) {
 			const link = {
 				rel: `${SOCIAL_MIDIA}.account`,
 				href: `${req.protocol}://${req.get("host")}/${SOCIAL_MIDIA}/${id}`,
@@ -620,13 +613,14 @@ const getQueryLink = (req, id, query) => {
 /**
  * Standard Error Handling
  * @param {object} res - standard response object from the Express library
+ * @param {number} erroCode - error code for the situation
  * @param {String} errorMsg - error message for the situation
  * @param {object} error - error that actually happened
  */
-const stdErrorHand = (res, errorMsg, error) => {
+const stdErrorHand = (res, errorCode, errorMsg, error) => {
 	logger.error(`${errorMsg} - Detalhes: ${error}`);
 
-	res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+	res.status(errorCode).json({
 		error: true,
 		description: errorMsg,
 	});
@@ -670,6 +664,62 @@ const isCellValid = (value) => {
 	return true;
 };
 
+/**
+ * Acquire the account link from the import base
+ * @param {string} accountLink - supposed account link
+ */
+const getImportAccountLink = (accountLink) => {
+	if (isCellValid(accountLink)) return accountLink;
+
+	return null;
+};
+
+/**
+ * Acquire the account username from the import base
+ * @param {string} usernameRaw - supposed account username
+ */
+const getImportUsername = (usernameRaw) => {
+	if (!(usernameRaw) || !(usernameRaw.includes(`${SOCIAL_MIDIA}.com`))) return null;
+
+	let username = usernameRaw.replace(`https://www.${SOCIAL_MIDIA}.com/`, "");
+	username = username.replace(`https://${SOCIAL_MIDIA}.com/`, "");
+	username = username.split("/");
+
+	if (username[0] !== "pg")	username = username[0];
+	else username = username[1];
+
+	username = username.split("?");
+
+	return username[0];
+};
+
+/**
+ * Acquire a number from the import base
+ * @param {string} number - supposed valid number
+ */
+const getImportNumber = (number) => {
+	number = parseInt(number.replace(/\.|,/g, ""), 10);
+
+	if (Number.isNaN(number)) number = null;
+
+	return number;
+};
+
+/**
+ * Acquire a date from the import base
+ * @param {string} date - supposed valid date
+ * @param {array} lastDate - last valid date
+ */
+const getImportDate = (date, lastDate) => {
+	if (!date) return lastDate;
+
+	date = date.split("/");
+
+	if (!(date) || date.length !== 3) date = lastDate;
+
+	return date;
+};
+
 module.exports = {
 	listAccounts,
 	help,
@@ -686,4 +736,8 @@ module.exports = {
 	evolutionMsg,
 	capitalize,
 	isCellValid,
+	getImportAccountLink,
+	getImportUsername,
+	getImportNumber,
+	getImportDate,
 };

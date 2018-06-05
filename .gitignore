@@ -1,6 +1,5 @@
 .DS_Store
 .env
-coverage/
 docs/
 logs/
 node_modules/

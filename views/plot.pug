@@ -7,13 +7,18 @@ block content
 			| Aqui você tem a liberdade para fazer a sua pesquisa exploratória
 			| sobre a projeção do cenário eleitoral nas mídias digitais
 
+	h2 This is a heading
+	p This is a paragraph.
+	p#test This is another paragraph.
+	button Click me
+
 	block plotArea
 		.row.justify-content-around
 			.col-8.order-md-2.order-2.bg-light
 				img(src="/imagens/Gráfico_exemplo.png", alt="Gráfico requisitado", width="100%")
 			.py-2.col-md-3.order-md-1.order-1.bg-light
 				.py-2.h4.mb-3.text-center Controle
-				form.needs-validation(novalidate='')
+				form.needs-validation(novalidate="")
 					.row
 						.py-2.col-md-12
 							+digitalMedia
@@ -32,28 +37,33 @@ block content
 
 mixin digitalMedia
 	label(for="digitalMedia") Mídia digital:
-		select#digitalMedia.custom-select.d-block.w-100(required='')
-			option(value='') Escolha...
-			option Facebook
-			option Instagram
-			option Twitter
-			option Youtube
+		select#digitalMedia.custom-select.d-block.w-100(required="", name="digitalMedia")
+			option(value="Selecione") Rede...
+			option(value="Facebook") Facebook
+			option(value="Twitter") Twitter
+			option(value="Instagram") Instagram
+			option(value="Youtube") Youtube
 		.invalid-feedback
 			| Por favor selecione uma mídia válida.
 
 mixin queries
 	label(for="query") Aspecto de análise:
-		select#query.custom-select.d-block.w-100(required='')
-			option(value='') Escolha...
-			option Curtidas
-			option Seguidores
+		select#query.custom-select.d-block.w-100(required="", name="query")
+			option(value="Selecione") Acomodação
+			option(value="Curtidas") Curtidas
+			option(value="Seguidores") Seguidores
+			option(value="Seguindo") Seguindo
+			option(value="Tweets") Tweets
+			option(value="Posts") Posts
+			option(value="Videos") Videos
+			option(value="Inscritos") Inscritos
 		.invalid-feedback
 			| Por favor selecione um aspecto válido.
 
 mixin categories
 	label(for="category") Categorias:
-		select#category.custom-select.d-block.w-100(required='')
-			option(value='') Escolha...
+		select#category.custom-select.d-block.w-100(required="")
+			option(value="") Escolha...
 			option Frentes/Coletivos
 			option Organizações da Sociedade Civil
 			option Candidatos à presidência

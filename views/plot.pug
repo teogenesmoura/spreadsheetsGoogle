@@ -29,48 +29,40 @@ block content
 						+actors
 					.d-block.my-3
 						.custom-control.custom-checkbox
-							input#clearActors.custom-control-input(type="checkbox")
-							label.custom-control-label(for="clearActors") Limpar atores
+							input#clearActors.form-check-input(type="checkbox")
+							label.form-check-label(for="clearActors") Limpar atores
 
 mixin digitalMedia
 	label(for="digitalMedia") Mídia digital:
-		select#digitalMedia.custom-select.d-block.w-100(required="", name="digitalMedia")
-			option(value="Selecione") Rede...
-			option(value="Facebook") Facebook
-			option(value="Twitter") Twitter
-			option(value="Instagram") Instagram
-			option(value="Youtube") Youtube
+		select#digitalMedia.custom-select.d-block.w-100(required="")
+			option(value="") Rede...
+			option(value="facebook") Facebook
+			option(value="twitter") Twitter
+			option(value="instagram") Instagram
+			option(value="youtube") Youtube
 		.invalid-feedback
 			| Por favor selecione uma mídia válida.
 
 mixin queries
-	label(for="query") Aspecto de análise:
-		select#query.custom-select.d-block.w-100(required="", name="query")
-			option(value="Selecione") Acomodação
-			option(value="Curtidas") Curtidas
-			option(value="Seguidores") Seguidores
-			option(value="Seguindo") Seguindo
-			option(value="Tweets") Tweets
-			option(value="Posts") Posts
-			option(value="Videos") Videos
-			option(value="Inscritos") Inscritos
+	label(for="queries") Aspecto de análise:
+		select#queries.custom-select.d-block.w-100(required="")
+			option(value="") Escolha...
 		.invalid-feedback
 			| Por favor selecione um aspecto válido.
 
 mixin categories
-	label(for="category") Categorias:
-		select#category.custom-select.d-block.w-100(required="")
-			option(value="") Escolha...
-			option Frentes/Coletivos
-			option Organizações da Sociedade Civil
-			option Candidatos à presidência
-			option Todos
+	label(for="categories") Categorias:
+		select#categories.custom-select.d-block.w-100(required="")
+			option(value = "") Escolha...
+			option(value = "F/C") Frentes/Coletivos
+			option(value = "OSC") Organizações da Sociedade Civil
+			option(value = "CP") Candidatos à presidência
 		.invalid-feedback
 			| Por favor selecione um aspecto válido.
 
 mixin actors
-	-for(let cnt = 1; cnt < 10; cnt++)
-		-let _id = "id" + cnt
-			.custom-control.custom-checkbox
-				input.custom-control-input(type="checkbox", id=_id)
-				label.custom-control-label(for=_id) Ator #{cnt}
+	#checkbox.form-check
+		input#defaultCheck.form-check-input(type='checkbox', value='')
+		label.form-check-label(for='defaultCheck')
+			| Atores
+

@@ -4,6 +4,7 @@ const instagramRoute = require("./instagram.route");
 const twitterRoute = require("./twitter.route");
 const facebookRoute = require("./facebook.route");
 const youtubeRoute = require("./youtube.route");
+const httpStatus = require("../../config/resocie.json").httpStatus;
 
 const router = express.Router();
 
@@ -53,7 +54,15 @@ router.get("/", (req, res) => {
 });
 
 router.get("/qualquer", (req, res) => {
-	res.render("qualquer");
+	const data = {
+		texto: "testandi",
+		extra: "qualquer coisa",
+		statusCod: httpStatus.ERROR_SPLIT_ACTORS,
+	};
+	// res.render("qualquer");
+	console.log("Passou por aqui");
+	console.log(`Status enviado = ${httpStatus.ERROR_SPLIT_ACTORS}`);
+	res.send(data);
 });
 
 router.get("/espacoExploratorio", (req, res) => {

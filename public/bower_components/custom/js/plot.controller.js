@@ -78,6 +78,7 @@ let clear = (field) => {
 	switch(field){
 		case "queries": clearQueries(); break;
 		case "categories": clearCategories(); break;
+		case "actors": clearActors(); break;
 	}
 }
 
@@ -88,6 +89,10 @@ let clearQueries = () => {
 
 let clearCategories = () => {
 	$("#categories").empty();
+}
+
+let clearActors = () => {
+	$("#actors").empty();
 }
 
 $(document).ready(() => {
@@ -104,7 +109,7 @@ $(document).ready(() => {
 });
 
 let getActorsFC = () => {
-	$("#checkbox").empty();
+	clear("actors");
 
 	let actors = [
 		{
@@ -125,16 +130,16 @@ let getActorsFC = () => {
 
 	actors.forEach((actor) => {
 		let check = "<input class='form-check-input' type='checkbox' id='" + actor.id + "'/>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 		check = "<label class='form-check-label' for='" + actor.id + "'>" + actor.name + "</label><br>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 
 
 	});
 };
 
 let getActorsOSC = () => {
-	$("#checkbox").empty();
+	clear("actors");
 
 	let actors = [
 		{
@@ -155,15 +160,15 @@ let getActorsOSC = () => {
 
 	actors.forEach((actor) => {
 		let check = "<input class='form-check-input' type='checkbox' id='" + actor.id + "'/>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 		check = "<label class='form-check-label' for='" + actor.id + "'>" + actor.name + "</label><br>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 
 
 	});
 };
 let getActorsCP = () => {
-	$("#checkbox").empty();
+	clear("actors");
 
 	let actors = [
 		{
@@ -184,9 +189,9 @@ let getActorsCP = () => {
 
 	actors.forEach((actor) => {
 		let check = "<input class='form-check-input' type='checkbox' id='" + actor.id + "'/>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 		check = "<label class='form-check-label' for='" + actor.id + "'>" + actor.name + "</label><br>";
-		$("#checkbox").append(check);
+		$("#actors").append(check);
 
 
 	});

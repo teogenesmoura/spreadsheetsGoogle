@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1528206123295" clover="3.2.0">
-  <project timestamp="1528206123295" name="All files">
-    <metrics statements="1368" coveredstatements="1046" conditionals="349" coveredconditionals="233" methods="157" coveredmethods="130" elements="1874" coveredelements="1409" complexity="0" loc="1368" ncloc="1368" packages="5" files="21" classes="21">
+<coverage generated="1528812297036" clover="3.2.0">
+  <project timestamp="1528812297037" name="All files">
+    <metrics statements="1372" coveredstatements="1047" conditionals="349" coveredconditionals="233" methods="157" coveredmethods="130" elements="1878" coveredelements="1410" complexity="0" loc="1372" ncloc="1372" packages="5" files="21" classes="21">
       <package name="DataViz">
         <metrics statements="18" coveredstatements="15" conditionals="4" coveredconditionals="2" methods="4" coveredmethods="1"/>
         <file name="index.js" path="/home/rodrigo/Documentos/DataViz/index.js">
@@ -1356,7 +1356,7 @@
         </file>
       </package>
       <package name="DataViz.server.routes">
-        <metrics statements="75" coveredstatements="72" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="1"/>
+        <metrics statements="79" coveredstatements="73" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="1"/>
         <file name="facebook.route.js" path="/home/rodrigo/Documentos/DataViz/server/routes/facebook.route.js">
           <metrics statements="14" coveredstatements="14" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
           <line num="2" count="5" type="stmt"/>
@@ -1375,28 +1375,32 @@
           <line num="77" count="5" type="stmt"/>
         </file>
         <file name="index.route.js" path="/home/rodrigo/Documentos/DataViz/server/routes/index.route.js">
-          <metrics statements="21" coveredstatements="18" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="1"/>
+          <metrics statements="25" coveredstatements="19" conditionals="0" coveredconditionals="0" methods="4" coveredmethods="1"/>
           <line num="1" count="5" type="stmt"/>
           <line num="3" count="5" type="stmt"/>
           <line num="4" count="5" type="stmt"/>
           <line num="5" count="5" type="stmt"/>
           <line num="6" count="5" type="stmt"/>
-          <line num="8" count="5" type="stmt"/>
-          <line num="12" count="5" type="stmt"/>
-          <line num="13" count="1" type="stmt"/>
-          <line num="35" count="1" type="stmt"/>
-          <line num="49" count="1" type="stmt"/>
-          <line num="55" count="5" type="stmt"/>
-          <line num="56" count="0" type="stmt"/>
-          <line num="59" count="5" type="stmt"/>
-          <line num="60" count="0" type="stmt"/>
-          <line num="63" count="5" type="stmt"/>
+          <line num="7" count="5" type="stmt"/>
+          <line num="9" count="5" type="stmt"/>
+          <line num="13" count="5" type="stmt"/>
+          <line num="14" count="1" type="stmt"/>
+          <line num="36" count="1" type="stmt"/>
+          <line num="50" count="1" type="stmt"/>
+          <line num="56" count="5" type="stmt"/>
+          <line num="57" count="0" type="stmt"/>
+          <line num="63" count="0" type="stmt"/>
           <line num="64" count="0" type="stmt"/>
+          <line num="65" count="0" type="stmt"/>
           <line num="68" count="5" type="stmt"/>
-          <line num="71" count="5" type="stmt"/>
-          <line num="74" count="5" type="stmt"/>
-          <line num="76" count="5" type="stmt"/>
-          <line num="78" count="5" type="stmt"/>
+          <line num="69" count="0" type="stmt"/>
+          <line num="72" count="5" type="stmt"/>
+          <line num="73" count="0" type="stmt"/>
+          <line num="77" count="5" type="stmt"/>
+          <line num="80" count="5" type="stmt"/>
+          <line num="83" count="5" type="stmt"/>
+          <line num="85" count="5" type="stmt"/>
+          <line num="87" count="5" type="stmt"/>
         </file>
         <file name="instagram.route.js" path="/home/rodrigo/Documentos/DataViz/server/routes/instagram.route.js">
           <metrics statements="13" coveredstatements="13" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>

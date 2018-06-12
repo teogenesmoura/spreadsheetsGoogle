@@ -1,0 +1,126 @@
+{
+	"spreadsheets": {
+		"id": "1yesZHlR3Mo0qpuH7VTFB8_zyl6p_H-b1khh-wlB3O_Q",
+		"name": "Grupos",
+		"periods": [
+			"dez-2017",
+			"jan-2018",
+			"fev-2018",
+			"mar-2018",
+			"abril-2018",
+			"maio-2018",
+			"junho-2018"
+		],
+		"categories": [
+			"FRENTES / COLETIVOS",
+			"ORGANIZAÇÕES DA SOCIEDADE CIVIL",
+			"PRÉ-CANDIDATURAS À PRESIDÊNCIA"
+		],
+		"facebookRange": {
+			"linkRow": 3,
+			"likesRow": 4,
+			"followersRow": 5,
+			"dateRow": 6
+		},
+		"twitterRange": {
+			"nameRow": 0,
+			"profileRow": 7,
+			"tweetsRow": 8,
+			"followingRow": 9,
+			"followersRow": 10,
+			"likesRow": 11,
+			"momentsRow": 12,
+			"campaignsRow": 13,
+			"dateRow": 14
+		},
+		"youtubeRange": {
+			"dateRow": 14,
+			"channelRow": 19,
+			"subscribsRow": 20,
+			"videosRow": 21,
+			"viewsRow": 22
+		},
+		"instagramRange": {
+			"nameRow": 0,
+			"profileRow": 15,
+			"followersRow": 16,
+			"followingRow": 17,
+			"postsRow": 18,
+			"dateRow": 14
+		},
+		"range": {
+			"nameRow": 0
+		}
+	},
+	"observatory": {
+		"socialMidia": {
+			"facebookMidia": "facebook",
+			"instagramMidia": "instagram",
+			"twitterMidia": "twitter",
+			"youtubeMidia": "youtube"
+		},
+		"queriesRange": {
+			"facebookQueries": 2,
+			"instagramQueries": 3,
+			"twitterQueries": 5,
+			"youtubeTypes": 3
+		},
+		"queries": {
+			"commonQuery": "latest",
+			"facebookQueries": [
+				"likes",
+				"followers"
+			],
+			"instagramQueries": [
+				"followers",
+				"following",
+				"num_of_posts"
+			],
+			"twitterQueries": [
+				"tweets",
+				"followers",
+				"following",
+				"likes",
+				"moments"
+			],
+			"youtubeQueries":[
+				"videos",
+				"views",
+				"subscribers"
+			]
+		},
+		"queriesPT": {
+			"facebookQueriesPT": {
+				"likes": "curtidas",
+				"followers": "seguidores"
+			},
+			"instagramQueriesPT": {
+				"followers": "seguidores",
+				"following": "seguindo",
+				"num_of_posts": "postagens"
+			},
+			"twitterQueriesPT": {
+				"tweets": "tweets",
+				"followers": "seguidores",
+				"following": "seguindo",
+				"likes": "curtidas",
+				"moments": "momentos"
+			},
+			"youtubeQueriesPT": {
+				"videos": "vídeos",
+				"views": "visualizações",
+				"subscribers": "inscritos"
+			}
+		}		
+	},
+	"httpStatus": {
+		"OK": 200,
+		"FOUND": 302,
+		"ERROR_LIST_ACCOUNTS": 512,
+		"ERROR_GET_USER": 513,
+		"ERROR_LATEST": 514,
+		"ERROR_LOAD_ACCOUNT": 515,
+		"ERROR_QUERY_KEY": 400,
+		"ERROR_SPLIT_ACTORS": 517
+	}
+}

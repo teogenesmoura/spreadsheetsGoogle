@@ -1,37 +1,33 @@
-const { google } = require("googleapis");
-const express = require("express");
-const path = require("path");
-const fs = require("fs");
-const opn = require("opn");
-const sheets = require("./controllers/spreadsheets");
+const mongoose = require("mongoose");
+const app = require("./config/express");
 const logger = require("./config/logger");
+const config = require("./config/config");
 
-/* Reference code for OAuth and Spreadsheets:
-	https://github.com/google/google-api-nodejs-client/blob/master/samples/sheets/quickstart.js
-*/
-const keyfile = path.join(__dirname, "credentials.json");
-const keys = JSON.parse(fs.readFileSync(keyfile));
-const scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
-const client = new google.auth.OAuth2(
-	keys.web.client_id,
-	keys.web.client_secret,
-	keys.web.redirect_uris[0],
-);
-// Generate the url that will be used for authorization
-this.authorizeUrl = client.generateAuthUrl({
-	access_type: "offline",
-	prompt: "consent",
-	scope: scopes,
+// Drawing with certain options throws an error if this is undefined
+if (global.CanvasGradient === undefined) {
+	global.CanvasGradient = () => {};
+}
+
+Promise = require("bluebird"); // eslint-disable-line no-global-assign
+
+// plugin bluebird promise in mongoose
+mongoose.Promise = Promise;
+
+// connect to mongo db
+const mongoUri = config.mongo.host;
+mongoose.connect(mongoUri, { keepAlive: 1 });
+mongoose.connection.on("error", () => {
+	throw new Error(`unable to connect to database: ${mongoUri}`);
 });
-// Open an http server to accept the oauth callback. In this
-// simple example, the only request to our webserver is to
-// /oauth2callback?code=<code>
-const app = express();
-app.get("/", (req, res) => {
-	sheets.authenticate(client, req, res);
+mongoose.connection.once("open", () => {
+	logger.info(`Connected to database on host ${mongoUri}`);
 });
-app.listen(3000, () => {
-	logger.info(`[SERVER] Listening on port ${3000}`);
-	// open the browser to the authorize url to start the workflow
-	opn(this.authorizeUrl, { wait: false });
-});
+
+// Start Server
+if (config.env !== "test") {
+	app.listen(config.port, () => {
+		logger.info(`[SERVER] Listening on port ${config.port}`);
+	});
+}
+
+module.exports = app;

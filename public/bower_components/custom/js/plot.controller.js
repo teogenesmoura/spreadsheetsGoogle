@@ -198,6 +198,17 @@ let getActorsCP = () => {
 };
 
 $(document).ready(() => {
+	$("#clearActors").on("change", () => {
+
+		$("body").append("<br>Selecionou<br>");
+		$(".form-check-input").prop("checked", false);
+		/*for (i=0;i<document.elements.length;i++) 
+			if(document.elements[i].type == "checkbox") 
+				document.elements[i].checked=0*/
+	});
+});
+
+$(document).ready(() => {
 	$("button").click(() => {
 		// $("#test").hide();
 		// $.get(URL, dados, callback);
